@@ -1,5 +1,14 @@
 <?php
 /**
+* @package simpleMVC
+* @licence LGPL
+* @author Jonathan Gotti < jgotti at jgotti dot net >
+* @since 2007-10
+* @changelog - 2007-11-05 - new actionStack properties and related methods like getCurrentAction()
+*            - 2007-10-29 - appendAppMsg can now appen multiple msgs at one time
+*            - 2007-10-24 - no more view->_appMsgs setting at init time
+*                         - now pendingAppMsgs can take a given msgs parameter (passed by reference) to append msgs to the array
+* 
 * abstract action controller.
 * Chaque controller de ce contexte est une extension de ce controller.
 * les controller d'actions doivent avoir des méthodes pour chaque action par 
@@ -24,13 +33,17 @@
 * il est possible de rediriger vers une autre action grace a la méthode forward.
 * Attention selon la facon de rediriger l'action vous executerez ou non les methodes pre/post
 * automatiques liées à la nouvelle action.
-* @package simpleMVC
-* @licence LGPL
-* @author Jonathan Gotti < jgotti at jgotti dot net >
-* @since 2007-10
-* @changelog - 2007-10-29 - appendAppMsg can now appen multiple msgs at one time
-*            - 2007-10-24 - no more view->_appMsgs setting at init time
-*                         - now pendingAppMsgs can take a given msgs parameter (passed by reference) to append msgs to the array
+* 
+* Important note:
+* Every time you call an action directly or by forwarding action remember that 
+* calling actionACtion instead of action will execute that action out of any automatic
+* methods. So here's the list of what won't happen in such case:
+* - no call to pre/post Action
+* - no call to pre/post actionAction
+* - no trace in actionStack so no way to get the current action name corresponding to that action
+* - no automatic view rendering.
+* So if you call actionAction instead of action all of the previous steps have to be called manually
+* if you need them to apply.
 */
 
 abstract class abstractController{
@@ -45,6 +58,9 @@ abstract class abstractController{
   
   /** internally use to get the controller name */
   protected $name = '';
+  /** action stack is used to provide current action name if required */
+  protected $actionStack = array();
+  
   
   static $defaultActionName = 'index';
   static $defaultControllerName = 'index';
@@ -66,13 +82,39 @@ abstract class abstractController{
       foreach(self::$defaultViewDirs as $d)
         $this->view->addViewDir($d);
     }
-  } 
-  
+  }
   /**
   * retourne le nom du controller
   */
   public function getName(){
     return $this->name;
+  }
+  /**
+  * methode interne pour garder une trace de la pile d'appels des actions.
+  * ajoute l'action en cours a la pile d'appel
+  * @param string $action le nom de l'action en cours
+  */
+  protected function _currentActionStart($action){
+    $this->actionStack[] = $action;
+  }
+  /**
+  * methode interne pour garder une trace de la pile d'appels des actions.
+  * supprime l'action en cours de la pile d'appel
+  * @param string $action le nom de l'action en cours
+  */
+  protected function _currentActionEnd($action){
+    if($action !== $this->getCurrentAction()){
+      throw new Exception("Error occured in action stack order.".(print_r($this->actionStack,1)));
+    }
+    array_pop($this->actionStack);
+  }
+  /**
+  * retourne le nom de l'action en cours
+  */
+  public function getCurrentAction(){
+    if(! count($this->actionStack) ) return false;
+    $res = array_reverse($this->actionStack);
+    return $res[0];
   }
   
   /**
@@ -125,13 +167,14 @@ abstract class abstractController{
   public function __call($method,$args=null){
     #- show($method,'color:green');
     if(method_exists($this,$method.'Action')){
+      $this->_currentActionStart($method);
       $tryPreAction = $tryPostAction = true;
       #- appelle les methodes preAction
       if(method_exists($this,'pre'.$method.'Action'))
         if( true === call_user_func(array($this,'pre'.$method.'Action')) )
           $tryPreAction = false;
       if($tryPreAction && method_exists($this,'preAction'))
-        $this->preAction();
+        $this->preAction($method);
       #- appelle l'action
       $result = call_user_func_array(array($this,$method.'Action'),$args);
       if($result === true)
@@ -141,10 +184,11 @@ abstract class abstractController{
         if( true === call_user_func(array($this,'post'.$method.'Action')) )
           $tryPostAction = false;
       if($tryPostAction && method_exists($this,'postAction'))
-        if( true === $this->postAction())
+        if( true === $this->postAction($method))
           $tryPostAction = false;
       if($tryPostAction && self::$viewAutoRendering)
         $this->view->render($method);
+      $this->_currentActionStart($method);
       return $result;
     }else{
       throw new Exception(get_class($this)."::$method() method doesn't exist");

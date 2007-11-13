@@ -11,7 +11,11 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2007-10-25 - now helpers which extends abstractViewHelper will support method getController
+* @changelog - 2007-11-12 - new methods lookUpScript*() to permit easy checking of existing script files
+*                         - new static property $defaultLookUpModel to ease manual call to lookUpScriptByAction
+*                         - render and renderScript methods now use lookUpScript* methods
+*                         - renderScript now have an additionnal parameter $useLookUp (avoid twice lookup at render time)
+*            - 2007-10-25 - now helpers which extends abstractViewHelper will support method getController
 *                         - baseView now support getter methods for private vars like get_privateVars or getPrivateVars. 
 *                           (case sensitive only the first char prefixed by _ can be replace by an uppercase letter)
 *            - 2007-10-24 - new method getPendingAppMsgs automaticly called at render time to set view->_appMsgs
@@ -21,6 +25,7 @@
 interface viewHelperInterface{
   function __construct(viewInterface $view);
 }
+
 abstract class abstractViewHelper implements viewHelperInterface{
   public $view = null;
   function __construct(viewInterface $view){
@@ -40,8 +45,10 @@ interface viewInterface{
   
   function setLayout(array $layout=null);
   function addViewDir($viewDir);
+  function lookUpScriptByAction($action=null,$controller=null,$scriptPathModel=null);
+  function lookUpScript($scriptFileName);
   function render($action=null,$force=false);
-  function renderScript($scripFile);
+  function renderScript($scripFile,$useLookUp=true);
   
   function getHelper($helperName,$autoLoad=false);
   function helperLoad($helperName,$forceReload=false);
@@ -53,10 +60,12 @@ interface viewInterface{
 class baseView implements viewInterface{
   static protected $_rendered = false;
   static public $defaultLayout = array(
-    'header.tpl.php',
-    ':controller_:action.tpl.php',
-    'footer.tpl.php',
+    # 'header.tpl.php',
+    ':controller_:action.tpl.php|default_:action.tpl.php',
+    # 'footer.tpl.php',
   );
+  /** used only for manual script lookup */
+  static public $defaultLookUpModel = ':controller_:action.tpl.php';
   protected $_viewDirs = array();
   protected $_layout = null;
   protected $_controller = null;
@@ -185,6 +194,44 @@ class baseView implements viewInterface{
       throw new Exception("$viewDir is not a valid directory");
     $this->_viewDirs[] = $viewDir;
   }
+  
+  /**
+  * look in viewDirs for script existing script to render for the given action.
+  * @param str $action     case sensitive name of the action to look at
+  * @param str $controller case sensitive name of the controller. 
+  *                        (can be usefull to dinamicly define the layout 
+  *                         by checking other controllers scripts to render.)
+  * @param str $scriptPathModel will be set to $defaultLookUpModel if not given
+  * @return str scriptPath or false if not found.
+  */
+  function lookUpScriptByAction($action=null,$controller=null,$scriptPathModel=null){
+    if(is_null($scriptPathModel))
+      $scriptPathModel = self::$defaultLookUpModel;
+    if(is_null($controller))
+      $controller = $this->_controller->getName();
+    if( is_null($action))
+      $action = 'default';
+    $scripts = explode('|',preg_replace('!:(action|controller)!e','$\1',$scriptPathModel));
+    foreach($scripts as $scriptFile){
+      $tmp = $this->lookUpScript($scriptFile);
+      if($tmp !== false)
+        return $tmp;
+    }
+    return false;
+  }
+  /**
+  * check path for given scriptFile regarding the viewDirs setted
+  * @param str scriptFile script filename
+  * @return str script path or false if not found
+  */
+  function lookUpScript($scriptFile){
+    foreach(array_reverse($this->_viewDirs) as $d){
+      if(is_file("$d/$scriptFile"))
+        return "$d/$scriptFile";
+    }
+    return is_file($scriptFile)?$scriptFile:false;
+  }
+  
   /**
   * try to render all scripts setted in layout.
   * calling render will automaticly call getPendingAppMsgs()
@@ -198,28 +245,30 @@ class baseView implements viewInterface{
     $controller = $this->_controller->getName();
     if(is_null($action))
       $action = 'default';
-    foreach($this->_layout as $scripts){
-      $scripts = explode('|',preg_replace('!:(action|controller)!e','$\1',$scripts));
-      foreach($scripts as $script){ # render first script found in case of alternatives
-        if( $this->renderScript($script) )
-          break;
-      }
+    foreach($this->_layout as $scriptPathModel){
+      $scriptFile = $this->lookUpScriptByAction($action,$controller,$scriptPathModel);
+      if($scriptFile !== false)
+        $this->renderScript($scriptFile,false);
     }
     self::$_rendered = true;
   }
   
-  function renderScript($scriptFile){
-    foreach(array_reverse($this->_viewDirs) as $d){
-      if(is_file("$d/$scriptFile")){
-        include("$d/$scriptFile");
-        return true;
-      }
+  /**
+  * render the given script file.
+  * @param  str  $scriptFile can be the script file path or only the name if you do a lookup 
+  * @param  bool $useLookUp   if false then won't use lookUpScript but only check if file exists.
+  * @return bool scriptFile included or not.
+  */
+  function renderScript($scriptFile,$useLookUp=true){
+    if($useLookUp){
+      $scriptFile = $this->lookUpScript($scriptFile);
+      if($scriptFile === false)
+        return false;
+    }elseif(! is_file($scriptFile) ){
+        return false;
     }
-    if(is_file($scriptFile)){
-      include($scriptFile);
-      return true;
-    }
-    return false;
+    include($scriptFile);
+    return true;
   }
   /**
   * add pending appMsgs to this->_appMsgs
