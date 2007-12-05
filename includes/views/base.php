@@ -11,7 +11,8 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2007-11-12 - new methods lookUpScript*() to permit easy checking of existing script files
+* @changelog - 2007-12-05 - new method setController() required by abstractController forward to work properly
+*            - 2007-11-12 - new methods lookUpScript*() to permit easy checking of existing script files
 *                         - new static property $defaultLookUpModel to ease manual call to lookUpScriptByAction
 *                         - render and renderScript methods now use lookUpScript* methods
 *                         - renderScript now have an additionnal parameter $useLookUp (avoid twice lookup at render time)
@@ -43,6 +44,7 @@ interface viewInterface{
   function __isset($k);
   function assign($k,$v=null);
   
+  function setController(abstractController $controller);
   function setLayout(array $layout=null);
   function addViewDir($viewDir);
   function lookUpScriptByAction($action=null,$controller=null,$scriptPathModel=null);
@@ -77,7 +79,8 @@ class baseView implements viewInterface{
   public $_appMsgs = array();
   
   function __construct(abstractController $controller=null,array $layout=null){
-    $this->_controller = $controller;
+    if(! is_null($controller) )
+      $this->setController($controller);
     $this->setLayout($layout);
   }
   
@@ -175,9 +178,20 @@ class baseView implements viewInterface{
     return $returnHelper?$this->_loadedHelpers[$helperName]:true;
   }
   
+  /** 
+  * set the controller of the view
+  * @param abstractController $controller
+  * @return viewInterface for method chaining
+  */
+  function setController(abstractController $controller){
+    $this->_controller = $controller;
+    return $this;
+  }
+  
   /**
   * set layout for this view without touching the default one
   * @param array $layout array of view script files
+  * @return viewInterface for method chaining
   */
   public function setLayout(array $layout=null){
     $this->_layout = is_null($layout)?self::$defaultLayout:$layout;
@@ -188,11 +202,13 @@ class baseView implements viewInterface{
   * append a directory for view script lookup.
   * the last added will be the first checked.
   * @param str $viewDir
+  * @return viewInterface for method chaining
   */
   public function addViewDir($viewDir){
     if(! is_dir($viewDir) )
       throw new Exception("$viewDir is not a valid directory");
     $this->_viewDirs[] = $viewDir;
+    return $this;
   }
   
   /**
@@ -271,7 +287,8 @@ class baseView implements viewInterface{
     return true;
   }
   /**
-  * add pending appMsgs to this->_appMsgs
+  * populate this->_appMsgs with pending appMsgs
+  * @return viewInterface for method chaining
   */
   function getPendingAppMsgs(){
     eval(get_class($this->_controller)."::pendingAppMsgs(\$this->_appMsgs);");

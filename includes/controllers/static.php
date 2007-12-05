@@ -11,9 +11,9 @@
 class staticController extends abstractController{
   
   static public $layout    = array(
-    'header.tpl.php',
+    #- 'header.tpl.php',
     'static_:action.tpl.php',
-    'footer.tpl.php'
+    #- 'footer.tpl.php'
   );
   
   function init(){

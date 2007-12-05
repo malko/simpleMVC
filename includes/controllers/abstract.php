@@ -4,21 +4,23 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2007-11-05 - new actionStack properties and related methods like getCurrentAction()
+* @changelog - 2007-12-05 - bug correction regarding parameters treatment in redirect method
+*                         - bug correction regarding the forgotten assignation of the given view at construct time
+*            - 2007-11-05 - new actionStack properties and related methods like getCurrentAction()
 *            - 2007-10-29 - appendAppMsg can now appen multiple msgs at one time
 *            - 2007-10-24 - no more view->_appMsgs setting at init time
 *                         - now pendingAppMsgs can take a given msgs parameter (passed by reference) to append msgs to the array
-* 
+*
 * abstract action controller.
 * Chaque controller de ce contexte est une extension de ce controller.
-* les controller d'actions doivent avoir des méthodes pour chaque action par 
-* exemple pour l'action default defaultAction. 
+* les controller d'actions doivent avoir des méthodes pour chaque action par
+* exemple pour l'action default defaultAction.
 * Pour appeller ces methodes en bénéficiant de l'instanciation automatique des vues
 * mais aussi de l'appel auto des methodes pre/post action ainsi vous devez appellez l'action
 * actionController::default();
 * si vous appellez la methode actionController::defaultAction() directement alors aucune
 * action automatique ne sera prise.
-* 
+*
 * PRE/POST action methods:
 * vous pouvez définir les méthodes preAction et postAction dans vos controlleurs
 * elles seront appellées avant et apres chaque action, vous pouvez aussi définir
@@ -28,14 +30,14 @@
 * pre/post génériques et empecherons leur execution si elle retournent TRUE.
 * De meme si la methode de l'action retourne TRUE alors les post[action]Action
 * ne seront pas éxécutées.
-* 
+*
 * forward d'action:
 * il est possible de rediriger vers une autre action grace a la méthode forward.
 * Attention selon la facon de rediriger l'action vous executerez ou non les methodes pre/post
 * automatiques liées à la nouvelle action.
-* 
+*
 * Important note:
-* Every time you call an action directly or by forwarding action remember that 
+* Every time you call an action directly or by forwarding action remember that
 * calling actionACtion instead of action will execute that action out of any automatic
 * methods. So here's the list of what won't happen in such case:
 * - no call to pre/post Action
@@ -55,23 +57,34 @@ abstract class abstractController{
   static  $viewAutoRendering = true;
   /** pointer on the view */
   public  $view = null;
-  
+
   /** internally use to get the controller name */
   protected $name = '';
   /** action stack is used to provide current action name if required */
   protected $actionStack = array();
-  
-  
+
+
   static $defaultActionName = 'index';
   static $defaultControllerName = 'index';
   /** set the way appMsg are prepared %T and %M will be respectively replaced byt msgType and msgStr*/
   static $appMsgModel = "<div class='%T'>%M</div>";
-  
+
+  /**
+  * crée une nouvelle instance de controller.
+  * @param viewInterface $view Par défaut le controlleur va demander une instance de $defaultViewClass à utiliser.
+  *                            On peut cependant réutiliser une instance déjà existante c'est notamment ce qui se passe
+  *                            lors d'un appel à la méthode forward afin d'eviter la création de multiples instances de la vue
+  *                            mais aussi de conservé les variables déjà assignées.
+  *                            (en gros ceci concerne une utilisation avancée de simpleMVC 
+  *                             donc si vous débutez avec simpleMVC laissez ce parametre de coté).
+  */
   public function __construct(viewInterface $view = null){
     $this->name = strtolower(preg_replace('!(?:_c|C)ontroller$!','',get_class($this)));
+    if(! is_null($view) )
+      $this->view = $view;
     $this->init();
   }
-  
+
   /**
   * initialisation communes aux controlleurs de ce contexte.
   * Notamment l'instanciation de ce qui est nécéssaire au vu et le traitement des messages.
@@ -81,6 +94,9 @@ abstract class abstractController{
       $this->view = new self::$defaultViewClass($this);
       foreach(self::$defaultViewDirs as $d)
         $this->view->addViewDir($d);
+    }else{
+      #- this is required for forward method to work properly
+      $this->view->setController($this); 
     }
   }
   /**
@@ -116,15 +132,15 @@ abstract class abstractController{
     $res = array_reverse($this->actionStack);
     return $res[0];
   }
-  
+
   /**
   * @param mixed $msg    the message string or list of messages (array).
   *                      array can be of two form first one is only a list of msgs:
   *                      array(msg1,msg2,msg3...)
   *                      or a list of array(msg, msgClass)
   *                      array(array(msg1,msgClass1))
-  * @param str $msgClass info|error|success in fact can be whatever you want 
-  *                      just think about declaring corresponding styles in the 
+  * @param str $msgClass info|error|success in fact can be whatever you want
+  *                      just think about declaring corresponding styles in the
   *                      stylesheet
   */
   static function appendAppMsg($msg='',$msgType='info'){
@@ -141,9 +157,9 @@ abstract class abstractController{
       throw new Exception(__class__.'::appendAppMsg() require a session to be started before any call.');
     $_SESSION['simpleMVC_appMsgs'][] = str_replace(array('%T','%M'),array($msgType,$msg),self::$appMsgModel);
   }
-  
+
   /**
-  * retourne les messages de l'application y compris apres une redirection et 
+  * retourne les messages de l'application y compris apres une redirection et
   * vide les messsages en attente
   * @param array $msgs     tableau auquel ajouter la liste des messages
   * @param bool  $noClean  si vrai alors ne vide pas la liste des messages en attente (à utiliser avec précaution)
@@ -158,10 +174,10 @@ abstract class abstractController{
       $_SESSION['simpleMVC_appMsgs'] = array();
     return $msgs;
   }
-  
+
   /**
   * gere les appels au methodes action (pas actionAction).
-  * si une methode action est appellé gere les appels aux methodes pre/post 
+  * si une methode action est appellé gere les appels aux methodes pre/post
   * action correspondantes et genere le rendu de la vue si $viewAutoRendering = true
   */
   public function __call($method,$args=null){
@@ -194,7 +210,7 @@ abstract class abstractController{
       throw new Exception(get_class($this)."::$method() method doesn't exist");
     }
   }
-  
+
   public function forward($actionName,$controllerName=null){
     if(is_null($controllerName)){
       $this->$actionName();
@@ -203,10 +219,12 @@ abstract class abstractController{
         $controllerName .= 'Controller';
       $controller = new $controllerName($this->view);
       $controller->$actionName();
+      #- restore controller (was modified at new controller init time)
+      $this->view->setController($this);
     }
     return true; #- convenience to easily skip chaining default postActions
   }
-  
+
   /**
   * like redirect but in a more easyer way.
   * @param str   $action
@@ -218,12 +236,12 @@ abstract class abstractController{
   */
   public function redirect($uri,$params=null,$permanent=false,$keepGoing=false){
     if(! is_null($params) ){
-      if(! is_array($params)){
+      if(is_array($params)){
         foreach($params as $k=>$v)
           $Qstr[] = urlencode($k).'='.urlencode($v);
         $params = implode('&amp;',$Qstr);
       }
-      $params = ((strpos($uri,'?')!==false)?'&amp;':'?').$params;
+      $params = ((strpos($uri,'?')!==false)?((substr($uri,-1)!=='?')?'&amp;':'') :'?').$params;
     }
     if($permanent)
       header("location: $uri$params",true,301);
@@ -233,12 +251,12 @@ abstract class abstractController{
       return true; #- convenience to easily skip chaining default postActions
     exit();
   }
-  
+
   /**
   * like redirect but in a more easyer way.
   * @param str   $action
   * @param str   $controller default to the current controller name
-  * @param mixed $params     string or array of additionnal params to append to the uri 
+  * @param mixed $params     string or array of additionnal params to append to the uri
   *                          any value for action or ctrl params will be removed.
   * @param bool  $permanent  put true to specify a permanent redirection
   * @param bool  $keepGoing  put true if you don't want to trigger a user exit().
@@ -251,7 +269,7 @@ abstract class abstractController{
         unset($params['ctrl'],$params['action']);
       }
     }
-    if(is_null($controller)) 
+    if(is_null($controller))
       $controller = $this->getName();
     return $this->redirect("?ctrl=$controller&action=$action",$params,$permanent,$keepGoing);
   }
