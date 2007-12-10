@@ -4,7 +4,8 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2007-12-06 - new getActionStack() method
+* @changelog - 2007-12-09 - addition of dispatchStack related static methods and property
+*            - 2007-12-06 - new getActionStack() method
 *            - 2007-12-05 - bug correction regarding parameters treatment in redirect method
 *                         - bug correction regarding the forgotten assignation of the given view at construct time
 *            - 2007-11-05 - new actionStack properties and related methods like getCurrentAction()
@@ -43,10 +44,14 @@
 * methods. So here's the list of what won't happen in such case:
 * - no call to pre/post Action
 * - no call to pre/post actionAction
-* - no trace in actionStack so no way to get the current action name corresponding to that action
+* - no trace in actionStack/dispatchStack so no way to get the current action name corresponding to that action
 * - no automatic view rendering.
 * So if you call actionAction instead of action all of the previous steps have to be called manually
 * if you need them to apply.
+* 
+* regarding actionStack/dispatchStack:
+* actionStack is internal of a given controller instance 
+* dispatchStack is complete controller:action stack even when forwarding action from a controller to another
 */
 
 abstract class abstractController{
@@ -63,7 +68,8 @@ abstract class abstractController{
   protected $name = '';
   /** action stack is used to provide current action name if required */
   protected $actionStack = array();
-
+  /** dispatch stack is used to retrieve the full controller/action stack */
+  static protected $dispatchStack= array();
 
   static $defaultActionName = 'index';
   static $defaultControllerName = 'index';
@@ -107,30 +113,98 @@ abstract class abstractController{
     return $this->name;
   }
   
+  ###--- DISPATCH STACK MANAGEMENT ---###
   /**
-  * retourne la pile d'action.
+  * append element to dispatch stack
+  * @param abstractController the controller doing an action you want to push in stack
+  * @protected
   */
-  public function getActionStack(){
-    return $this->actionStack;
+  static protected function dispatchStackAppend(abstractController $controller){
+    self::$dispatchStack[] = $controller->getName().':'.$controller->getCurrentAction();
+  }
+  /**
+  * remove element from dispatch stack
+  * @param abstractController the controller doing an action you want to remove from stack
+  * @protected
+  */
+  static protected function dispatchStackRemove(abstractController $controller){
+    $stackNeedle =  $controller->getName().':'.$controller->getCurrentAction();
+    // note: if you wonder why i haven't used array_search as it return last corresponding index to do this,
+    // the response is that it's not safe to rely on, as not clearly announced in manual 
+    // so i've chosen this way which will ever be safe
+    for($i=count(self::$dispatchStack)-1;$i>=0;$i--){
+      if(self::$dispatchStack[$i]===$stackNeedle){
+        unset(self::$dispatchStack[$i]);
+        self::$dispatchStack = array_values(self::$dispatchStack);# reindex stack
+        return;
+      }
+    }
+    // if nothing found we are in trouble
+    throw new Exception("Error occured in dispatch stack order.".(print_r(self::$dispatchStack,1)));
+  }
+  /**
+  * @return array full dispatchStack
+  */
+  static public function getDispatchStack(){
+    return self::$dispatchStack;
+  }
+  /**
+  * return the current last element in dispatch stack.
+  * @return string (ie: controller:action)
+  */
+  static public function getCurrentDispatch(){
+    if(! count(self::$dispatchStack) ) return false;
+    $res = array_reverse(self::$dispatchStack);
+    return $res[0];
+  }
+  /**
+  * return the first element in dispatch stack.
+  * @return string (ie: controller:action)
+  */
+  static public function getFirstDispatch(){
+    if(! count(self::$dispatchStack) ) return false;
+    return self::$dispatchStack[0];
+  }
+  /**
+  * return the current controller name
+  */
+  static public function getCurrentControllerName(){
+    $dispatch = self::getCurrentDispatch();
+    if($dispatch===false)
+      return false;
+    return substr($dispatch,0,strpos($dispatch,':'));
+  }
+  /**
+  * return the first called controller name
+  */
+  static public function getFirstControllerName(){
+    if(! count(self::$dispatchStack))
+      return false;
+    return substr(self::$dispatchStack[0],0,strpos(self::$dispatchStack[0],':'));
   }
   
+  ###--- ACTION STACK MANAGEMENT ---###
   /**
   * methode interne pour garder une trace de la pile d'appels des actions.
   * ajoute l'action en cours a la pile d'appel
   * @param string $action le nom de l'action en cours
+  * @protected
   */
   protected function _currentActionStart($action){
     $this->actionStack[] = $action;
+    self::dispatchStackAppend($this);
   }
   /**
   * methode interne pour garder une trace de la pile d'appels des actions.
   * supprime l'action en cours de la pile d'appel
   * @param string $action le nom de l'action en cours
+  * @protected
   */
   protected function _currentActionEnd($action){
     if($action !== $this->getCurrentAction()){
       throw new Exception("Error occured in action stack order.".(print_r($this->actionStack,1)));
     }
+    self::dispatchStackRemove($this);
     array_pop($this->actionStack);
   }
   /**
@@ -141,7 +215,14 @@ abstract class abstractController{
     $res = array_reverse($this->actionStack);
     return $res[0];
   }
-
+  /**
+  * retourne la pile d'action.
+  */
+  public function getActionStack(){
+    return $this->actionStack;
+  }
+  
+  ###--- APPLICATION MESSAGES MANAGEMENT ---###
   /**
   * @param mixed $msg    the message string or list of messages (array).
   *                      array can be of two form first one is only a list of msgs:
@@ -183,7 +264,8 @@ abstract class abstractController{
       $_SESSION['simpleMVC_appMsgs'] = array();
     return $msgs;
   }
-
+  
+  ###--- ACTION CALL MANAGEMENT (where all the magic happen) ---###
   /**
   * gere les appels au methodes action (pas actionAction).
   * si une methode action est appellé gere les appels aux methodes pre/post
@@ -220,6 +302,7 @@ abstract class abstractController{
     }
   }
 
+  ###--- FORWARD AND REDIRECTION MANAGEMENT MANAGEMENT ---###
   public function forward($actionName,$controllerName=null){
     if(is_null($controllerName)){
       $this->$actionName();
@@ -233,7 +316,6 @@ abstract class abstractController{
     }
     return true; #- convenience to easily skip chaining default postActions
   }
-
   /**
   * like redirect but in a more easyer way.
   * @param str   $action
@@ -260,7 +342,6 @@ abstract class abstractController{
       return true; #- convenience to easily skip chaining default postActions
     exit();
   }
-
   /**
   * like redirect but in a more easyer way.
   * @param str   $action
