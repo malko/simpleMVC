@@ -4,7 +4,8 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2007-12-05 - bug correction regarding parameters treatment in redirect method
+* @changelog - 2007-12-06 - new getActionStack() method
+*            - 2007-12-05 - bug correction regarding parameters treatment in redirect method
 *                         - bug correction regarding the forgotten assignation of the given view at construct time
 *            - 2007-11-05 - new actionStack properties and related methods like getCurrentAction()
 *            - 2007-10-29 - appendAppMsg can now appen multiple msgs at one time
@@ -105,6 +106,14 @@ abstract class abstractController{
   public function getName(){
     return $this->name;
   }
+  
+  /**
+  * retourne la pile d'action.
+  */
+  public function getActionStack(){
+    return $this->actionStack;
+  }
+  
   /**
   * methode interne pour garder une trace de la pile d'appels des actions.
   * ajoute l'action en cours a la pile d'appel
@@ -204,7 +213,7 @@ abstract class abstractController{
           $tryPostAction = false;
       if($tryPostAction && self::$viewAutoRendering)
         $this->view->render($method);
-      $this->_currentActionStart($method);
+      $this->_currentActionEnd($method);
       return $result;
     }else{
       throw new Exception(get_class($this)."::$method() method doesn't exist");
