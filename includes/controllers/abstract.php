@@ -4,7 +4,8 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2007-12-09 - addition of dispatchStack related static methods and property
+* @changelog - 2008-01-22 - now redirect use url_viewHelper that reflect the use of rewriteRules on/off
+*            - 2007-12-09 - addition of dispatchStack related static methods and property
 *            - 2007-12-06 - new getActionStack() method
 *            - 2007-12-05 - bug correction regarding parameters treatment in redirect method
 *                         - bug correction regarding the forgotten assignation of the given view at construct time
@@ -352,15 +353,7 @@ abstract class abstractController{
   * @param bool  $keepGoing  put true if you don't want to trigger a user exit().
   */
   function redirectAction($action,$controller=null,$params=null,$permanent=false,$keepGoing=false){
-    if($params){
-      if(is_string($params)){
-        $params = preg_replace('!(?:^|\?|&(amp;)?])(action|ctrl)=[^=&]+!','',$params);
-      }elseif(is_array($params)){
-        unset($params['ctrl'],$params['action']);
-      }
-    }
-    if(is_null($controller))
-      $controller = $this->getName();
-    return $this->redirect("?ctrl=$controller&action=$action",$params,$permanent,$keepGoing);
+    $url = $this->view->url($action,$controller,$params);
+    return $this->redirect($url,null,$permanent,$keepGoing);
   }
 }

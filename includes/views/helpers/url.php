@@ -51,20 +51,19 @@ class url_viewHelper implements viewHelperInterface{
 	*                           d'eviter l'urlencodage automatique.
 	* @return str url cible.
 	*/
-	function url($action,$controller=null,$params,$alreadyEncoded=false){
+	function url($action,$controller=null,$params=null,$alreadyEncoded=false){
 		# gestion du controller
 		if( is_null($controller) )
 			$controller = $this->getController()->getName();
 		# preparation de la queryString
 		if(! empty($params) ){
-			
 			if( is_string($params) ){
-				if( preg_match('!^(&|\?)!',$params) )
-					substr($params,1);
+				$params = preg_replace('!^(&(amp;)?|\?)!','',$params);
 				if(! self::$useRewriteRules ){
 					$Qstr = $params; 
 				}else{
-					$_params = explode('&',$params);
+					$sep = strpos($params,'&amp;')!==false?'&amp;':'&';
+					$_params = explode($sep,$params);
 					$params = array();
 					foreach($_params as $p){
 						@list($k,$v) = explode('=',$p,2);
@@ -73,23 +72,25 @@ class url_viewHelper implements viewHelperInterface{
 					$alreadyEncoded = true; #- les chaines doivent déjà etre encodés!
 				}
 			}
-			
 			if(is_array($params)){
 				$Qstr = array();
 				if(! $alreadyEncoded )
 					$params = array_map('urlencode',$params);
 				$kv_sep = (self::$useRewriteRules)?'/':'=';
-				foreach($params as $k=>$v)
+				foreach($params as $k=>$v){
+					if($k==='ctrl' || $k==='action')
+						continue;
 					$Qstr[] = $k.$kv_sep.$v;
-				$Qstr = implode((self::$useRewriteRules?'/':'&'),$Qstr);
+				}
+				$Qstr = implode((self::$useRewriteRules?'/':'&amp;'),$Qstr);
 			}
-			
-			if(self::$useRewriteRules)
-				$url = APP_URL."/$controller/$action".(empty($Qstr)?'':"/$Qstr");
-			else
-				$url = APP_URL."/index.php?ctrl=$controller&action=$action".(empty($Qstr)?'':"&$Qstr");
-			
-			return $url
 		}
+		if(self::$useRewriteRules){
+			$url = APP_URL."/$controller/$action".(empty($Qstr)?'':"/$Qstr");
+		}else{
+			$sep = isset($sep)?$sep:'&amp;';
+			$url = APP_URL."/index.php?ctrl=$controller$sep"."action=$action".(empty($Qstr)?'':"$sep$Qstr");
+		}
+		return $url;
 	}
 }
