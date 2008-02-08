@@ -4,7 +4,7 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2008-01-22 - now redirect use url_viewHelper that reflect the use of rewriteRules on/off
+* @changelog - 2008-01-22 - now redirectAction use url_viewHelper that reflect the use of rewriteRules on/off
 *            - 2007-12-09 - addition of dispatchStack related static methods and property
 *            - 2007-12-06 - new getActionStack() method
 *            - 2007-12-05 - bug correction regarding parameters treatment in redirect method
@@ -318,9 +318,9 @@ abstract class abstractController{
     return true; #- convenience to easily skip chaining default postActions
   }
   /**
-  * like redirect but in a more easyer way.
-  * @param str   $action
-  * @param str   $controller default to the current controller name
+  * redirect user to the given uri
+  * @param str   $uri				 there's no management of url rewriting using this method 
+  *                          as it can be used for external redirection.
   * @param mixed $params     string or array of additionnal params to append to the uri
   *                          (no filtering only urlencode array values)
   * @param bool  $permanent  put true to specify a permanent redirection
@@ -329,8 +329,10 @@ abstract class abstractController{
   public function redirect($uri,$params=null,$permanent=false,$keepGoing=false){
     if(! is_null($params) ){
       if(is_array($params)){
-        foreach($params as $k=>$v)
+        foreach($params as $k=>$v){
+        	if(strlen($v)===0) continue;
           $Qstr[] = urlencode($k).'='.urlencode($v);
+        }
         $params = implode('&amp;',$Qstr);
       }
       $params = ((strpos($uri,'?')!==false)?((substr($uri,-1)!=='?')?'&amp;':'') :'?').$params;

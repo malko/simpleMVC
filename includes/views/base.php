@@ -183,7 +183,7 @@ class baseView implements viewInterface{
   * @param abstractController $controller
   * @return viewInterface for method chaining
   */
-  function setController(abstractController $controller){
+  public function setController(abstractController $controller){
     $this->_controller = $controller;
     return $this;
   }

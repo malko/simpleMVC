@@ -7,13 +7,19 @@ ini_set('default_charset','utf-8');
 date_default_timezone_set('Europe/Paris');
 
 #- definition du contexte d'execution
-define('FRONT_NAME','admin');
+define('FRONT_NAME','front');
 require '../includes/fx-common.php';
 
-#- demmarage de la session si necesaire (on precise le contexte d'execution)
-session_start(FRONT_NAME);
+#- starting session in corresponding context
+if( isset($_SESSION) )
+	session_write_close();
+session_name(FRONT_NAME);
+session_start();
 
-# set les repertoires de vue par défaut
+#- if needed specified your default database connection
+#- db::setDefaultConnectionStr(DB_CONNECTION);
+
+#- set les repertoires de vue par défaut
 abstractController::$defaultViewClass = 'baseView';
 abstractController::$defaultViewDirs  = array(ROOT_DIR.'/'.(defined('FRONT_NAME')?FRONT_NAME.'/':'').'views');
 
@@ -24,20 +30,39 @@ baseView::$defaultLayout = array(
   'footer.tpl.php'
 );
 
+# routage
+if( USE_REWRITE_RULES ){
+	if((!isset($_SERVER['PATH_INFO'])) && isset($_SERVER['REDIRECT_QUERY_STRING']) ){
+		$_SERVER['PATH_INFO'] = preg_replace('!^([^\?&]+).*$!','\\1',$_SERVER['REDIRECT_QUERY_STRING']);
+		if(isset($_GET[$_SERVER['PATH_INFO']]) && empty($_GET[$_SERVER['PATH_INFO']])){
+			unset($_GET[$_SERVER['PATH_INFO']]);
+		}
+	}
+	if( isset($_SERVER['PATH_INFO']) ){
+		$route = explode('/',substr($_SERVER['PATH_INFO'],1));
+		$_controller = count($route) ? array_shift($route) : null;
+		$_action = count($route) ? array_shift($route) : null;
+		while (count($route) > 1) {
+			$_GET[array_shift($route)] = array_shift($route);
+		}
+	}
+}
+
 #- Recuperation des controllers et actions à executer.
-$_controller = isset($_POST['ctrl'])?$_POST['ctrl']:(isset($_GET['ctrl'])?$_GET['ctrl']:'index');
-$_action     = isset($_POST['action'])?$_POST['action']:(isset($_GET['action'])?$_GET['action']:'index');
+$_controller = isset($_POST['ctrl'])?$_POST['ctrl']:(isset($_GET['ctrl'])?$_GET['ctrl']:(!empty($_controller)?$_controller:'default'));
+$_action     = isset($_POST['action'])?$_POST['action']:(isset($_GET['action'])?$_GET['action']:(!empty($_action)?$_action:'index'));
+
 
 #- instanciation du controller
 try{
   $cname = $_controller.'Controller';
   $controller = new $cname;
 }catch(Exception $e){
-  $controller = new errorController($e);
+  show($e->getMessage(),'exit');
 }
 #- appelle de l'action
 try{
   $controller->$_action();
 }catch(Exception $e){
-  $controller = new errorController($e);
+  show($e->getMessage(),'exit');
 }

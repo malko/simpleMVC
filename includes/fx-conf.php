@@ -23,9 +23,13 @@ function parse_conf_file($file_path,$out = false){
 	if(! file_exists($file_path))
 		return FALSE;
 	# get file content
-  if(! is_array($conf = file($file_path))){
-    return False;
-  }
+	if(! is_array($conf = file($file_path))){
+		return False;
+	}
+
+	$_search = array("!(%([^%\s]+)%)!e","!\\\\\s*\r?\n!");
+	$_replce = array("isset(\$out_['\\2'])?\$out_['\\2']:(defined('\\2')?\\2:'\\0')","\n");
+
   # parse conf file
 	$preserve = FALSE;
 	foreach($conf as $line){
@@ -43,7 +47,7 @@ function parse_conf_file($file_path,$out = false){
 		}
 	
     if($preserve) continue;
-    $value = preg_replace(array("!(%([^%\s]+)%)!","!\\\\\s*\r?\n!"),array("'.\\2.'","\n"),trim($value));
+    $value = preg_replace($_search,$_replce,trim($value));
 
     if(! in_array(strtoupper($value),array('NULL','FALSE','TRUE')) )
       $value = "'".($out?preg_replace('!(\\\\|\')!','\\\\\1',$value):$value)."'";
