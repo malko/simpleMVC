@@ -69,6 +69,68 @@ function __autoload($className){
   show($_dbg);
   throw new Exception("classe $className introuvable.");
 }
+###--- SOME FORMAT AND CLEAN METHOD ---###
+/** remove accented chars (iso-8859-1 and UTF8) */
+function removeMoreAccents($str){
+	static $convTable;
+	# create conversion table on first call
+	if(! isset($convTable) ){
+		$tmpTable = array(
+			'µ'=>'u',
+			'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'AE',
+			'Ç'=>'C', 'È'=>'E', 'É'=>'E', 'Ê'=>'E', 'Ë'=>'E',
+			'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ð'=>'D', 'Ñ'=>'N',
+			'Ò'=>'O', 'Œ'=>'OE', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O',
+			'Ù'=>'U', 'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'ß'=>'s',
+			'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a', 'æ'=>'ae',
+			'ç'=>'c', 'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e',
+			'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ñ'=>'n',
+			'ð'=>'o', 'œ'=>'oe', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o', 'ö'=>'o', 'ø'=>'o',
+			'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ü'=>'u', 'ý'=>'y', 'ÿ'=>'y',
+			'’'=>'\'','`'=>'\'',
+		);
+		$keys  = array_keys($tmpTable);
+		$values= array_values($tmpTable);
+		# check internal encoding
+		if(ord('µ')===194){ # we are already in utf 8
+			$utf8keys = $keys;
+			$keys     = array_map('utf8_decode',$keys);
+		}else{
+			$utf8keys = array_map('utf8_encode',$keys);
+		}
+		if(function_exists('array_combine')){
+			$convTable = array_merge(array_combine($utf8keys,$values),array_combine($keys,$values));
+		}else{
+			foreach($utf8keys as $n=>$k){
+				$convTable[$k] = $convTable[$keys[$n]] = $values[$n];
+			}
+		}
+	}
+	if(is_array($str)){
+		foreach($str as $k=>$v)
+			$str[$k] = strtr($v,$convTable);
+		return $str;
+	}
+	return strtr($str,$convTable);
+}
+/** format de date */
+function dateus2fr($date,$noTime=false){
+	if( empty($date) )
+		return '00/00/0000';
+	if(! strpos($date,' '))
+		return implode('/',array_reverse(explode('-',$date)));
+	list($date,$time) = explode(' ',$date);
+	return dateus2fr($date).($noTime?'':' '.$time);
+}
+function datefr2us($date,$noTime=false){
+	if( empty($date) )
+		return '0000-00-00';
+	if(! strpos($date,' '))
+		return implode('-',array_reverse(explode('/',$date)));
+	list($date,$time) = explode(' ',$date);
+	return dateus2fr($date).($noTime?'':' '.$time);
+}
+
 ###--- DEBUG HELPER ---###
 function show(){
   static $jsDone, $nb;
@@ -78,7 +140,7 @@ function show(){
     $jsDone = true; 
     $nb = 1;
     echo "
-    <script><!--//
+    <script type=\"text/javascript\"><!--//
       function toggleDbg(el){
         if(el.style.display==='none'){
           el.style.display = 'block';
@@ -88,8 +150,8 @@ function show(){
       }
       //-->
     </script>
-    <style type=text/css>
-      div.dbg b  { font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:0; }
+    <style type=\"text/css\">
+      div.dbg strong  { font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:0; }
       div.dbg pre { background:#F0F0F0;border-style:dashed;border-width:1px;max-height:250px;overflow:auto;margin-top:0; }
     </style>
     ";
@@ -120,7 +182,7 @@ function show(){
   $bStyle   = 'style="color:'.$color.';"';
   $trace    = debug_backtrace();
   $trace = str_replace(ROOT_DIR.'/','',$trace[0]['file']).':'.$trace[0]['line'];
-  echo "<div class=dbg><b $bStyle onclick=\"toggleDbg(document.getElementById('dbg$nb'));\">Show ( $trace )</b><br /><pre $preStyle id='dbg$nb'><xmp>$str</xmp></pre>";
+  echo "<div class=dbg><strong $bStyle onclick=\"toggleDbg(document.getElementById('dbg$nb'));\">Show ( $trace )</strong><br /><pre $preStyle id='dbg$nb'><xmp>$str</xmp></pre></div>";
   if($halt){
     echo "<h5 style=color:red;text-align:center;>SCRIPT EXITED BY SHOW</h5>";
     exit();
