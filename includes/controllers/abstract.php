@@ -4,7 +4,8 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2008-01-22 - now redirectAction use url_viewHelper that reflect the use of rewriteRules on/off
+* @changelog - 2008-02-20 - new parameter $explodeResult for methods getCurrentDispatch getFirstDispatch
+*            - 2008-01-22 - now redirectAction use url_viewHelper that reflect the use of rewriteRules on/off
 *            - 2007-12-09 - addition of dispatchStack related static methods and property
 *            - 2007-12-06 - new getActionStack() method
 *            - 2007-12-05 - bug correction regarding parameters treatment in redirect method
@@ -151,20 +152,22 @@ abstract class abstractController{
   }
   /**
   * return the current last element in dispatch stack.
-  * @return string (ie: controller:action)
+  * @param  bool $explodeResult if true then will return array(controller,action)
+  * @return string (ie: controller:action) or array if $explodeResult is true
   */
-  static public function getCurrentDispatch(){
+  static public function getCurrentDispatch($explodeResult=false){
     if(! count(self::$dispatchStack) ) return false;
     $res = array_reverse(self::$dispatchStack);
-    return $res[0];
+    return $explodeResult?explode(':',$res[0]):$res[0];
   }
   /**
   * return the first element in dispatch stack.
-  * @return string (ie: controller:action)
+  * @param  bool $explodeResult if true then will return array(controller,action)
+  * @return string (ie: controller:action) or array if $explodeResult is true
   */
-  static public function getFirstDispatch(){
+  static public function getFirstDispatch($explodeResult=false){
     if(! count(self::$dispatchStack) ) return false;
-    return self::$dispatchStack[0];
+    return $explodeResult?explode(':',self::$dispatchStack[0]):self::$dispatchStack[0];
   }
   /**
   * return the current controller name

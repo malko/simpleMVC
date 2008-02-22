@@ -10,6 +10,7 @@
 * 
 * @package simpleMVC
 * @since 2008-01-09
+* @changelog - 2008-02-01 - now suppress empty params from url
 */
 class url_viewHelper implements viewHelperInterface{
 	static public $useRewriteRules = null;
@@ -78,7 +79,7 @@ class url_viewHelper implements viewHelperInterface{
 					$params = array_map('urlencode',$params);
 				$kv_sep = (self::$useRewriteRules)?'/':'=';
 				foreach($params as $k=>$v){
-					if($k==='ctrl' || $k==='action')
+					if($k==='ctrl' || $k==='action' || strlen($v)===0)
 						continue;
 					$Qstr[] = $k.$kv_sep.$v;
 				}

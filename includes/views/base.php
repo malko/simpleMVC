@@ -11,7 +11,8 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2007-12-05 - new method setController() required by abstractController forward to work properly
+* @changelog - 2008-02-15 - now extendeded abstractViewHelper can directly call other viewHelper main methods as if it were into views.
+*            - 2007-12-05 - new method setController() required by abstractController forward to work properly
 *            - 2007-11-12 - new methods lookUpScript*() to permit easy checking of existing script files
 *                         - new static property $defaultLookUpModel to ease manual call to lookUpScriptByAction
 *                         - render and renderScript methods now use lookUpScript* methods
@@ -32,6 +33,11 @@ abstract class abstractViewHelper implements viewHelperInterface{
   function __construct(viewInterface $view){
     $this->view = $view;
   }
+
+  function __call($m,$a){
+  	return call_user_func_array(array($this->view,$m),$a);
+	}
+
   function getController(){
     return $this->view->getController();
   }
