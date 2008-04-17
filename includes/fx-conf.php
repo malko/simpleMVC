@@ -4,7 +4,9 @@
 * @copyleft (l) 2003-2004  Jonathan Gotti
 * @package config
 * @license http://opensource.org/licenses/gpl-license.php GNU Public License
-* @changelog - 2007-04-30 - bug correction regarding single quote escaped in values string
+* @changelog - 2008-02-25 - bug correction when values contain multiple % characters (like urlencoded values)
+*                         - '%%' will be replaced by '%' in values
+*            - 2007-04-30 - bug correction regarding single quote escaped in values string
 *													- bug correction when saving some multiple multiline values containing '=' at certain position on a line (not the first).
 *            - 2007-04-26 - replace double quote strings with single quote string at eval time to avoid replacement of escaped values (ie: \[rnt....])
 *            - 2007-03-27 - change regexp in parse_conf_file() to better support multilines values (line ended by \)
@@ -27,8 +29,8 @@ function parse_conf_file($file_path,$out = false){
 		return False;
 	}
 
-	$_search = array("!(%([^%\s]+)%)!e","!\\\\\s*\r?\n!");
-	$_replce = array("isset(\$out_['\\2'])?\$out_['\\2']:(defined('\\2')?\\2:'\\0')","\n");
+	$_search = array("/(?<!%)(%(?=[a-z_])([a-z0-9_]+)%)/ie",'!%%!',"!\\\\\s*\r?\n!");
+	$_replce = array("isset(\$out_['\\2'])?\$out_['\\2']:(defined('\\2')?\\2:'\\0');",'%',"\n");
 
   # parse conf file
 	$preserve = FALSE;
@@ -149,4 +151,3 @@ function _write_conf_line($var,$value=null,$oldline=null){
     $line = "$var = ".$value."\n";
   return $line;
 }
-?>

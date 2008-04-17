@@ -1,12 +1,14 @@
 <?php
 /**
 * definition des fonctions communes 
+* @changelog - 2008-04-12 - new function html_substr and trace option fir show
+*            - 2008-03-23 - add abstractModels lookup to __autoload
 */
 
 #- definition des chemins communs
 define('ROOT_DIR',dirname(dirname(__file__)));
 define('LIB_DIR',ROOT_DIR.'/includes');
-define('CONF_DIR',ROOT_DIR.'/config');
+define('CONF_DIR',ROOT_DIR.'/config'); #<- you should change this to put it outside the webserver dirs
 
 #- load la conf générale
 require dirname(__file__).'/fx-conf.php';
@@ -43,6 +45,11 @@ function __autoload($className){
       }
       $className = str_replace($m[0],'',$className);
     }
+		# look for models
+		if(preg_match('!^(model[A-Z]\w+)$!',$className,$m)){
+			$dirs[] = LIB_DIR.'/models';
+			$dirs[] = ROOT_DIR.'/models';
+		}
     if( FRONT_NAME !== 'default' ){ # add path corresponding to front controllers
       foreach($dirs as $d){
         if( is_dir($tmp = str_replace(ROOT_DIR,ROOT_DIR.'/'.FRONT_NAME,$d)) )
@@ -66,7 +73,7 @@ function __autoload($className){
       $dir .= "/$_dir";
     }while($cname);
   }
-  show($_dbg);
+	show($_dbg,'trace');
   throw new Exception("classe $className introuvable.");
 }
 ###--- SOME FORMAT AND CLEAN METHOD ---###
@@ -131,6 +138,106 @@ function datefr2us($date,$noTime=false){
 	return dateus2fr($date).($noTime?'':' '.$time);
 }
 
+function html_substr($htmlStr,$start=0,$length=null,$appendStr='...'){
+	if(strlen($htmlStr) < $length)
+		return $htmlStr;
+	$blockTags = '!t[rdhfba](?:ble|oot|ead|ody)?|div|[bh][r1-6]|form|h!i'; #- tags where space are not counting
+	$tagStack = array();
+	$outStr   = '';
+	$pos = 0;
+	while(strlen($htmlStr) > 0){
+		if( $length!==null && ($pos-$start)>=$length){
+			$outStr.=$appendStr;
+			break;
+		}
+		++$pos;
+		# first deal with tag or entities
+		if(preg_match('!^(?:</?([a-zA-Z]+)(?:[^">]+|"[^"]*")*/?>|&[^\s;]+;)!s',$htmlStr,$m)){
+			$match = $m[0];
+			$htmlStr = substr($htmlStr,strlen($match));
+			if($match[0]==='&'){ #- deal with entities
+				if($pos > $start) $outStr.=$match;
+				continue;
+			}else{  #- deal with tag
+				if(preg_match($blockTags,$m[1]))
+					$htmlStr = ltrim($htmlStr);
+				#- check self closed tag (hr, br, img and so on ...)
+				if(substr($match,-2,1)==='/'){
+					if($pos > $start) $outStr.=$match;
+					continue;
+				}
+				$tag = strtolower($m[1]);
+				--$pos;
+				#- opening tag
+				if($match[1]!=='/'){
+					if($pos >= $start){
+						array_unshift($tagStack,$tag);
+						$outStr.=$match;
+					}
+					continue;
+				}else{
+					if( $tagStack[0]===$tag ){
+						array_shift($tagStack);
+					}elseif($k = array_search($tag,$tagStack,true)){
+						unset($tagStack[$k]);
+						$tagStack = array_values($tagStack);
+					}else{ #- tag wasn't opened just drop it
+						continue;
+					}
+					if($pos>=$start) $outStr.=$match;
+					continue;
+				}
+			}
+		}
+
+		#- then deal with space
+		if(preg_match('!^\s+!',$htmlStr,$m)){
+			$htmlStr = ltrim($htmlStr);
+			if($pos>$start) $outStr.=$m[0];
+			#- @todo manage space that are not to be count
+			continue;
+		}
+		#- then consider all as single char
+		$outStr .= $htmlStr[0];
+		$htmlStr = substr($htmlStr,1);
+	}
+	#- close opened tags
+	if(count($tagStack)){
+		foreach($tagStack as $tag)
+			$outStr .= "</$tag>";
+	}
+	return $outStr;
+}
+
+/**
+*renvoie la correspondance d'une parenthese capturante d'une expression reguliere ou FALSE
+*@param string     $pattern expression réguliere perl
+*@param string     $str chaine sur laquelle porte la recherche
+*@param int|array  $id identifiant de la parenthese capturante dont on veut récuperer le motif default 1 (peut etre une liste d'id)
+*@param bool       $all renvoie toutes les occurences dans string default FALSE
+*@return mixed     (array si $id est une liste ou si $all==TRUE, string dans les autres cas et FALSE en cas d'erreur)
+*/
+function match($pattern,$str,$id=1,$all=FALSE){
+	if($all){
+		if(! preg_match_all($pattern,$str,$m) )
+			return FALSE;
+	}else{
+		if(! ($r = preg_match($pattern,$str,$m)) ){
+			if($r === FALSE){
+				show("REGEX ERROR: ",$pattern);
+			}
+			return FALSE;
+		}
+	}
+	if(is_array($id)){
+		foreach($id as $v)
+			$res[] = @$m[$v];
+		return $res;
+	}elseif(! in_array(@$m[$id],array(FALSE,null),1) ){
+		return $m[$id];
+	}
+	return FALSE;
+}
 ###--- DEBUG HELPER ---###
 function show(){
   static $jsDone, $nb;
@@ -160,6 +267,14 @@ function show(){
   $argc  = func_num_args();
   $param = $args[$argc-1];
   $halt  = false;
+
+	if($param!=='trace'){
+		$getTrace = (is_string($param) && substr_count($param,'trace'))?array():false;
+	}else{
+		$getTrace = array();
+		array_pop($args);
+	}
+
   if($argc>1 && $param === 'exit'){
     $halt = true;
     array_pop($args);
@@ -173,6 +288,26 @@ function show(){
   }else{
     $color = 'red';
   }
+
+	$trace    = debug_backtrace();
+	if(false!==$getTrace){
+		$_trace = $trace;
+		array_shift($_trace);
+		foreach($_trace as $k=>$v){
+			if(isset($v['object']))
+				$v['object'] = get_class($v['object']);
+			foreach($v['args'] as $ka=>$va){
+				if(is_object($va))
+					$v['args'][$ka] = get_class($va);
+				if(is_array($va))
+					$v['args'][$ka] = "Array(".count($va)." elements)";
+			}
+			$getTrace[$k] = $v;
+		}
+		$args[]="↓↓↓↓ FOLLOWING IS BACKTRACE ↓↓↓↓";
+		$args[]=$getTrace;
+	}
+
   $str = array();
   foreach($args as $arg){
     $str[] = print_r($arg,1);
@@ -180,8 +315,9 @@ function show(){
   $str = implode("\n".str_repeat('--',50)."\n",$str);
   $preStyle = 'style="color:'.$color.';border-color:'.$color.';"';
   $bStyle   = 'style="color:'.$color.';"';
-  $trace    = debug_backtrace();
-  $trace = str_replace(ROOT_DIR.'/','',$trace[0]['file']).':'.$trace[0]['line'];
+	$trace = str_replace(ROOT_DIR.'/','',$trace[0]['file'])
+		.(empty($trace[1]['function'])? '' : ' in '.(isset($trace[1]['class'])?$trace[1]['class'].$trace[1]['type']:'').$trace[1]['function'].'()')
+		.':'.$trace[0]['line'];
   echo "<div class=dbg><strong $bStyle onclick=\"toggleDbg(document.getElementById('dbg$nb'));\">Show ( $trace )</strong><br /><pre $preStyle id='dbg$nb'><xmp>$str</xmp></pre></div>";
   if($halt){
     echo "<h5 style=color:red;text-align:center;>SCRIPT EXITED BY SHOW</h5>";
