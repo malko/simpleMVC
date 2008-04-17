@@ -10,7 +10,8 @@
 * 
 * @package simpleMVC
 * @since 2008-01-09
-* @changelog - 2008-02-01 - now suppress empty params from url
+* @changelog - 2008-04-15 - add new param $appUrl to permit link creation for external apps
+*            - 2008-02-01 - now suppress empty params from url
 */
 class url_viewHelper implements viewHelperInterface{
 	static public $useRewriteRules = null;
@@ -50,9 +51,10 @@ class url_viewHelper implements viewHelperInterface{
 	*                            l'appli la remettra en forme si utilisation des rewriteRules)
 	* @param bool   $alreadyEncoded ne sert que quand $params est un tableau afin 
 	*                           d'eviter l'urlencodage automatique.
+	* @param string $appUrl     sert d'url de base à la place de APP_URL (permet de formater de liens pour d'autres applications)
 	* @return str url cible.
 	*/
-	function url($action,$controller=null,$params=null,$alreadyEncoded=false){
+	function url($action,$controller=null,$params=null,$alreadyEncoded=false,$appUrl=null){
 		# gestion du controller
 		if( is_null($controller) )
 			$controller = $this->getController()->getName();
@@ -86,11 +88,13 @@ class url_viewHelper implements viewHelperInterface{
 				$Qstr = implode((self::$useRewriteRules?'/':'&amp;'),$Qstr);
 			}
 		}
+		if( null === $appUrl)
+			$appUrl = APP_URL;
 		if(self::$useRewriteRules){
-			$url = APP_URL."/$controller/$action".(empty($Qstr)?'':"/$Qstr");
+			$url = "$appUrl/$controller/$action".(empty($Qstr)?'':"/$Qstr");
 		}else{
 			$sep = isset($sep)?$sep:'&amp;';
-			$url = APP_URL."/index.php?ctrl=$controller$sep"."action=$action".(empty($Qstr)?'':"$sep$Qstr");
+			$url = "$appUrl/index.php?ctrl=$controller$sep"."action=$action".(empty($Qstr)?'':"$sep$Qstr");
 		}
 		return $url;
 	}
