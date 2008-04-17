@@ -29,6 +29,15 @@ baseView::$defaultLayout = array(
   ':controller_:action.tpl.php|default_:action.tpl.php',
   'footer.tpl.php'
 );
+#- if multilingual then setup langManager
+#-langManager::$localesDirs = array(
+#-	ROOT_DIR.'/locales',
+#-	APP_DIR.'/locales',
+#-);
+#-if( isset($_SESSION['lang']) )
+#-	langManager::setCurrentLang($_SESSION['lang']);
+#-else
+#-	$_SESSION['lang'] = langManager::langDetect(true);
 
 # routage
 if( USE_REWRITE_RULES ){
@@ -58,11 +67,16 @@ try{
   $cname = $_controller.'Controller';
   $controller = new $cname;
 }catch(Exception $e){
-  show($e->getMessage(),'exit');
+	#- ~ abstractController::appendAppMsg($e->getMessage(),'error');
+	#- ~ $controller = new defaultController;
+	#- ~ $controller->redirectAction('error','default',null,404);
+	show($e->getMessage(),'exit;trace');
 }
 #- appelle de l'action
 try{
   $controller->$_action();
 }catch(Exception $e){
-  show($e->getMessage(),'exit');
+	#- ~ abstractController::appendAppMsg($e->getMessage(),'error');
+	#- ~ $controller->redirectAction('error','default',null,404);
+	show($e->getMessage(),$e->getTrace(),'color:maroon;trace;exit');
 }
