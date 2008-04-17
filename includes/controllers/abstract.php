@@ -4,7 +4,8 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
-* @changelog - 2008-02-20 - new parameter $explodeResult for methods getCurrentDispatch getFirstDispatch
+* @changelog - 2008-03-23 - replace parameter $permanent by $withResponseCode for redirect* methods
+*            - 2008-02-20 - new parameter $explodeResult for methods getCurrentDispatch getFirstDispatch
 *            - 2008-01-22 - now redirectAction use url_viewHelper that reflect the use of rewriteRules on/off
 *            - 2007-12-09 - addition of dispatchStack related static methods and property
 *            - 2007-12-06 - new getActionStack() method
@@ -235,7 +236,8 @@ abstract class abstractController{
   *                      array(array(msg1,msgClass1))
   * @param str $msgClass info|error|success in fact can be whatever you want
   *                      just think about declaring corresponding styles in the
-  *                      stylesheet
+  *                      stylesheet or to handle it properly in abstractModel::$appMsgModel
+  * return true
   */
   static function appendAppMsg($msg='',$msgType='info'){
     if(is_array($msg)){
@@ -245,11 +247,12 @@ abstract class abstractController{
         else
           self::appendAppMsg($m,$msgType);
       }
-      return;
+      return true;
     }
     if(! isset($_SESSION))
       throw new Exception(__class__.'::appendAppMsg() require a session to be started before any call.');
     $_SESSION['simpleMVC_appMsgs'][] = str_replace(array('%T','%M'),array($msgType,$msg),self::$appMsgModel);
+    return true;
   }
 
   /**
@@ -326,7 +329,8 @@ abstract class abstractController{
   *                          as it can be used for external redirection.
   * @param mixed $params     string or array of additionnal params to append to the uri
   *                          (no filtering only urlencode array values)
-  * @param bool  $permanent  put true to specify a permanent redirection
+  * @param bool/int $withResponseCode  put true to specify a permanent redirection (code 301)
+  *                                    you also can pass an int as $http_response_code (404 for example)
   * @param bool  $keepGoing  put true if you don't want to trigger a user exit().
   */
   public function redirect($uri,$params=null,$permanent=false,$keepGoing=false){
@@ -340,10 +344,16 @@ abstract class abstractController{
       }
       $params = ((strpos($uri,'?')!==false)?((substr($uri,-1)!=='?')?'&amp;':'') :'?').$params;
     }
-    if($permanent)
-      header("location: $uri$params",true,301);
-    else
+    if(! $permanent){
       header("location: $uri$params");
+   	}else{
+   		if(! is_int($permanent))
+   			$permanent = 301;
+   		if($permanent === 404)
+   			header("Refresh: 0; url=$uri$params", false, 404);
+   		else
+      	header("location: $uri$params",true,$permanent);
+    }
     if($keepGoing)
       return true; #- convenience to easily skip chaining default postActions
     exit();
@@ -354,11 +364,12 @@ abstract class abstractController{
   * @param str   $controller default to the current controller name
   * @param mixed $params     string or array of additionnal params to append to the uri
   *                          any value for action or ctrl params will be removed.
-  * @param bool  $permanent  put true to specify a permanent redirection
+  * @param bool/int $withResponseCode  put true to specify a permanent redirection (code 301)
+  *                                    you also can pass an int as $http_response_code (404 for example)
   * @param bool  $keepGoing  put true if you don't want to trigger a user exit().
   */
-  function redirectAction($action,$controller=null,$params=null,$permanent=false,$keepGoing=false){
+  function redirectAction($action,$controller=null,$params=null,$withResponseCode=false,$keepGoing=false){
     $url = $this->view->url($action,$controller,$params);
-    return $this->redirect($url,null,$permanent,$keepGoing);
+    return $this->redirect($url,null,$withResponseCode,$keepGoing);
   }
 }
