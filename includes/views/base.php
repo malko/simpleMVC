@@ -165,8 +165,9 @@ class baseView implements viewInterface{
     #- return new instance of helper
     $helperKey = strtolower($helperName);
     $helperName.= '_viewHelper';
-    if(! class_exists($helperName) )
-      throw new Exception("$m view Helper not found");
+    if(! class_exists($helperName) ){
+      throw new Exception("$helperName view Helper not found");
+		}
     $this->_loadedHelpers[$helperKey] = new $helperName($this);
     return $this->_loadedHelpers[$helperKey];
   }
@@ -226,7 +227,7 @@ class baseView implements viewInterface{
   * @param str $scriptPathModel will be set to $defaultLookUpModel if not given
   * @return str scriptPath or false if not found.
   */
-  function lookUpScriptByAction($action=null,$controller=null,$scriptPathModel=null){
+  public function lookUpScriptByAction($action=null,$controller=null,$scriptPathModel=null){
     if(is_null($scriptPathModel))
       $scriptPathModel = self::$defaultLookUpModel;
     if(is_null($controller))
@@ -246,7 +247,7 @@ class baseView implements viewInterface{
   * @param str scriptFile script filename
   * @return str script path or false if not found
   */
-  function lookUpScript($scriptFile){
+  public function lookUpScript($scriptFile){
     foreach(array_reverse($this->_viewDirs) as $d){
       if(is_file("$d/$scriptFile"))
         return "$d/$scriptFile";
@@ -260,7 +261,7 @@ class baseView implements viewInterface{
   * @param string $action if empty will be replace by default
   * @param bool   $force  will force rendering even if already rendered
   */
-  function render($action=null,$force=false){
+  public function render($action=null,$force=false){
     if( self::$_rendered && ! $force)
       return;
     $this->getPendingAppMsgs();
@@ -281,7 +282,7 @@ class baseView implements viewInterface{
   * @param  bool $useLookUp   if false then won't use lookUpScript but only check if file exists.
   * @return bool scriptFile included or not.
   */
-  function renderScript($scriptFile,$useLookUp=true){
+  public function renderScript($scriptFile,$useLookUp=true){
     if($useLookUp){
       $scriptFile = $this->lookUpScript($scriptFile);
       if($scriptFile === false)
@@ -296,7 +297,7 @@ class baseView implements viewInterface{
   * populate this->_appMsgs with pending appMsgs
   * @return viewInterface for method chaining
   */
-  function getPendingAppMsgs(){
+  public function getPendingAppMsgs(){
     eval(get_class($this->_controller)."::pendingAppMsgs(\$this->_appMsgs);");
     return $this;
   }
