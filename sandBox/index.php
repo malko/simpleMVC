@@ -7,7 +7,7 @@ ini_set('default_charset','utf-8');
 date_default_timezone_set('Europe/Paris');
 
 #- definition du contexte d'execution
-define('FRONT_NAME','front');
+define('FRONT_NAME','sandBox');
 require '../includes/fx-common.php';
 
 #- starting session in corresponding context

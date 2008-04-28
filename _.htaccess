@@ -1,0 +1,22 @@
+ErrorDocument 500 /index.php
+
+RewriteEngine on
+
+#- this must be configure to work properly in any environment (user dir or root webserver)
+RewriteBase /
+
+# set redirection to default application when no param given
+RewriteRule ^(?:index.php(.*))?$ front$1 [R,L]
+
+# next one make two things:
+# - ensure PATH_INFO to be filled
+# - hide index.php
+# - avoid some extension to be rewrited
+RewriteCond %{SCRIPT_FILENAME} !-f [OR]
+RewriteCond %{SCRIPT_FILENAME} ^index.php$ [NC]
+RewriteCond %{REQUEST_URI} !\.(js|ico|gif|jpg|png|css)$
+RewriteCond %{SCRIPT_FILENAME} !-d
+RewriteRule ^([^/]+)/(index\.php)?(.*)$ $1/index.php?/$3 [NC,QSA,L]
+# add a R to the options list in case of 'No input file specified.' php error
+# but in this case index.php won't be hide and another side effect is that
+# you will loose POST datas so be carrefull in this case with your form action to not use rewrite url
