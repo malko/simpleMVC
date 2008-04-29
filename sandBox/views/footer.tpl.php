@@ -1,0 +1,3 @@
+	<?= dbProfiler::printReport(); ?>
+	</body>
+</html>
