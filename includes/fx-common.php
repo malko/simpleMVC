@@ -1,6 +1,6 @@
 <?php
 /**
-* definition des fonctions communes 
+* definition des fonctions communes
 * @changelog - 2008-04-12 - new function html_substr and trace option fir show
 *            - 2008-03-23 - add abstractModels lookup to __autoload
 */
@@ -15,12 +15,12 @@ require dirname(__file__).'/fx-conf.php';
 if(file_exists(CONF_DIR.'/config.php'))
 	parse_conf_file(CONF_DIR.'/config.php');
 
-#- remove possible unwanted magic_quotes 
-if(get_magic_quotes_gpc()){ 
+#- remove possible unwanted magic_quotes
+if(get_magic_quotes_gpc()){
    function stripslashes_deep($value) {
        $value = is_array($value) ?array_map('stripslashes_deep', $value) :stripslashes($value);
        return $value;
-   }   
+   }
    foreach(array('POST', 'GET', 'REQUEST', 'COOKIE') as $gpc)
     $GLOBALS["_$gpc"] = array_map('stripslashes_deep', $GLOBALS["_$gpc"]);
 }
@@ -30,7 +30,7 @@ function __autoload($className){
   $dirs[] = LIB_DIR;
   if( defined('FRONT_NAME') ){
     # look for controller
-    if( preg_match('!(?:_c|C)ontroller$!',$className,$m) ){ 
+    if( preg_match('!(?:_c|C)ontroller$!',$className,$m) ){
       $dirs[] = LIB_DIR.'/controllers';
       $dirs[] = ROOT_DIR.'/controllers';
       $className = str_replace($m[0],'',$className);
@@ -198,7 +198,7 @@ function html_substr($htmlStr,$start=0,$length=null,$appendStr='...'){
 			continue;
 		}
 		#- then consider all as single char
-		$outStr .= $htmlStr[0];
+		$outStr .= substr($htmlStr,0,1);
 		$htmlStr = substr($htmlStr,1);
 	}
 	#- close opened tags
@@ -244,7 +244,7 @@ function show(){
   if( isset($jsDone) ){
     ++$nb;
   }else{
-    $jsDone = true; 
+    $jsDone = true;
     $nb = 1;
     echo "
     <script type=\"text/javascript\"><!--//
