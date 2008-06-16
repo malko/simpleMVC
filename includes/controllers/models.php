@@ -1,28 +1,53 @@
 <?php
 class modelsController extends abstractController{
 
+	public $modelType = null;
+
+	/**
+	* list of fields to show in generated model list
+	* key are property names and values will be used as headers.
+	*/
+	public $listFields=array();
 
 	function init(){
 		parent::init();
-		$this->modelType = isset($_POST['modelType'])?$_POST['modelType']:(isset($_GET['modelType'])?$_GET['modelType']:false);
+		if(! $this->modelType )
+			$this->modelType = isset($_POST['modelType'])?$_POST['modelType']:(isset($_GET['modelType'])?$_GET['modelType']:false);
 		if( ! $this->modelType){
 			self::appendAppMsg('Vous devez specifier le type de model à administrer','error');
 			$this->redirectAction('index','default');
 		}
+		$this->view->setLayout(array(
+			'header.tpl.php',
+			':controller_:action.tpl.php|models_:action.tpl.php|default_:action.tpl.php',
+			'footer.tpl.php'
+		));
 	}
 
 	function listAction(){
 		$models = abstractModel::getAllModelInstances($this->modelType);
+		$datas = array();
 		if( count($models) ){
 			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
-			foreach($models as $m){
-				$row = $m->datas;
-				unset($row[$PKname]);
-				$row['id'] = $m->PK.'/modelType/'.$this->modelType;
-				$datas[] = $row;
+			if( empty($this->listFields) ){
+				foreach($models as $m){
+					$row = $m->datas;
+					unset($row[$PKname]);
+					$row['id'] = $m->PK.'/modelType/'.$this->modelType;
+					$datas[] = $row;
+				}
+			}else{
+				foreach($models as $m){
+					$row = array();
+					$row['id'] = $m->PK.'/modelType/'.$this->modelType;
+					foreach($this->listFields as $k=>$v)
+						$row[$k] = $m->{$k};
+					$datas[] = $row;
+				}
+				$this->listHeaders = array_values($this->listFields);
 			}
-			$this->view->listDatas = $datas;
 		}
+		$this->view->listDatas = $datas;
 		$this->view->modelType = $this->modelType;
 	}
 

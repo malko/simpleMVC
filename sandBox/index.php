@@ -7,7 +7,7 @@ ini_set('default_charset','utf-8');
 date_default_timezone_set('Europe/Paris');
 
 #- definition du contexte d'execution
-define('FRONT_NAME','sandBox');
+define('FRONT_NAME',basename(dirname(__file__)));
 require '../includes/fx-common.php';
 
 #- starting session in corresponding context
@@ -19,9 +19,15 @@ session_start();
 #- if needed specified your default database connection
 #- db::setDefaultConnectionStr(DB_CONNECTION);
 
+#- include class-abstractModel if you use them
+#- require LIB_DIR.'/class-abstractmodel.php';
+
 #- set les repertoires de vue par défaut
 abstractController::$defaultViewClass = 'baseView';
-abstractController::$defaultViewDirs  = array(ROOT_DIR.'/'.(defined('FRONT_NAME')?FRONT_NAME.'/':'').'views');
+abstractController::$defaultViewDirs  = array(
+	LIB_DIR.'/views',
+	ROOT_DIR.'/'.FRONT_NAME.'/views'
+);
 
 #- parametrage du layout par défaut
 baseView::$defaultLayout = array(
@@ -29,6 +35,7 @@ baseView::$defaultLayout = array(
   ':controller_:action.tpl.php|default_:action.tpl.php',
   'footer.tpl.php'
 );
+
 #- if multilingual then setup langManager
 #-langManager::$localesDirs = array(
 #-	ROOT_DIR.'/locales',
@@ -38,6 +45,8 @@ baseView::$defaultLayout = array(
 #-	langManager::setCurrentLang($_SESSION['lang']);
 #-else
 #-	$_SESSION['lang'] = langManager::langDetect(true);
+#- set default dictionary for model filters messages (usefull only if you use abstractModels and langManager in the same app)
+#- abstractModel::$dfltFiltersDictionary='filters';
 
 # routage
 if( USE_REWRITE_RULES ){

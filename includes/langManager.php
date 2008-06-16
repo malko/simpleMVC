@@ -1,21 +1,25 @@
 <?php
 /**
+* utility class to provide multilingual support to simpleMVC
 * @package simpleMVC
+* @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
+* @author jonathan gotti <jgotti at jgotti dot org>
+* @changelog -2008-05-08 - new method msg() with sprintf support
 */
 class langManager{
 
 	static public $localesDirs = array(
 		'locales'
 	);
-	
+
 	static public $_loadedDictionaries = array();
-	
+
 	/** list of accepted languages codes, case sensitive (lower case) first is default */
-	static public $acceptedLanguages = array('en','fr');
-	
+	static public $acceptedLanguages = array('fr','en');
+
 	/** keep trace of currently setted language */
 	static public $currentLang = false;
-	
+
 	/**
 	* parametre les languages acceptés, par défaut le premier sera retourné
 	* @param array $langs liste des langues accepté avec la langue par défaut en premiere position.
@@ -23,7 +27,7 @@ class langManager{
 	static public function setAcceptedLanguages(array $langs){
 		self::$acceptedLanguages = array_values($langs);
 	}
-	
+
 	/**
 	* vérifie si le language donné est considéré comme accepté par l'application.
 	* @param string $lang
@@ -36,7 +40,7 @@ class langManager{
 			return false;
 		return $returnCode?$code:true;
 	}
-	
+
 	/**
 	* parametre la langue actuelle
 	* @param string $lang code de la langue, si non accepté laisse la valeur courante ou met celle par défaut.
@@ -52,7 +56,7 @@ class langManager{
 			return self::$currentLang = $lang;
 		return self::setCurrentLang();
 	}
-	
+
 	/**
 	* retourne le code de langue par défaut
 	* @return string code langue
@@ -60,7 +64,7 @@ class langManager{
 	static public function getDefaultLang(){
 		return empty(self::$acceptedLanguages[0])?false:self::$acceptedLanguages[0];
 	}
-	
+
 	/**
 	* retourne le code de langue courant
 	* @return string code langue
@@ -68,8 +72,8 @@ class langManager{
 	static public function getCurrentLang(){
 		return empty(self::$currentLang)?false:self::$currentLang;
 	}
-	
-	
+
+
 	/**
 	* detection de la langue demandé par l'utilisateur
 	* @param bool $setCurrent si true alors appelle la methode setCurrentLang()
@@ -90,7 +94,7 @@ class langManager{
 		}
 		return $setCurrent? self::setCurrentLang($lang) : $lang ;
 	}
-	
+
 	###--- DICTIONARIES MANAGEMENT ---###
 	/**
   * check path for given dicFile regarding the localesDirs setted (last to first)
@@ -113,8 +117,8 @@ class langManager{
     }
     return is_file($dicFile)?$dicFile:false;
 	}
-  
-  
+
+
 	/** charge un fichier de langue en cherchant dans les repertoires self::$localesDirs */
 	static public function loadDic($dicName,$dicLang=null,$force=false){
 		$dicLang = self::isAcceptedLang($dicLang===null?self::$currentLang:$dicLang,true);
@@ -124,23 +128,23 @@ class langManager{
 			return true;
 		}
 		$dic = empty($dicFile)?false:parse_conf_file($dicFile,true);
-		
+
 		if(! is_array($dic) )
 			return self::$_loadedDictionaries[$dicLang][$dicName] = false;
 		return self::$_loadedDictionaries[$dicLang][$dicName] = $dic;
 	}
-	
+
   /**
   * recherche le message dans le dictionnaire choisis et la langue donné et tente de charger les dictionnaires automatiquement.
   * @param str $idMsg     la chaine du message original ou son id tout dépend de votre facon de gérer les fichiers de langues
   * @param str $dicName   nom du ou des dictionnaires dans lesquels faire la recherche du message séparés par des '|'
   *                       par défaut cherchera dans les dictionnaires suivants: controller_action controller et default
-  * @param str $langCode  
-  * 
+  * @param str $langCode  will use current langCode if null
+  * @return string
   */
   static public function lookUpMsg($idMsg,$dicName=null,$langCode=null){
   	if( is_null($dicName) ){
-			list($controller,$action) = explode(':',abstractController::getCurrentDispatch(),2);
+			@list($controller,$action) = explode(':',abstractController::getCurrentDispatch(),2);
 			$dicName = $controller.'_'.$action."|$controller|default";
 		}
 		if( is_null($langCode) ){
@@ -164,5 +168,22 @@ class langManager{
 		}
 		return $idMsg;
 	}
-	
+	/**
+	* same as lookUpMsg but with additional sprintf step to permit you to embed variables strings in messages
+	* at run time. This method won't use sprintf if no sprintfDatas are given.
+  * @param str   $idMsg     la chaine du message original ou son id tout dépend de votre facon de gérer les fichiers de langues
+	* @param array $sprintfDatas
+  * @param str   $dicName   nom du ou des dictionnaires dans lesquels faire la recherche du message séparés par des '|'
+  *                       par défaut cherchera dans les dictionnaires suivants: controller_action controller et default
+	* @see lookUpMsg for more info
+  * @param str   $langCode  will use current langCode if null
+  * @return string
+	*/
+	static public function msg($idMsg,array $sprintfDatas=null,$dicName=null,$langCode=null){
+		if( empty($sprintfDatas) )
+			return self::lookUpMsg($idMsg,$dicName,$langCode);
+		array_unshift($sprintfDatas,self::lookUpMsg($idMsg,$dicName,$langCode));
+		return call_user_func_array('sprintf',$sprintfDatas);
+	}
+
 }
