@@ -1,6 +1,7 @@
 <?php
 /**
 * definition des fonctions communes
+* @package simpleMVC
 * @changelog - 2008-05-06 - more understandable show output for trace
 *            - 2008-05-01 - add modelAddons lookup to __autoload
 *            - 2008-04-12 - new function html_substr and trace option for show

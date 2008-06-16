@@ -1,5 +1,7 @@
 <?php
 /**
+* @package simpleMVC
+* @subPackage sandbox
 * front controller for admin site
 */
 error_reporting(E_ALL | E_STRICT);

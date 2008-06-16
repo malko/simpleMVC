@@ -1,11 +1,12 @@
 <?php
 /**
+*@class baseView
 * class pour la gestion des vues par défaut
 * incluera automatiquement les fichiers nommés header.tpl.php et footer.tpl.php
 * ce comportement peut etre changé en définissant la propriété baseView::$layout
 * qui est une liste des templates à inclure pour recomposé la page.
 * pour permettre des comportements génériques les noms de template peuvent comporter
-* les variables ':controller' et ':action' qui seront remplacé par 
+* les variables ':controller' et ':action' qui seront remplacé par
 * le nom du controller et de l'action en cours
 * @package simpleMVC
 * @licence LGPL
@@ -18,7 +19,7 @@
 *                         - render and renderScript methods now use lookUpScript* methods
 *                         - renderScript now have an additionnal parameter $useLookUp (avoid twice lookup at render time)
 *            - 2007-10-25 - now helpers which extends abstractViewHelper will support method getController
-*                         - baseView now support getter methods for private vars like get_privateVars or getPrivateVars. 
+*                         - baseView now support getter methods for private vars like get_privateVars or getPrivateVars.
 *                           (case sensitive only the first char prefixed by _ can be replace by an uppercase letter)
 *            - 2007-10-24 - new method getPendingAppMsgs automaticly called at render time to set view->_appMsgs
 *                         - new method assign to ease multiple var assignment in one call.
@@ -27,7 +28,10 @@
 interface viewHelperInterface{
   function __construct(viewInterface $view);
 }
-
+/**
+* abstract base class to ease the creation of viewHelpers
+*@class abstractViewHelper
+*/
 abstract class abstractViewHelper implements viewHelperInterface{
   public $view = null;
   function __construct(viewInterface $view){
@@ -42,14 +46,17 @@ abstract class abstractViewHelper implements viewHelperInterface{
     return $this->view->getController();
   }
 }
-
+/**
+* define the interface any view system must implements to work properly inside the simpleMVC framework
+*@interface viewInterface
+*/
 interface viewInterface{
   function __construct(abstractController $controller=null,array $layout=null);
   function __set($k,$v);
   function __get($k);
   function __isset($k);
   function assign($k,$v=null);
-  
+
   function setController(abstractController $controller);
   function setLayout(array $layout=null);
   function addViewDir($viewDir);
@@ -57,11 +64,11 @@ interface viewInterface{
   function lookUpScript($scriptFileName);
   function render($action=null,$force=false);
   function renderScript($scripFile,$useLookUp=true);
-  
+
   function getHelper($helperName,$autoLoad=false);
   function helperLoad($helperName,$forceReload=false);
   function helperLoaded($helperName,$returnHelper=false);
-  
+
   function getPendingAppMsgs();
 }
 
@@ -78,30 +85,30 @@ class baseView implements viewInterface{
   protected $_layout = null;
   protected $_controller = null;
   protected $_loadedHelpers = array();
-  
+
   /** where will go all the user define datas */
   private $_datas = array();
-  
+
   public $_appMsgs = array();
-  
+
   function __construct(abstractController $controller=null,array $layout=null){
     if(! is_null($controller) )
       $this->setController($controller);
     $this->setLayout($layout);
   }
-  
+
   function __set($k,$v){
     $this->_datas[$k] = $v;
   }
-  
+
   function __get($k){
     return isset($this->_datas[$k])?$this->_datas[$k]:null;
   }
-  
-  /** 
+
+  /**
   * this one is required to permit use of empty()
   */
-  function __isset($k){ 
+  function __isset($k){
     return isset($this->_datas[$k]);
   }
   /**
@@ -122,7 +129,7 @@ class baseView implements viewInterface{
     }
     return $this;
   }
-  
+
   /**
   * manage protected var getters (ie: getProtectedVar, get_protectedVar (case sensitive) ) and call to helpers methods.
   */
@@ -138,11 +145,11 @@ class baseView implements viewInterface{
     $helper = $this->getHelper($m,true);
     return call_user_func_array(array($helper,$m),$a);
   }
-  
-  /**  
-  * return existing instance of a given helper. 
+
+  /**
+  * return existing instance of a given helper.
   * if autoLoad is set to TRUE then will try to load it if not already loaded
-  * @param str  $helperName 
+  * @param str  $helperName
   * @param bool $autoLoad   if true then will try to load helper even if not loaded
   * @param viewHelperInterface
   */
@@ -154,7 +161,7 @@ class baseView implements viewInterface{
   /**
   * try to load the given helper
   * @param str  $helperName  name of the helper class (without _viewHelper suffix)
-  * @param bool $forceReload if true then will replace any previous instance with a new one 
+  * @param bool $forceReload if true then will replace any previous instance with a new one
   *                          instead of returning the one that already exists
   * @return viewHelperInterface
   */
@@ -184,8 +191,8 @@ class baseView implements viewInterface{
       return $returnHelper?null:false;
     return $returnHelper?$this->_loadedHelpers[$helperName]:true;
   }
-  
-  /** 
+
+  /**
   * set the controller of the view
   * @param abstractController $controller
   * @return viewInterface for method chaining
@@ -194,7 +201,7 @@ class baseView implements viewInterface{
     $this->_controller = $controller;
     return $this;
   }
-  
+
   /**
   * set layout for this view without touching the default one
   * @param array $layout array of view script files
@@ -202,9 +209,9 @@ class baseView implements viewInterface{
   */
   public function setLayout(array $layout=null){
     $this->_layout = is_null($layout)?self::$defaultLayout:$layout;
-    return $this; #- for chaining 
+    return $this; #- for chaining
   }
-  
+
   /**
   * append a directory for view script lookup.
   * the last added will be the first checked.
@@ -217,12 +224,12 @@ class baseView implements viewInterface{
     $this->_viewDirs[] = $viewDir;
     return $this;
   }
-  
+
   /**
   * look in viewDirs for script existing script to render for the given action.
   * @param str $action     case sensitive name of the action to look at
-  * @param str $controller case sensitive name of the controller. 
-  *                        (can be usefull to dinamicly define the layout 
+  * @param str $controller case sensitive name of the controller.
+  *                        (can be usefull to dinamicly define the layout
   *                         by checking other controllers scripts to render.)
   * @param str $scriptPathModel will be set to $defaultLookUpModel if not given
   * @return str scriptPath or false if not found.
@@ -254,7 +261,7 @@ class baseView implements viewInterface{
     }
     return is_file($scriptFile)?$scriptFile:false;
   }
-  
+
   /**
   * try to render all scripts setted in layout.
   * calling render will automaticly call getPendingAppMsgs()
@@ -275,10 +282,10 @@ class baseView implements viewInterface{
     }
     self::$_rendered = true;
   }
-  
+
   /**
   * render the given script file.
-  * @param  str  $scriptFile can be the script file path or only the name if you do a lookup 
+  * @param  str  $scriptFile can be the script file path or only the name if you do a lookup
   * @param  bool $useLookUp   if false then won't use lookUpScript but only check if file exists.
   * @return bool scriptFile included or not.
   */
@@ -301,5 +308,5 @@ class baseView implements viewInterface{
     eval(get_class($this->_controller)."::pendingAppMsgs(\$this->_appMsgs);");
     return $this;
   }
-  
+
 }

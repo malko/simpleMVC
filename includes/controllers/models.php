@@ -1,4 +1,10 @@
 <?php
+/**
+* @class modelsController
+* @package simpleMVC
+* @licence LGPL
+* @author Jonathan Gotti < jgotti at jgotti dot net >
+*/
 class modelsController extends abstractController{
 
 	public $modelType = null;

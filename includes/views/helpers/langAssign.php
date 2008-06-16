@@ -1,6 +1,7 @@
 <?php
 /**
 * helper pour la gestion des langues
+* @class langAssign_viewHelper
 * @package simpleMVC
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
@@ -9,13 +10,13 @@
 */
 
 class langAssign_viewHelper extends abstractViewHelper{
-	
+
 	function __construct(viewInterface $view){
 		parent::__construct($view);
 		if( empty(langManager::$currentLang) )
 			langManager::langDetect(true);
 	}
-	
+
   /**
   * assign one or more var to view using lookUpDic().
   * @param mixed  $k name of var to assign or list of key=>values to assign
@@ -24,14 +25,14 @@ class langAssign_viewHelper extends abstractViewHelper{
   * @return viewInterface to permit chaining
   */
   public function langAssign($k,$v=null,$langCode=null){
-  	#- verification du code langue 
+  	#- verification du code langue
   	$langCode = langManager::isAcceptedLang($langCode); # clean up the langCode
   	if( $langCode === false){
   		$langCode = langManager::getCurrentLang();
   		if( $langCode === false ){ # no currentLang set we try to do it
   			$langCode = langManager::setCurrentLang();
   			# no languages set at all we default to standard assign()
-  			if( $langCode === false) 
+  			if( $langCode === false)
   				return $this->view->assign($k,$v);
 			}
   	}

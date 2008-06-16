@@ -7,7 +7,7 @@
 * ou parametrer dans le bootsrap ou l'action controller comme suit:
 * url_viewHelper::useRewriteRules = false;
 * ou url_viewHelper::setUseRewriteRules(false);
-* 
+* @class url_viewHelper
 * @package simpleMVC
 * @since 2008-01-09
 * @changelog - 2008-04-15 - add new param $appUrl to permit link creation for external apps
@@ -15,9 +15,9 @@
 */
 class url_viewHelper implements viewHelperInterface{
 	static public $useRewriteRules = null;
-	
+
 	public $view = null;
-	
+
   public function __construct(viewInterface $view){
     $this->view = $view;
     if( self::$useRewriteRules===null ){
@@ -27,19 +27,19 @@ class url_viewHelper implements viewHelperInterface{
 				self::$useRewriteRules = true;
 		}
   }
-  
+
   public function getController(){
     return $this->view->getController();
   }
-  
+
   static public function setUseRewriteRules($useRewriteRules){
 		self::$useRewriteRules = (bool) $useRewriteRules;
 	}
-  
+
 	/**
 	* prepare une url interne au site
 	* @param string $action     nom de l'action cible du lien
-	* @param string $controller nom du controller cible du lien 
+	* @param string $controller nom du controller cible du lien
 	*                           si null le controller en cours sera utilisé
 	* @param mixed  $params     peut etre soit un tableau ou une chaine:
 	*                           - tableau associatif de paires clés valeurs à passer dans l'url
@@ -49,7 +49,7 @@ class url_viewHelper implements viewHelperInterface{
 	*                           si c'est une chaine c'est à vous de le faire.
 	*                           (les chaines doivent etre des querystring standard
 	*                            l'appli la remettra en forme si utilisation des rewriteRules)
-	* @param bool   $alreadyEncoded ne sert que quand $params est un tableau afin 
+	* @param bool   $alreadyEncoded ne sert que quand $params est un tableau afin
 	*                           d'eviter l'urlencodage automatique.
 	* @param string $appUrl     sert d'url de base à la place de APP_URL (permet de formater de liens pour d'autres applications)
 	* @return str url cible.
@@ -63,7 +63,7 @@ class url_viewHelper implements viewHelperInterface{
 			if( is_string($params) ){
 				$params = preg_replace('!^(&(amp;)?|\?)!','',$params);
 				if(! self::$useRewriteRules ){
-					$Qstr = $params; 
+					$Qstr = $params;
 				}else{
 					$sep = strpos($params,'&amp;')!==false?'&amp;':'&';
 					$_params = explode($sep,$params);

@@ -1,4 +1,6 @@
 #- <?php echo "Access Denied!"; exit(); ?>
+#- @package simpleMVC
+#- @subpackage config
 #- GENERAL CONFIG FOR APPS
 #- ADD ANY CONSTANTS YOU MAY REQUIRE HERE
 

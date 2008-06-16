@@ -1,6 +1,7 @@
 <?php
 /**
 * @package simpleMVC
+* @class abstractController
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
@@ -51,9 +52,9 @@
 * - no automatic view rendering.
 * So if you call actionAction instead of action all of the previous steps have to be called manually
 * if you need them to apply.
-* 
+*
 * regarding actionStack/dispatchStack:
-* actionStack is internal of a given controller instance 
+* actionStack is internal of a given controller instance
 * dispatchStack is complete controller:action stack even when forwarding action from a controller to another
 */
 
@@ -85,7 +86,7 @@ abstract class abstractController{
   *                            On peut cependant réutiliser une instance déjà existante c'est notamment ce qui se passe
   *                            lors d'un appel à la méthode forward afin d'eviter la création de multiples instances de la vue
   *                            mais aussi de conservé les variables déjà assignées.
-  *                            (en gros ceci concerne une utilisation avancée de simpleMVC 
+  *                            (en gros ceci concerne une utilisation avancée de simpleMVC
   *                             donc si vous débutez avec simpleMVC laissez ce parametre de coté).
   */
   public function __construct(viewInterface $view = null){
@@ -106,7 +107,7 @@ abstract class abstractController{
         $this->view->addViewDir($d);
     }else{
       #- this is required for forward method to work properly
-      $this->view->setController($this); 
+      $this->view->setController($this);
     }
   }
   /**
@@ -115,7 +116,7 @@ abstract class abstractController{
   public function getName(){
     return $this->name;
   }
-  
+
   ###--- DISPATCH STACK MANAGEMENT ---###
   /**
   * append element to dispatch stack
@@ -133,7 +134,7 @@ abstract class abstractController{
   static protected function dispatchStackRemove(abstractController $controller){
     $stackNeedle =  $controller->getName().':'.$controller->getCurrentAction();
     // note: if you wonder why i haven't used array_search as it return last corresponding index to do this,
-    // the response is that it's not safe to rely on, as not clearly announced in manual 
+    // the response is that it's not safe to rely on, as not clearly announced in manual
     // so i've chosen this way which will ever be safe
     for($i=count(self::$dispatchStack)-1;$i>=0;$i--){
       if(self::$dispatchStack[$i]===$stackNeedle){
@@ -187,7 +188,7 @@ abstract class abstractController{
       return false;
     return substr(self::$dispatchStack[0],0,strpos(self::$dispatchStack[0],':'));
   }
-  
+
   ###--- ACTION STACK MANAGEMENT ---###
   /**
   * methode interne pour garder une trace de la pile d'appels des actions.
@@ -226,7 +227,7 @@ abstract class abstractController{
   public function getActionStack(){
     return $this->actionStack;
   }
-  
+
   ###--- APPLICATION MESSAGES MANAGEMENT ---###
   /**
   * @param mixed $msg    the message string or list of messages (array).
@@ -271,7 +272,7 @@ abstract class abstractController{
       $_SESSION['simpleMVC_appMsgs'] = array();
     return $msgs;
   }
-  
+
   ###--- ACTION CALL MANAGEMENT (where all the magic happen) ---###
   /**
   * gere les appels au methodes action (pas actionAction).
@@ -325,7 +326,7 @@ abstract class abstractController{
   }
   /**
   * redirect user to the given uri
-  * @param str   $uri				 there's no management of url rewriting using this method 
+  * @param str   $uri				 there's no management of url rewriting using this method
   *                          as it can be used for external redirection.
   * @param mixed $params     string or array of additionnal params to append to the uri
   *                          (no filtering only urlencode array values)
