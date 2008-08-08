@@ -50,7 +50,7 @@ class modelsController extends abstractController{
 						$row[$k] = $m->{$k};
 					$datas[] = $row;
 				}
-				$this->listHeaders = array_values($this->listFields);
+				$this->view->listHeaders = array_values($this->listFields);
 			}
 		}
 		$this->view->listDatas = $datas;
