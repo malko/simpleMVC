@@ -6,3 +6,7 @@
 	<link rel="stylesheet" href="<?= APP_URL ?>/views/default.css" type="text/css" />
 </head>
 <body>
+<?php
+	if( $this->_appMsgs ){
+		echo '<div class="msgbox">'.implode('',$this->_appMsgs).'</div>';
+	}
