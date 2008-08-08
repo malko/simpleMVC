@@ -1,0 +1,423 @@
+/*
+* a simple and lightweight rich text editor
+* @author jonathan gotti < jgotti at jgotti dot org >
+* @licence double licence GPL / MIT
+* @package jqueryPlugins
+* @since 2008-01
+* this work is inspired from:
+* - jQuery RTE plugin by 2007 Batiste Bieler (http://batiste.dosimple.ch/blog/2007-09-11-1/)
+* - jquery.wisiwyg by Juan M Martinez (http://private.tietokone.com.ar/jquery.wysiwyg/)
+* @changelog - 2008-01-30 - new methods createElement, hasSelection, removeLink
+*/
+
+(function($){
+
+	$.fn.rte = function(options) {
+		// if doable we transform textarea to rich text editors
+		if(document.designMode || document.contentEditable){
+			// iterate and reformat each matched element
+			return this.each(function() {
+				RTE($(this),options);
+			});
+		}else{
+			return this;
+		}
+	}
+
+  function RTE(elmt, options ){
+		return this instanceof RTE ? this.init(elmt,options): new RTE(elmt, options);
+	}
+
+	$.extend(RTE.prototype,{
+		container: null,
+		textarea: null,
+		opts:     $.fn.rte.defaults,
+		iframe:   null,
+		editable: null,
+		content:  '',
+		toolbar:  '',
+		id:       '',
+		init: function(elmt,options){
+			// prepare options without overriding default ones
+			this.opts     = $.extend({}, $.fn.rte.defaults, options);
+			this.id       = elmt.attr('id')?elmt.attr('id'):(elmt.attr('name')?elmt.attr('name'):'');
+			this.textarea = elmt;
+			// create iframe elments
+			this.initIframe()
+				.initToolBar()     // create toolbar elemens
+				.arrangeElements() //put all together
+				.initIframe();     // set iframe content and make it editable.
+			this.initEventHandlers();
+			this.toggleEditMode();
+
+		},
+
+		initIframe: function(){
+			if(! this.iframe){
+				this.iframe = document.createElement("iframe");
+        this.iframe.frameBorder=0;
+        this.iframe.frameMargin=0;
+        this.iframe.framePadding=0;
+				this.iframe.id = 'RTE_FRAME_'+this.id;
+				$(this.iframe)
+					.width(this.textarea.width())
+					.height(this.textarea.height());
+			}else{
+				var css = this.opts.css_url?"<link type='text/css' rel='stylesheet' href='"+this.opts.css_url+"' />":'';
+				this.content = this.textarea.val();
+				if($.trim(this.content)=='' && ! $.browser.msie){// Mozilla need this to display caret
+					this.content = '<br />';
+					this.textarea.parent('form').bind('submit',{rte:this},function(e){
+						var t=e.data.rte.textarea;t.val(t.val().replace(/(^<br \/>|<br \/>$)/,''));
+						return true;
+					});
+				}
+				if(window.document.getElementById(this.iframe.id).contentDocument){
+					this.editable = window.document.getElementById(this.iframe.id).contentDocument;
+				} else {// IE
+					this.editable = window.document.frames[this.iframe.id].document;
+				}
+				this.editable.open();
+				this.editable.write('<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"</head><body class='frameBody'>"+this.content+"</body></html>");
+				this.editable.close();
+				this.editable.contentEditable = 'true';
+				this.editable.designMode = 'on';
+			}
+			return this;
+		},
+
+		arrangeElements: function(){
+			this.container = $('<div class="rte" id="RTE_'+this.id+'"></div>');
+			this.container.width(this.opts.width!=0 ? this.opts.width : (parseInt(this.textarea.width())+10)+'px')
+				.css('text-align','center');
+			this.textarea.wrap(this.container).before(this.iframe);
+			$(this.iframe).before(this.toolbar);
+			this.container.height(this.opts.height!=0 ? this.opts.height : (parseInt(this.textarea.height())+parseInt(this.toolbar.height())+'px'))
+			return this;
+		},
+
+		initToolBar: function(){
+			var formatSel = this.makeSelector('formatSel','Format elements',this.opts.formatOptions);
+			var classSel  = this.makeSelector('classSel', 'Style Elements', this.opts.classOptions);
+      this.toolbar = $("<div class='toolbar'>"+formatSel+" "+classSel+"&nbsp;&nbsp;</div>");
+      return this;
+    },
+
+    /** internal helpers to create selectors */
+    makeSelector: function(name,empty,opts){
+    	var options = '';
+			for(var i in opts){
+				options += '<option value="'+opts[i][0]+'">'+opts[i][1]+'</option>';
+			}
+			if( opts !== '')
+				return '<select class="'+name+'">'+(empty!==''?'<option value="" >'+empty+'</option>':'')+options+'</select>';
+		},
+
+		appendFormatButton: function(cmd,label,image,className){
+			if(cmd==='spacer'){
+				this.toolbar.append('&nbsp;&nbsp;');
+				return this;
+			}
+			label = label.replace(/[^\\]"/,'"');
+			var img = image?'<img src="'+this.opts.imgPath+image+'" alt="'+label+'" border="0" />':label;
+			var b = $('<a href="#" title="'+label+(className?'" class="'+className:'')+'">'+img+' </a>');
+			this.toolbar.append(b);
+			if( cmd.toString().match(/^(bold|italic|undo|redo|underline|formatblock|removeformat|justify|insert)/i) ){
+				b.bind('click',{rte:this},function(e){ e.data.rte.formatText(cmd); return false;});
+			}else{
+				b.bind('click',{rte:this},cmd);
+			}
+			return this;
+		},
+
+		initEventHandlers: function(){
+			var tb = this.toolbar;
+			// format selector
+			$('select.formatSel', tb).bind('change',{rte:this},function(e){
+				var selected = this.options[this.selectedIndex].value;
+				e.data.rte.formatText("formatblock", '<'+selected+'>');
+				//e.data.rte.formatText("formatblock", selected);
+			});
+      //class selector
+			$('select.classSel', tb).bind('change',{rte:this},function(e){
+				var selected = this.options[this.selectedIndex].value;
+				if(selected != 0){ // add class
+					var editable = e.data.rte.editable;
+					var _tag = selected.split(':');
+					var tag  = editable.createElement(_tag[0]);
+					if(_tag[1])
+						tag.className = _tag[1];
+					e.data.rte.surroundContents(tag);
+				/*}else{
+					e.data.rte.formatText("removeformat");*/
+				}
+				e.data.rte.syncFromEditor();
+			});
+
+			this.appendFormatButton('bold','bold','format-text-bold.png');
+				this.appendFormatButton('underline','underline','format-text-underline.png')
+				.appendFormatButton('italic','italic','format-text-italic.png')
+				.appendFormatButton('spacer')
+				.appendFormatButton('insertorderedlist','ordered list','text_list_numbers.png')
+				.appendFormatButton('insertunorderedlist','unordered list','text_list_bullets.png')
+				.appendFormatButton('spacer');
+			/* no undo redo for now that's buggy
+			if(! $.browser.msie ){ //--  not implemented under ie sorry for thoose who use it
+				this.appendFormatButton('undo','undo','arrow_undo.png')
+				.appendFormatButton('redo','redo','arrow_redo.png')
+				.appendFormatButton('spacer');
+			}*/
+			this.appendFormatButton('justifyleft','left alignment','format-justify-left.png')
+				.appendFormatButton('justifycenter','centered alignment','format-justify-center.png')
+				.appendFormatButton('justifyright','right alignment','format-justify-right.png')
+				.appendFormatButton('justifyfull','justify alignment','format-justify-fill.png')
+				.appendFormatButton('spacer')
+				.appendFormatButton(this.opts.createLink,'create link','link_add.png')
+				.appendFormatButton(this.removeLinkCB,'remove link','link_break.png')
+				.appendFormatButton(this.opts.insertImage,'insert image','image_add.png')
+				.appendFormatButton('spacer');
+			//if($.browser.msie)
+				this.appendFormatButton(this.cleanContents,'remove format','html_delete.png');
+			//else
+				//this.appendFormatButton('removeFormat','remove format','edit-clear.png');
+
+			this.appendFormatButton(this.toggleEditModeCB,'toggle edit mode','tag.png','toggle')
+
+			// data synchronisation between textarea/iframe */
+      $(this.editable).bind('mouseup',{rte:this},function(e){e.data.rte.syncFromEditor();});
+      $(this.editable).bind('keyup',{rte:this},function(e){e.data.rte.syncFromEditor();});
+      this.textarea.bind('keyup',{rte:this},function(e){e.data.rte.syncFromTextarea();});
+
+
+			// set to use paragraph on return to behave same on firefox as on ie.
+			this.formatText("insertbronreturn",false);
+		},
+
+		/** return a node created in the context of the editable document. */
+		createElement: function(tag){
+			return this.editable.createElement(tag);
+		},
+
+		syncFromTextarea: function(){
+			$(this.editable).find('body').html(this.textarea.val());
+		},
+
+		syncFromEditor: function(){
+			this.setSelectors();
+			this.textarea.val($(this.editable).find('body').html());
+		},
+
+    setSelectors: function() {
+    	var node = this.getSelectedElement();
+    	var classIndex = formatIndex = 0;
+    	var classSel = $('select.classSel', this.toolbar).get(0);
+    	var formatSel=$('select.formatSel', this.toolbar).get(0);
+
+    	while(node.parentNode && classIndex===0 && formatIndex===0 ){
+				var nName = node.nodeName.toLowerCase();
+    		if( formatIndex === 0 ){
+					for(var i=0;i<formatSel.options.length;i++){
+						if(nName==formatSel.options[i].value.toLowerCase()){
+							formatIndex=i;
+							break;
+						}
+					}
+				}
+    		if( classIndex === 0 ){
+					var cName = $(node).attr('class');
+					if( cName ){
+						for(var i=0;i<classSel.options.length;i++){
+							if(nName+':'+cName==classSel.options[i].value){
+								classIndex=i;
+								break;
+							}
+						}
+					}
+				}
+				node = node.parentNode;
+			}
+			formatSel.selectedIndex=formatIndex;
+			classSel.selectedIndex=classIndex;
+			return true;
+    },
+
+		toggleEditModeCB: function(e){ e.data.rte.toggleEditMode(); return false},
+		toggleEditMode: function(){
+			if(this.textarea.is(':visible')){
+				this.textarea.hide();;
+				$(this.iframe).show();
+			}else{
+				this.textarea.show();
+				$(this.iframe).hide();
+			}
+			return this;
+		},
+
+		/**
+		* you must create the node in the editable document context to get it work with ie.
+		* you can use the rte.createElement method to achieve this.
+		* @param domNode    node the node to add
+		* @param bool       returnNode will return node instead of rte instance if set to true
+		* @param rangeOject permit you to pass your own rangeObject it's usefull when replacing the default createLink method.
+		* @return rte or domeNode depending on returnNode value.
+		*/
+		surroundContents: function(node,returnNode,rangeObject){
+			if(this.textarea.is(':visible'))
+				return returnNode?this:node;
+			var r = rangeObject?rangeObject:this.getSelectedElement(true);
+			if(r){
+				if(r.surroundContents){// the normal way
+					r.surroundContents(node);
+				}else if(r.htmlText!==undefined){ // do it the dirty ie way (dirty hack if you have better way i take it)
+					//-- don't ask me why i can't achieve the same thing by using jquery methods (buggy ie drive me crazy)
+				//alert(r.htmlText+'/'+r.text);
+					var tmpParent = this.createElement('div');
+					node.innerHTML += r.htmlText;
+					tmpParent.appendChild(node);
+					r.pasteHTML(tmpParent.innerHTML);
+				}
+				this.syncFromEditor();
+			}
+			return returnNode?this:node;
+		},
+
+		insertNode: function(node,returnNode){
+			if(this.textarea.is(':visible'))
+				return returnNode?this:node;
+			var r = this.getSelectedElement(true);
+			if(r.insertNode){ // normal way
+				r.insertNode(node);
+			}else{ // ugly ie hack
+				var tmpParent = this.createElement('div');
+				tmpParent.appendChild(node);
+				r.collapse();
+				r.pasteHTML(tmpParent.innerHTML);
+			}
+			this.syncFromEditor();
+			return returnNode?this:node;
+		},
+
+		/** really clean content from any tag (called as a callback) */
+		cleanContents: function(event){
+			var rte = event.data.rte
+			if(rte.textarea.is(':visible'))
+				return false;
+			r = rte.getSelectedElement(true);
+			if(r.htmlText!==undefined){
+				r.pasteHTML(r.text);
+			}else if(r.extractContents !== undefined && r.insertNode !== undefined){
+				var tmp = r.extractContents();
+				$(tmp).children().each(function(){
+					$(this).replaceWith($(this).text());
+				});
+				r.insertNode(tmp);
+			}else{
+				rte.formatText('removeFormat');
+			}
+			rte.syncFromEditor();
+		},
+
+		hasSelection: function(){
+			var r = this.getSelectedElement(true);
+			if(r.htmlText !== undefined)
+				return r.htmlText===''?false:true;
+			return ( r.toString() == '')?false:true;
+
+		},
+		removeLinkCB: function(e){ return e.data.rte.removeLink(); },
+		removeLink: function(){
+			var p = this.getSelectedElement();
+			if(p.tagName !== undefined && p.tagName.match(/a/i)){
+				$(p).replaceWith(p.innerHTML);
+			}else{
+				p = $(p).parent('a');
+				p.replaceWith(p.html());
+			}
+			this.syncFromEditor();
+		},
+
+		/** return the parent node of the selection or range if returnRange is true */
+    getSelectedElement: function(returnRange) {
+			if(this.textarea.is(':visible'))
+				return false;
+			if(this.editable.selection) { // IE selections
+				selection = this.editable.selection;
+				range = selection.createRange();
+				try {
+					node = range.parentElement();
+				}catch(e){
+					return false;
+				}
+			}else{ // Mozilla selections
+				try {
+					selection = this.iframe.contentWindow.getSelection();
+					range = selection.getRangeAt(0);
+				}catch(e){
+					return false;
+				}
+				node = range.commonAncestorContainer;
+			}
+			return returnRange?range:node;
+    },
+
+		formatText: function(command, option) {
+			if(this.textarea.is(':visible'))
+				return this;
+			$(this.editable).focus();
+			try{
+				this.editable.execCommand(command, false, option?option:null);
+			}catch(e){console.log(e)}
+			$(this.editable).focus();
+
+			// quick and dirty hack to avoid empty tags when trying to remove formatblocks
+			if(command === 'formatblock' && option === '<>'){
+				this.syncFromEditor();
+				var val = this.textarea.get(0).value;
+				this.textarea.get(0).value = val.replace(/<<>>|<\/<>>/g,'');
+				this.syncFromTextarea();
+			}
+
+			this.syncFromEditor();
+		}
+
+	});
+
+	// plugin defaults settings
+	$.fn.rte.defaults = {
+		css_url: '',
+		imgPath: '/js/jqueryPlugins/jqueryRte/',
+		width:0,
+		height:0,
+		formatOptions: [
+			['P', 'Paragraph'],
+			['PRE', 'Preformatted'],
+			['ADDRESS','Address'],
+			['H1','Title 1'],
+			['H2','Title 2'],
+			['H3','Title 3 '],
+			['H4','Title 4'],
+			['H5','Title 5'],
+			['H6','Title 6']
+		],
+		classOptions: [
+			['span:title','title'],
+      ['div:test','test']
+		],
+		createLink: function(e){
+			var rte = e.data.rte;
+			var url = prompt('Insert link URL');
+			rte.formatText('createlink',url?url:'');
+			return false;
+		},
+		insertImage: function(e){
+			var rte = e.data.rte;
+			var url = prompt('Insert image URL');
+			var i = rte.createElement('img');
+			i.src = url;
+			rte.insertNode(i);
+			//rte.formatText('insertimage',url?url:'');
+			return false;
+		}
+	};
+
+})(jQuery);
