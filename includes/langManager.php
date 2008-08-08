@@ -4,7 +4,9 @@
 * @package simpleMVC
 * @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
 * @author jonathan gotti <jgotti at jgotti dot org>
-* @changelog -2008-05-08 - new method msg() with sprintf support
+* @changelog
+*            -2008-08-05 - add property onFailureCheckDfltLang to check for messages in default language when not found in current
+*            -2008-05-08 - new method msg() with sprintf support
 */
 class langManager{
 
@@ -19,6 +21,9 @@ class langManager{
 
 	/** keep trace of currently setted language */
 	static public $currentLang = false;
+
+	/** set whether messages are checked in default languages when not found instead of just returning the given idMsg*/
+	static public $onFailureCheckDfltLang = true;
 
 	/**
 	* parametre les languages acceptés, par défaut le premier sera retourné
@@ -136,6 +141,8 @@ class langManager{
 
   /**
   * recherche le message dans le dictionnaire choisis et la langue donné et tente de charger les dictionnaires automatiquement.
+  * If no messages is found in given dictionnaries and lang the idMsg will be return as result.
+  * If onFailureCheckDfltLang is true then will also lookup msg in default language before returning the idMsg.
   * @param str $idMsg     la chaine du message original ou son id tout dépend de votre facon de gérer les fichiers de langues
   * @param str $dicName   nom du ou des dictionnaires dans lesquels faire la recherche du message séparés par des '|'
   *                       par défaut cherchera dans les dictionnaires suivants: controller_action controller et default
@@ -166,6 +173,9 @@ class langManager{
 					return self::$_loadedDictionaries[$l][$dn][$idMsg];
 			}
 		}
+		#- check default lang on failure if required
+		if( self::$onFailureCheckDfltLang && strpos($langCode,$dfltLang=self::getDefaultLang())===false  && $dfltLang!==false )
+			return self::lookUpMsg($idMsg,$dicName,$dfltLang);
 		return $idMsg;
 	}
 	/**

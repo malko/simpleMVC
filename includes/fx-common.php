@@ -300,21 +300,23 @@ function show(){
 			if(isset($v['object']))
 				$v['object'] = get_class($v['object']);
 			$traceArgs = array();
-			foreach($v['args'] as $ka=>$va){
-				if(is_object($va))
-					$a = 'instanceof '.get_class($va);
-				elseif(is_array($va))
-					$a = "Array(".count($va)." elements)";
-				else
-					$a = var_export($va,1);
-				$traceArgs[] = $a;
+			if( isset($v['args']) ){
+				foreach($v['args'] as $ka=>$va){
+					if(is_object($va))
+						$a = 'instanceof '.get_class($va);
+					elseif(is_array($va))
+						$a = "Array(".count($va)." elements)";
+					else
+						$a = var_export($va,1);
+					$traceArgs[] = $a;
+				}
 			}
 			$traceArgs = count($traceArgs)?"\n\t".implode(",\n\t",$traceArgs)."\n":'';
 			$traceFile = empty($v['file'])?'':'in '.str_replace(ROOT_DIR.'/','',$v['file'])." at line $v[line]\n";
 			@$getTrace[$k] = $traceFile.(($v['object']||$v['class'])?$v[$v['object']?'object':'class'].$v['type']:'')."$v[function]($traceArgs);";
 		}
 		$args[]="↓↓↓↓-------------------------- FOLLOWING IS BACKTRACE LAST CALL FIRST --------------------------↓↓↓↓";
-		$args[]=implode(str_repeat('__',49)."\n\n",$getTrace);
+		$args[]=implode("\n".str_repeat('__',49)."\n\n",$getTrace);
 	}
 
   $str = array();
