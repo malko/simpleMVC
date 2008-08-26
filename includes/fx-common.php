@@ -262,7 +262,7 @@ function show(){
     </script>
     <style type=\"text/css\">
       div.dbg strong  { font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:0; }
-      div.dbg pre { background:#F0F0F0;border-style:dashed;border-width:1px;max-height:350px;overflow:auto;margin-top:0; }
+      div.dbg pre { text-align:left;background:#F0F0F0;border-style:dashed;border-width:1px;max-height:350px;overflow:auto;margin-top:0; }
     </style>
     ";
   }
@@ -316,7 +316,7 @@ function show(){
 			@$getTrace[$k] = $traceFile.(($v['object']||$v['class'])?$v[$v['object']?'object':'class'].$v['type']:'')."$v[function]($traceArgs);";
 		}
 		$args[]="↓↓↓↓-------------------------- FOLLOWING IS BACKTRACE LAST CALL FIRST --------------------------↓↓↓↓";
-		$args[]=implode("\n".str_repeat('__',49)."\n\n",$getTrace);
+		$args[]=str_replace("\t","  ",implode("\n".str_repeat('__',49)."\n\n",$getTrace));
 	}
 
   $str = array();

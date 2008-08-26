@@ -25,30 +25,18 @@ class langAssign_viewHelper extends abstractViewHelper{
   * @return viewInterface to permit chaining
   */
   public function langAssign($k,$v=null,$langCode=null){
-  	#- verification du code langue
-  	$langCode = langManager::isAcceptedLang($langCode); # clean up the langCode
-  	if( $langCode === false){
-  		$langCode = langManager::getCurrentLang();
-  		if( $langCode === false ){ # no currentLang set we try to do it
-  			$langCode = langManager::setCurrentLang();
-  			# no languages set at all we default to standard assign()
-  			if( $langCode === false)
-  				return $this->view->assign($k,$v);
-			}
-  	}
-  	if( is_array($k) ){
+		#- ~ if(is_object($v) || is_array($v)){ #- object/array assignation are not managed by langAssign
+			#- ~ $this->view->assign($k,$v);
+		#- ~ }else
+		if(is_array($k)){ #- multiple assignation at once
       foreach($k as $key=>$val)
         $this->langAssign($key,$val);
-    }elseif(is_null($v)){
-      if( isset($this->view->_datas[$k]) )
-        $this->view->assign($k);
+		}elseif(! is_string($v)){
+				$this->view->assign($k,$v);
     }else{
-    	list($controller,$action) = explode(':',abstractController::getCurrentDispatch(),2);
-    	$lang = ( $langCode === langManager::getDefaultLang() )?$langCode : $langCode.'|'.langManager::getDefaultLang();
-    	$this->view->assign($k,langManager::lookUpMsg($v,$controller.'_'.$action.'|'.$controller.'|default',$lang));
+			list($controller,$action) = abstractController::getCurrentDispatch(true);
+			$this->view->assign($k,langManager::lookUpMsg($v,$controller.'_'.$action.'|'.$controller.'|default',$langCode));
     }
-    return $this;
+		return $this->view;
   }
 }
-
-
