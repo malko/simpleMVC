@@ -75,8 +75,9 @@ $_action     = isset($_POST['action'])?$_POST['action']:(isset($_GET['action'])?
 
 #- instanciation du controller
 try{
-  $cname = $_controller.'Controller';
-  $controller = new $cname;
+	$cname = $_controller.'Controller';
+	if( class_exists($cname) )
+		$controller = new $cname;
 }catch(Exception $e){
 	#- ~ abstractController::appendAppMsg($e->getMessage(),'error');
 	#- ~ $controller = new defaultController;
