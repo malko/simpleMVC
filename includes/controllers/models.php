@@ -5,7 +5,7 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 */
-class modelsController extends abstractController{
+abstract class modelsController extends abstractController{
 
 	public $modelType = null;
 
@@ -28,6 +28,7 @@ class modelsController extends abstractController{
 			':controller_:action.tpl.php|models_:action.tpl.php|default_:action.tpl.php',
 			'footer.tpl.php'
 		));
+		$this->view->modelType = $this->modelType;
 	}
 
 	function listAction(){
@@ -91,7 +92,7 @@ class modelsController extends abstractController{
 	function saveAction(){
 		if( empty($_POST) ){
 			self::appendAppMsg('Aucune données à enregistrée.','error');
-			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 		}
 		#- get instance
 		$modelPKName = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
@@ -101,14 +102,14 @@ class modelsController extends abstractController{
 			$model = abstractModel::getModelInstance($this->modelType,$_POST[$modelPKName]);
 			if( $model === false){
 				self::appendAppMsg('Mise à jour d\'un élément inexistant en base de données.','error');
-				return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+				return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 			}
 			$model->_setDatas($_POST);
 		}
 		if( $model->hasFiltersMsgs() ){
 			self::appendAppMsg($model->getFiltersMsgs(),'error');
 			$this->view->assign($model->datas);
-			return $this->forward('form',$this->getName(),array('modelType'=>$this->modelType));
+			return $this->forward('form',$this->getName());
 		}
 		if($model->isTemporary())
 			$successMsg = "Nouvel enregistrement ajouté.";
@@ -116,7 +117,7 @@ class modelsController extends abstractController{
 			$successMsg = "Enregistrement mis à jour.";
 		$model->save();
 		self::appendAppMsg($successMsg,'success');
-		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 	}
 
 	function delAction(){
