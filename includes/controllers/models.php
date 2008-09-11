@@ -4,6 +4,10 @@
 * @package simpleMVC
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
+* @changelog
+*            - 2008-09-11 - define dummy indexAction that forward to listAction
+*                         - remove setLayout from formAction
+*                         - list without listFields setted will ask value from model instead of taking it directly from model->datas
 */
 abstract class modelsController extends abstractController{
 
@@ -31,16 +35,27 @@ abstract class modelsController extends abstractController{
 		$this->view->modelType = $this->modelType;
 	}
 
+	function indexAction(){
+		return $this->forward('list');
+	}
+
 	function listAction(){
 		$models = abstractModel::getAllModelInstances($this->modelType);
 		$datas = array();
 		if( count($models) ){
 			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 			if( empty($this->listFields) ){
+				$modelDatasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
+				show($modelDatasDefs);
 				foreach($models as $m){
-					$row = $m->datas;
-					unset($row[$PKname]);
-					$row['id'] = $m->PK.'/modelType/'.$this->modelType;
+					$row = array();
+					foreach(array_keys($m->datas) as $key){
+						if( $key ===$PKname ){
+							$row['id'] = $m->PK.'/modelType/'.$this->modelType;
+							continue;
+						}
+						$row[$key] = $m->{$key};
+					}
 					$datas[] = $row;
 				}
 			}else{
@@ -55,7 +70,6 @@ abstract class modelsController extends abstractController{
 			}
 		}
 		$this->view->listDatas = $datas;
-		$this->view->modelType = $this->modelType;
 	}
 
 	function addAction(){
@@ -82,11 +96,6 @@ abstract class modelsController extends abstractController{
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
 		$this->view->actionUrl = $this->view->url('save',$this->getName(),array('modelType'=>$this->modelType));
 		$this->view->listUrl   = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
-		$this->view->setLayout(array(
-			'header.tpl.php',
-			'models_'.$this->modelType.'_form.tpl.php|:controller_form.tpl.php',
-			'footer.tpl.php'
-		));
 	}
 
 	function saveAction(){
