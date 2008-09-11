@@ -1,7 +1,7 @@
 <?php
 
 class formInput_viewHelper extends abstractViewHelper{
-
+	static $useRTE = false;
 	/**
 	*
 	* @param string $name      name of the input use as default id attribute if none provide as option
@@ -13,6 +13,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - check|checkbox
 	*                          - radio
 	*                          - hidden
+	*                          - date|datepicker
 	*                          - file
 	* @param array  $options   list of optionnal parameters:
 	*                          - default is the default value to set if $value is empty.
@@ -21,12 +22,13 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - default class will be same as type
 	*                          - values is an associative list of key value pairs used with select | checkBox | radio
 	*                          - label is an optional label for the input
-	*                          -
+	*                          - pickerOptStr is used for datepicker fields
 	*/
 	function formInput($name,$value=null,$type='text',array $options=array()){
 		$dfltOpts = array(
 			'id'    => $name,
 			'class' => $type,
+			'formatStr' => in_array($type,array('radio','check','checkbox'))?'%input %label':'%label %input',
 		);
 		$options = array_merge($dfltOpts,$options);
 
@@ -40,11 +42,32 @@ class formInput_viewHelper extends abstractViewHelper{
 				if($type==='txt')
 					$type='text';
 				$value = preg_replace('/(?<!\\\\)"/','\"',$value);
-				return "$labelStr<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
+				return $this->formatInput(
+					$labelStr,
+					"<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
+					$options['formatStr']
+				);
 				break; //-- dummy break
 			case 'area':
 			case 'textarea':
-				return "$labelStr<textarea name=\"$name\"".$this->getAttrStr($options).">$value</textarea>";
+				if(! self::$useRTE ){
+					return $this->formatInput(
+						$labelStr,
+						"<textarea name=\"$name\"".$this->getAttrStr($options).">$value</textarea>",
+						$options['formatStr']
+					);
+				}else{
+					$rteOptions = array('value' => $value);
+					foreach($options as $k=>$o){
+						if( in_array($k,array('rows','cols','disabled','style')) )
+							$rteOptions[$k] = $o;
+					}
+					return $this->formatInput(
+						$labelStr,
+						$this->rte($name,array('value'=>$value)),
+						$options['formatStr']
+					);
+				}
 				break;//-- dummy break
 			case 'select':
 				if( !empty($options['values']) ){
@@ -57,7 +80,11 @@ class formInput_viewHelper extends abstractViewHelper{
 						$opts .= "<option value=\"$k\"$selected>$v</option>";
 					}
 				}
-				return "$labelStr<select name=\"$name\"".$this->getAttrStr($options).">$opts</select>";
+				return $this->formatInput(
+					$labelStr,
+					"<select name=\"$name\"".$this->getAttrStr($options).">$opts</select>",
+					$options['formatStr']
+				);
 				break;//-- dummy break
 			case 'check':
 			case 'checkbox':
@@ -65,7 +92,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				if( $type==='check')
 					$type = 'checkBox';
 				if( isset($options['values']) && is_array($options['values']) && count($options['values'])>0){
-					$opts = empty($labelStr)?'':$labelStr;
+					$opts = '';
 					$idStr= $options['id'];
 					$i=-1;
 					foreach($options['values'] as $ok=>$ov){
@@ -73,22 +100,38 @@ class formInput_viewHelper extends abstractViewHelper{
 							$checked = in_array($ok,$value)?' checked="checked"':'';
 						else
 							$checked = $ok==$value?' checked="checked"':'';
-						$labelStr = "<label for=\"\">$ov</label>";
+						#- ~ $labelStr = "<label for=\"\">$ov</label>";
 						$opts .= "<input type=\"$type\" id=\"$idStr".(++$i)."\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"$ok\"".$this->getAttrStr($options,array('id'))."$checked /><label for=\"$idStr$i\">$ov</label>";
 					}
-					return $opts;
+					return $this->formatInput($labelStr,$opts,$options['formatStr']);
 				}else{
-					return "$labelStr<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
+					return $this->formatInput(
+						$labelStr,
+						"<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
+						$options['formatStr']
+					);
 				}
 				break;//-- dummy break
+			case 'date':
+			case 'datepicker':
+				return $this->formatInput(
+					$labelStr,
+					$this->datepicker($name,$value,empty($options['pickerOptStr'])?null:$options['pickerOptStr']),
+					$options['formatStr']
+				);
+				break;//--dummy break
 			case 'file':
-				return "$labelStr<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
+				return $this->formatInput(
+					$labelStr,
+					"<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
+					$options['formatStr']
+				);
 				break;//-- dummy break
 		}//end switch
 	}
 
 	protected function getAttrStr(array $attrs,array $excludeAttrs=null){
-		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple');
+		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style');
 		$attrStr= '';
 		foreach($attrs as $ok=>$ov){
 			if( is_array($excludeAttrs) && in_array($ok,$excludeAttrs) )
@@ -97,6 +140,10 @@ class formInput_viewHelper extends abstractViewHelper{
 				$attrStr.=" $ok=\"".preg_replace('/(?<!\\\\)"/','\"',$ov).'"';
 		}
 		return $attrStr;
+	}
+
+	protected function formatInput($labelStr,$input,$formatStr){
+		return str_replace(array('%label','%input'),array($labelStr,$input),$formatStr);
 	}
 
 }

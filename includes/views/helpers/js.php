@@ -1,19 +1,55 @@
 <?php
-
+/**
+* helper to manage sortof include_once with js files and permit to manage dependancies between jsPlugins helpers
+* @code
+* 	//--inside view template files preload some plugins and print the includes strings
+* 	echo $this->js(null,$stringPluginsToLoad);
+* 	//-- do the normal job calling eventual jsPlugins as normal helpers inside the code
+*   //-- then render additional scripts and include files that may still need to be include
+* 	echo $this->js($stringScriptToExecuteAtWindowOnLoad);
+* @endcode
+* @class js_viewHelper
+*/
 class js_viewHelper extends abstractViewHelper{
 
 	static $includedFiles = array();
 	static $pendingScript = '';
+	static $registeredPlugins = array();
 
-	/** false or path to jquery library */
-	static $useJquery = false;
-
-	function js($datas=null){
+	function js($datas=null,$pluginToLoad=null){
+		if( $pluginToLoad !== null)
+			self::loadPlugin($this->view,$pluginToLoad);
 		if( null === $datas)
 			return self::getPending();
 		if( is_array($datas) || preg_match('!\.(js|css)$!',$datas) )
 			return self::includes($datas);
 		return self::script($datas);
+	}
+	/**
+	* preload jsPlugins
+	* @param viewInterface $view    the view interface used to load plugins
+	* @param mixed         $plugins array or string list of plugins to load (string item delimiter is '|')
+	* @return includes string
+	*/
+	static function loadPlugin(viewInterface $view,$plugins){
+		if( ! is_array($plugins) )
+			$plugins = explode('|',$plugins);
+		foreach($plugins as $p){
+			$view->helperLoad($p);
+		}
+	}
+
+	static function registerPlugin(jsPlugin_viewHelper $plugin){
+		$pluginName = strtolower(str_replace('_viewHelper','',get_class($plugin)));
+		self::$registeredPlugins[$pluginName]=true;
+	}
+
+	static function getRegisteredPlugins(){
+		return array_keys(self::$registeredPlugins);
+	}
+
+	static function isRegistered($pluginName){
+		return isset(self::$registeredPlugins[$pluginName])?true:false;
 	}
 
 	static function script($script){
@@ -21,13 +57,11 @@ class js_viewHelper extends abstractViewHelper{
 	}
 
 	static function getPending(){
-		if( false!==self::$useJquery && !isset(self::$includedFiles[self::$useJquery]) )
-			self::includes(self::$useJquery);
 
 		if( ! strlen(self::$pendingScript) )
 			return self::getIncludes();
 
-		$script = ( false===self::$useJquery)? self::$pendingScript : "jQuery().ready(function(){\n$script\n});";
+		$script = self::isRegistered('jquery')?"jQuery().ready(function(){\n".self::$pendingScript."\n});" : self::$pendingScript;
 		self::$pendingScript = '';
 
 		return self::getIncludes()."\n<script type=\"text/javascript\">\n/*<![CDATA[*/\n$script\n/*]]>*/\n</script>\n";
@@ -61,7 +95,4 @@ class js_viewHelper extends abstractViewHelper{
 		}
 		return $incStr;
 	}
-}
-
-class js extends js_viewHelper{
 }

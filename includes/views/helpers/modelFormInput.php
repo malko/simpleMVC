@@ -28,7 +28,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 
 			return $this->formInput($keyName,$value,'select',$options);
 		}elseif(isset($relsDefs['hasMany'][$keyName]) ){
-
+			//-- @todo voir si on gere ou non les relations hasMany
 		}
 
 		if( $keyName === 'PK' || $keyName === abstractModel::_getModelStaticProp($modelName,'primaryKey') ){
@@ -39,9 +39,9 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 		#- try to get def from datas array
 		if( !empty($datasDefs[$keyName]) ){
 			$value = ( $modelName instanceof abstractModel )?$modelName->{$keyName}:$datasDefs[$keyName]['Default'];
-			$datasDefs[$keyName]['Type'] = strtolower($datasDefs[$keyName]['Type']);
+			$datasDefs[$keyName]['Type'] = trim(strtolower($datasDefs[$keyName]['Type']));
 			#- check for enum types
-			if( preg_match('!^\s*enum!',$datasDefs[$keyName]['Type'])){
+			if( preg_match('!^enum!',$datasDefs[$keyName]['Type'])){
 				if(empty($options['values']) &&  method_exists($modelName,'get'.$keyName.'PossibleValues') ){
 					eval('$values = '.(is_string($modelName)?$modelName:$modelName->modelName).'::get'.$keyName.'PossibleValues();');
 					foreach($values as $v)
@@ -49,7 +49,9 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				}
 				return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 			}
-			if( preg_match('!\s*\w+\s*\(\s*(\d+)\s*\)\s*$!',$datasDefs[$keyName]['Type'],$match) ){
+			if( $datasDefs[$keyName]['Type'] === 'date')
+				return $this->formInput($keyName,$value,'date',$options);
+			if( preg_match('!\w+\s*\(\s*(\d+)\s*\)$!',$datasDefs[$keyName]['Type'],$match) ){
 				if(! isset($options['maxlength']) )
 					$options['maxlength'] = $match[1];
 			}
