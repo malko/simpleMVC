@@ -46,7 +46,6 @@ abstract class modelsController extends abstractController{
 			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 			if( empty($this->listFields) ){
 				$modelDatasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
-				show($modelDatasDefs);
 				foreach($models as $m){
 					$row = array();
 					foreach(array_keys($m->datas) as $key){
