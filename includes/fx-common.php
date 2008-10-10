@@ -15,6 +15,7 @@ define('LIB_DIR',dirname(__file__));
 
 #- load configurtations files
 require LIB_DIR.'/fx-conf.php';
+
 if( defined('FRONT_NAME') && file_exists(CONF_DIR.'/'.FRONT_NAME.'_config.php') ) #- specific front config
 	parse_conf_file(CONF_DIR.'/'.FRONT_NAME.'_config.php');
 if(file_exists(CONF_DIR.'/config.php')) #- general config

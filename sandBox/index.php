@@ -25,9 +25,11 @@ session_start();
 
 #- if needed specified your default database connection
 #- db::setDefaultConnectionStr(DB_CONNECTION);
+#- ~ db::$_default_verbosity = DEVEL_MODE?1:0; #- only report errors
 
 #- include class-abstractModel if you use them
 #- require LIB_DIR.'/class-abstractmodel.php';
+#- ~ abstractModel::$useDbProfiler = DEVEL_MODE?true:false;
 
 #- set les repertoires de vue par défaut
 abstractController::$defaultViewClass = 'baseView';
@@ -73,10 +75,10 @@ if( USE_REWRITE_RULES ){
 	}
 }
 
+list($_defaultController,$_defaultAction) = explode(':',DEFAULT_DISPATCH);
 #- Recuperation des controllers et actions à executer.
-$_controller = isset($_POST['ctrl'])?$_POST['ctrl']:(isset($_GET['ctrl'])?$_GET['ctrl']:(!empty($_controller)?$_controller:'default'));
-$_action     = isset($_POST['action'])?$_POST['action']:(isset($_GET['action'])?$_GET['action']:(!empty($_action)?$_action:'index'));
-
+$_controller = isset($_POST['ctrl'])?$_POST['ctrl']:(isset($_GET['ctrl'])?$_GET['ctrl']:(!empty($_controller)?$_controller:$_defaultController));
+$_action     = isset($_POST['action'])?$_POST['action']:(isset($_GET['action'])?$_GET['action']:(!empty($_action)?$_action:$_defaultAction));
 
 #- instanciation du controller
 try{
@@ -84,16 +86,19 @@ try{
 	if( class_exists($cname) )
 		$controller = new $cname;
 }catch(Exception $e){
-	#- ~ abstractController::appendAppMsg($e->getMessage(),'error');
-	#- ~ $controller = new defaultController;
-	#- ~ $controller->redirectAction('error','default',null,404);
-	show($e->getMessage(),'exit;trace');
+	if( DEVEL_MODE )
+		show($e->getMessage(),'color:orange;trace;exit');
+	abstractController::appendAppMsg($e->getMessage(),'error');
+	$controller = new defaultController;
+	$controller->redirectAction('error','default',null,404);
 }
 #- appelle de l'action
 try{
   $controller->$_action();
 }catch(Exception $e){
-	#- ~ abstractController::appendAppMsg($e->getMessage(),'error');
-	#- ~ $controller->redirectAction('error','default',null,404);
-	show($e->getMessage(),$e->getTrace(),'color:maroon;trace;exit');
+	if( DEVEL_MODE )
+		show($e->getMessage(),$e->getTrace(),'color:maroon;trace;exit');
+	abstractController::appendAppMsg($e->getMessage(),'error');
+	$controller->redirectAction('error','default',null,404);
 }
+
