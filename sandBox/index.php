@@ -10,6 +10,11 @@ date_default_timezone_set('Europe/Paris');
 
 #- definition du contexte d'execution
 define('FRONT_NAME',basename(dirname(__file__)));
+
+#- definition des chemins communs
+define('ROOT_DIR',dirname(dirname(__file__)));
+define('CONF_DIR',ROOT_DIR.'/config');
+
 require '../includes/fx-common.php';
 
 #- starting session in corresponding context

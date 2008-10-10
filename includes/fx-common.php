@@ -2,20 +2,22 @@
 /**
 * definition des fonctions communes
 * @package simpleMVC
-* @changelog - 2008-05-06 - more understandable show output for trace
+* @changelog
+*            - 2008-09-12 - now try to load a specific config file for the current used front
+*            - 2008-05-06 - more understandable show output for trace
 *            - 2008-05-01 - add modelAddons lookup to __autoload
 *            - 2008-04-12 - new function html_substr and trace option for show
 *            - 2008-03-23 - add abstractModels lookup to __autoload
 */
 
 #- definition des chemins communs
-define('ROOT_DIR',dirname(dirname(__file__)));
-define('LIB_DIR',ROOT_DIR.'/includes');
-define('CONF_DIR',dirname(ROOT_DIR).'/config'); #<- you should change this to put it outside the webserver dirs
+define('LIB_DIR',dirname(__file__));
 
-#- load la conf générale
-require dirname(__file__).'/fx-conf.php';
-if(file_exists(CONF_DIR.'/config.php'))
+#- load configurtations files
+require LIB_DIR.'/fx-conf.php';
+if( defined('FRONT_NAME') && file_exists(CONF_DIR.'/'.FRONT_NAME.'_config.php') ) #- specific front config
+	parse_conf_file(CONF_DIR.'/'.FRONT_NAME.'_config.php');
+if(file_exists(CONF_DIR.'/config.php')) #- general config
 	parse_conf_file(CONF_DIR.'/config.php');
 
 #- remove possible unwanted magic_quotes
