@@ -9,6 +9,8 @@
 * 	echo $this->js($stringScriptToExecuteAtWindowOnLoad);
 * @endcode
 * @class js_viewHelper
+* @changelog
+*            - 2008-10-13 - new parameter absolutePath for include method
 */
 class js_viewHelper extends abstractViewHelper{
 
@@ -67,15 +69,27 @@ class js_viewHelper extends abstractViewHelper{
 		return self::getIncludes()."\n<script type=\"text/javascript\">\n/*<![CDATA[*/\n$script\n/*]]>*/\n</script>\n";
 	}
 
-	static function includes($file){
+	/**
+	* include js and css files only once.
+	* By default it takes relative path to ROOT_DIR/ROOT_URL and make them absolute path,
+	* no check will be made if you pass true as $absolutePath. This can be usefull to include external files for example.
+	* @param  string $file         relative path to ROOT_DIR or absolute path with second parameter set to true.
+	* @param  bool   $absolutePath $file will be considered to already be an absolute path and so no check would be done.
+	* @return bool
+	*/
+	static function includes($file,$absolutePath=false){
 		if( is_array($file) ){
 			$success = true;
 			foreach($file as $f)
 				$success &= self::includes($f);
 			return $success;
 		}
+		#- check paths
+		if(! $absolutePath ){
 		if( ! is_file(ROOT_DIR.'/'.$file) )
 			return false;
+			$file = ROOT_URL.'/'.$file;
+		}
 		if( isset(self::$includedFiles[$file]) )
 			return true;
 		self::$includedFiles[$file]=false;
@@ -88,9 +102,9 @@ class js_viewHelper extends abstractViewHelper{
 			if( $v )#- avoid multiple time inclusion
 				continue;
 			if( preg_match('!\.js$!',$k) )
-				$incStr.= "<script src=\"".ROOT_URL."/$k\" type=\"text/javascript\"></script>\n";
+				$incStr.= "<script src=\"$k\" type=\"text/javascript\"></script>\n";
 			if( preg_match('!\.css$!',$k) )
-				$incStr.= "<link type=\"text/css\" rel=\"stylesheet\" href=\"".ROOT_URL."$k\" />\n";
+				$incStr.= "<link type=\"text/css\" rel=\"stylesheet\" href=\"$k\" />\n";
 			self::$includedFiles[$k]=true;
 		}
 		return $incStr;
