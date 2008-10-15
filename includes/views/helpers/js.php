@@ -11,6 +11,7 @@
 * @class js_viewHelper
 * @changelog
 *            - 2008-10-13 - new parameter absolutePath for include method
+*                         - methods are not static any more as view can now make complex call to helpers methods
 */
 class js_viewHelper extends abstractViewHelper{
 
@@ -20,53 +21,52 @@ class js_viewHelper extends abstractViewHelper{
 
 	function js($datas=null,$pluginToLoad=null){
 		if( $pluginToLoad !== null)
-			self::loadPlugin($this->view,$pluginToLoad);
+			$this->loadPlugin($pluginToLoad);
 		if( null === $datas)
-			return self::getPending();
+			return $this->getPending();
 		if( is_array($datas) || preg_match('!\.(js|css)$!',$datas) )
-			return self::includes($datas);
-		return self::script($datas);
+			return $this->includes($datas);
+		return $this->script($datas);
 	}
 	/**
 	* preload jsPlugins
-	* @param viewInterface $view    the view interface used to load plugins
 	* @param mixed         $plugins array or string list of plugins to load (string item delimiter is '|')
 	* @return includes string
 	*/
-	static function loadPlugin(viewInterface $view,$plugins){
+	function loadPlugin($plugins){
 		if( ! is_array($plugins) )
 			$plugins = explode('|',$plugins);
 		foreach($plugins as $p){
-			$view->helperLoad($p);
+			$this->view->helperLoad($p);
 		}
 	}
 
-	static function registerPlugin(jsPlugin_viewHelper $plugin){
+	function registerPlugin(jsPlugin_viewHelper $plugin){
 		$pluginName = strtolower(str_replace('_viewHelper','',get_class($plugin)));
 		self::$registeredPlugins[$pluginName]=true;
 	}
 
-	static function getRegisteredPlugins(){
+	function getRegisteredPlugins(){
 		return array_keys(self::$registeredPlugins);
 	}
 
-	static function isRegistered($pluginName){
+	function isRegistered($pluginName){
 		return isset(self::$registeredPlugins[$pluginName])?true:false;
 	}
 
-	static function script($script){
+	function script($script){
 		self::$pendingScript .= "\n$script\n";
 	}
 
-	static function getPending(){
+	function getPending(){
 
 		if( ! strlen(self::$pendingScript) )
-			return self::getIncludes();
+			return $this->getIncludes();
 
-		$script = self::isRegistered('jquery')?"jQuery().ready(function(){\n".self::$pendingScript."\n});" : self::$pendingScript;
+		$script = $this->isRegistered('jquery')?"jQuery().ready(function(){\n".self::$pendingScript."\n});" : self::$pendingScript;
 		self::$pendingScript = '';
 
-		return self::getIncludes()."\n<script type=\"text/javascript\">\n/*<![CDATA[*/\n$script\n/*]]>*/\n</script>\n";
+		return $this->getIncludes()."\n<script type=\"text/javascript\">\n/*<![CDATA[*/\n$script\n/*]]>*/\n</script>\n";
 	}
 
 	/**
@@ -77,11 +77,11 @@ class js_viewHelper extends abstractViewHelper{
 	* @param  bool   $absolutePath $file will be considered to already be an absolute path and so no check would be done.
 	* @return bool
 	*/
-	static function includes($file,$absolutePath=false){
+	function includes($file,$absolutePath=false){
 		if( is_array($file) ){
 			$success = true;
 			foreach($file as $f)
-				$success &= self::includes($f);
+				$success &= $this->includes($f);
 			return $success;
 		}
 		#- check paths
@@ -96,7 +96,7 @@ class js_viewHelper extends abstractViewHelper{
 		return true;
 	}
 
-	static function getIncludes(){
+	function getIncludes(){
 		$incStr = '';
 		foreach(self::$includedFiles as $k=>$v){
 			if( $v )#- avoid multiple time inclusion

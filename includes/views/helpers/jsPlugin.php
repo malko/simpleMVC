@@ -17,16 +17,16 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 		#- load required plugins
 		if( ! empty($this->requiredPlugins)){
 			foreach($this->requiredPlugins as $p)
-				js_viewHelper::loadPlugin($this->view,$p);
+				$this->view->_js_loadPlugin($this->view,$p);
 		}
 		#- include required Files
 		foreach($this->requiredFiles as $f)
-			js_viewHelper::includes($f);
+			$this->view->_js_includes($f);
 		#- exectute init method if exists
 		if(method_exists($this,'init'))
 			$this->init();
 		#- register plugin
-		js_viewHelper::registerPlugin($this);
+		$this->view->_js_registerPlugin($this);
 	}
 }
 
