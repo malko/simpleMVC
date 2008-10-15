@@ -17,7 +17,7 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 		#- load required plugins
 		if( ! empty($this->requiredPlugins)){
 			foreach($this->requiredPlugins as $p)
-				$this->view->_js_loadPlugin($this->view,$p);
+				$this->view->_js_loadPlugin($p);
 		}
 		#- include required Files
 		foreach($this->requiredFiles as $f)
@@ -28,12 +28,4 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 		#- register plugin
 		$this->view->_js_registerPlugin($this);
 	}
-}
-
-/**
-* dummy jsPlugin that load jquery usefull for jsPlugins that require jquery
-* @class jquery_viewHelper
-*/
-class jquery_viewHelper extends jsPlugin_viewHelper{
-	public $requiredFiles = array('js/jquery.js');
 }

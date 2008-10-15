@@ -110,3 +110,11 @@ class js_viewHelper extends abstractViewHelper{
 		return $incStr;
 	}
 }
+
+/**
+* dummy jsPlugin that load jquery usefull for jsPlugins that require jquery
+* @class jquery_viewHelper
+*/
+class jquery_viewHelper extends jsPlugin_viewHelper{
+	public $requiredFiles = array('js/jquery.js');
+}
