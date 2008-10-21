@@ -3,6 +3,7 @@
 * definition des fonctions communes
 * @package simpleMVC
 * @changelog
+*            - 2008-10-21 - autoload modification to check modelCollection extended classes in corresponding model file
 *            - 2008-09-12 - now try to load a specific config file for the current used front
 *            - 2008-05-06 - more understandable show output for trace
 *            - 2008-05-01 - add modelAddons lookup to __autoload
@@ -52,6 +53,8 @@ function __autoload($className){
 			$dirs[] = ROOT_DIR.'/modelAddons';
 			$className = str_replace($m[0],'',$className);
 		}else{ #- default look for models
+			if( preg_match('!Collection$!',$className) ) #- modelCollection must be looked in models files
+				$className = preg_replace('!Collection$!','',$className);
 			$dirs[] = LIB_DIR.'/models';
 			$dirs[] = ROOT_DIR.'/models';
 		}
