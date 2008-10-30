@@ -1,8 +1,28 @@
 <?php
-
+/**
+* @package simpleMVC
+* @subPackage helpers
+* @class modelFormInput_viewHelper
+* @changelog
+*            - 2008-10-30 - add svninfos and put it uptodate with local version
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
+*/
 class modelFormInput_viewHelper extends abstractViewHelper{
-
-
+	/**
+	* @param mixed  $modelName  string modelName or modelInstance to retrieve value from
+	* @param string $keyName    name of the property to get input for
+	* @param array  $options    list of options to render the input here's some of possible options
+	*                           - value  -> override the default/model value by the given one
+	*                           - values -> list of choice for select/checkbox/radio...
+	*                           - type   -> formInput type to use to render the input field
+	*                           - formatStr -> string to describe the output format %input and %label will be replaced by their corresponding values.
+  *                           - @see formInput for other supported options depending the type of field to edit.
+	*
+	*/
 	function modelFormInput($modelName, $keyName, array $options=array()){
 
 		$relsDefs =  abstractModel::modelHasRelDefs($modelName,null,true);
@@ -21,11 +41,15 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			}
 			if( empty($options['values']) ){
 				eval ('$choices = '.$relsDefs['hasOne'][$keyName]['modelName'].'::getAllInstances();');
-				$options['values'][0] = '--- '.$options['label'].' ---';
+				if( $relsDefs['hasOne'][$keyName]['relType'] !== 'dependOn' ){
+					$options['values'][0] = '--- '.$options['label'].' ---';
+				}
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();
 			}
 
+			if(! empty($options['value']) )
+				$value = $options['value'];
 			return $this->formInput($keyName,$value,'select',$options);
 		}elseif(isset($relsDefs['hasMany'][$keyName]) ){
 			//-- @todo voir si on gere ou non les relations hasMany
@@ -38,7 +62,10 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 		}
 		#- try to get def from datas array
 		if( !empty($datasDefs[$keyName]) ){
-			$value = ( $modelName instanceof abstractModel )?$modelName->{$keyName}:$datasDefs[$keyName]['Default'];
+			if(isset($options['value']) )
+				$value = $options['value'];
+			else
+				$value = ( $modelName instanceof abstractModel )?$modelName->{$keyName}:$datasDefs[$keyName]['Default'];
 			$datasDefs[$keyName]['Type'] = trim(strtolower($datasDefs[$keyName]['Type']));
 			#- check for enum types
 			if( preg_match('!^enum!',$datasDefs[$keyName]['Type'])){

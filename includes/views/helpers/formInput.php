@@ -1,7 +1,19 @@
 <?php
-
+/**
+* @package simpleMVC
+* @subPackage helpers
+* @class formInput_viewHelper
+* @changelog
+*            - 2008-10-30 - add static property $useFileEntry and svn infos
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
+*/
 class formInput_viewHelper extends abstractViewHelper{
 	static $useRTE = false;
+	static $useFileEntry = true;
 	/**
 	*
 	* @param string $name      name of the input use as default id attribute if none provide as option
@@ -28,7 +40,7 @@ class formInput_viewHelper extends abstractViewHelper{
 		$dfltOpts = array(
 			'id'    => $name,
 			'class' => $type,
-			'formatStr' => in_array($type,array('radio','check','checkbox'))?'%input %label':'%label %input',
+			'formatStr' => '<div class="formInput">'.(in_array($type,array('radio','check','checkbox'))?'%input %label':'%label %input').'</div>',
 		);
 		$options = array_merge($dfltOpts,$options);
 
@@ -37,7 +49,6 @@ class formInput_viewHelper extends abstractViewHelper{
 		switch($type){
 			case 'txt':
 			case 'text':
-			case 'hidden':
 			case 'password':
 				if($type==='txt')
 					$type='text';
@@ -48,6 +59,10 @@ class formInput_viewHelper extends abstractViewHelper{
 					$options['formatStr']
 				);
 				break; //-- dummy break
+			case 'hidden':
+				$value = preg_replace('/(?<!\\\\)"/','\"',$value);
+				return "<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
+				break; //-- dummy break
 			case 'area':
 			case 'textarea':
 				if(! self::$useRTE ){
@@ -57,21 +72,21 @@ class formInput_viewHelper extends abstractViewHelper{
 						$options['formatStr']
 					);
 				}else{
-					$rteOptions = array('value' => $value);
+					$rteOptions = array('value' => $value,'rows'=>10,'cols'=>50);
 					foreach($options as $k=>$o){
 						if( in_array($k,array('rows','cols','disabled','style')) )
 							$rteOptions[$k] = $o;
 					}
 					return $this->formatInput(
 						$labelStr,
-						$this->rte($name,array('value'=>$value)),
+						$this->rte($name,$rteOptions),
 						$options['formatStr']
 					);
 				}
 				break;//-- dummy break
 			case 'select':
+				$opts = '';
 				if( !empty($options['values']) ){
-					$opts = '';
 					foreach($options['values'] as $k=>$v){
 						if( is_array($value) )
 							$selected = in_array($k,$value)?' selected="selected"':'';
@@ -121,9 +136,14 @@ class formInput_viewHelper extends abstractViewHelper{
 				);
 				break;//--dummy break
 			case 'file':
+				if( self::$useFileEntry){
+					$inputStr = $this->fileEntry($name,$value,$options);
+				}else{
+					$inputStr = "<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
+				}
 				return $this->formatInput(
 					$labelStr,
-					"<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
+					$inputStr,
 					$options['formatStr']
 				);
 				break;//-- dummy break
