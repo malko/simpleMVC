@@ -2,6 +2,11 @@
 /**
 * definition des fonctions communes
 * @package simpleMVC
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
 *            - 2008-10-21 - autoload modification to check modelCollection extended classes in corresponding model file
 *            - 2008-09-12 - now try to load a specific config file for the current used front
@@ -61,7 +66,7 @@ function __autoload($className){
 		#- add path corresponding to front controllers
 		if( FRONT_NAME !== 'default' ){
 			foreach($dirs as $d){
-				if( (! preg_match('!^'.LIB_DIR.'!',$d)) && is_dir($tmp = str_replace(ROOT_DIR,ROOT_DIR.'/'.FRONT_NAME,$d)) )
+				if( (! preg_match('!^'.LIB_DIR.'!',$d)) && is_dir($tmp = str_replace(ROOT_DIR,APP_DIR,$d)) )
 					$dirs[] = $tmp;
 			}
 		}
