@@ -3,6 +3,11 @@
 * @package simpleMVC
 * @subPackage sandbox
 * front controller for admin site
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 */
 error_reporting(E_ALL | E_STRICT);
 ini_set('default_charset','utf-8');
@@ -35,7 +40,7 @@ session_start();
 abstractController::$defaultViewClass = 'baseView';
 abstractController::$defaultViewDirs  = array(
 	LIB_DIR.'/views',
-	ROOT_DIR.'/'.FRONT_NAME.'/views'
+	APP_DIR.'/views'
 );
 
 #- parametrage du layout par défaut
