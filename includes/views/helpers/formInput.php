@@ -4,6 +4,8 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2008-11-07 - add codepress and skip types
+*                         - now radio and chackbox are contained in their label tag
 *            - 2008-10-30 - add static property $useFileEntry and svn infos
 * @svnInfos:
 *            - $LastChangedDate$
@@ -27,6 +29,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - hidden
 	*                          - date|datepicker
 	*                          - file
+	*                          - codepress
 	* @param array  $options   list of optionnal parameters:
 	*                          - default is the default value to set if $value is empty.
 	*                          - multiple,class, size, id, onchange, maxlength are replaced by the corresponding html attributes
@@ -47,6 +50,9 @@ class formInput_viewHelper extends abstractViewHelper{
 		$value = null!==$value?$value:(isset($options['default'])?$options['default']:'');
 		$labelStr = (isset($options['label'])?"<label for=\"$options[id]\">$options[label]</label>":'');
 		switch($type){
+			case 'skip':
+				return '';
+				break; //-- dummy break
 			case 'txt':
 			case 'text':
 			case 'password':
@@ -116,7 +122,7 @@ class formInput_viewHelper extends abstractViewHelper{
 						else
 							$checked = $ok==$value?' checked="checked"':'';
 						#- ~ $labelStr = "<label for=\"\">$ov</label>";
-						$opts .= "<input type=\"$type\" id=\"$idStr".(++$i)."\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"$ok\"".$this->getAttrStr($options,array('id'))."$checked /><label for=\"$idStr$i\">$ov</label>";
+						$opts .= "<label><input type=\"$type\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"$ok\"".$this->getAttrStr($options)."$checked />$ov</label>";
 					}
 					return $this->formatInput($labelStr,$opts,$options['formatStr']);
 				}else{
@@ -144,6 +150,13 @@ class formInput_viewHelper extends abstractViewHelper{
 				return $this->formatInput(
 					$labelStr,
 					$inputStr,
+					$options['formatStr']
+				);
+				break;//-- dummy break
+			case 'codepress':
+				return $this->formatInput(
+					$labelStr,
+					$this->codepress($name,$value,empty($options['codepress'])?null:$options['codepress']),
 					$options['formatStr']
 				);
 				break;//-- dummy break

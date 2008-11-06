@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2008-11-07 - add possibility to skip automated date type setting
 *            - 2008-10-30 - add svninfos and put it uptodate with local version
 * @svnInfos:
 *            - $LastChangedDate$
@@ -76,8 +77,9 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				}
 				return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 			}
-			if( $datasDefs[$keyName]['Type'] === 'date')
+			if(empty($options['type']) && $datasDefs[$keyName]['Type'] === 'date' ){
 				return $this->formInput($keyName,$value,'date',$options);
+			}
 			if( preg_match('!\w+\s*\(\s*(\d+)\s*\)$!',$datasDefs[$keyName]['Type'],$match) ){
 				if(! isset($options['maxlength']) )
 					$options['maxlength'] = $match[1];

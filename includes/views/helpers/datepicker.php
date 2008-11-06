@@ -3,6 +3,7 @@
 * helper to easily incorporate jquery Datepicker
 * @package simpleMVC
 * http://marcgrabanski.com/code/ui-datepicker
+* @changelog - 2008-11-07 - change _js_script call (not static anymore)
 */
 
 class datepicker_viewHelper extends  jsPlugin_viewHelper{
@@ -16,7 +17,7 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 
 	function datepicker($idElement,$value='',$datePickerOptionStr=null){
 
-	js_viewHelper::script('
+		$this->_js_script('
 		$("#'.$idElement.'").datepicker({
 			dateFormat: "dd-mm-yy",
 			highlightWeek: true,
