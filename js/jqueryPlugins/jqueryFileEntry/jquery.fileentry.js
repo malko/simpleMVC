@@ -36,7 +36,7 @@
 		fileBrowserDialog: function(e){
 			var fe  = e.data.fileEntry;
 			var div = $('\
-				<div id="rteIframeContainer">\
+				<div id="faceboxContainer">\
 					<h3>sélection de document</h3>\
 					<iframe src="'+fe.opts.rootPath+'/docs/uploadform/embed/'+fe.id+(fe.input.attr('path')?'/fold/'+fe.input.attr('path'):'')+'" style="width:450px;height:250px;border:none;"></iframe>\
 				</div>'
