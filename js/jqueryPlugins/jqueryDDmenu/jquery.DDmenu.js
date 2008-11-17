@@ -63,21 +63,21 @@
 			if(parent.parent('ul').attr('id')===this.menuId){
 				style = {
 					width: parseInt(parent.width())-4.+'px',
-					left: coords.left+2+'px',
+					left: coords.left+'px',
 					top:  (coords.top+parseInt(parent.height()))+'px'
 				};
 			}else{
 				style = {
 					top: (coords.top-parent.parent('ul').offset().top)+'px',
-					left:parent.width()+2+'px'
+					left:parent.width()+'px'
 				};
 			}
 			sub.css(style);
 		},
 		hideSub: function(e){
 			var parent = $(this);
-			var ddmenu = e.data.DDmenu;
 			var sub = $(parent.children('ul').get(0));
+			var ddmenu = e.data.DDmenu;
 			if(! sub)
 				return false;
 			if( ! ddmenu.opts.hide )
@@ -99,6 +99,6 @@
 				sub.show(ddmenu.opts.speed[0]);
 			}
 			parent.addClass('active');
-		},
+		}
 	});
 })(jQuery);
