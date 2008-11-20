@@ -10,11 +10,17 @@
 * @class url_viewHelper
 * @package simpleMVC
 * @since 2008-01-09
-* @changelog - 2008-04-15 - add new param $appUrl to permit link creation for external apps
+* @changelog - 2008-11-20 - add new static property self::$argSeparator
+*            - 2008-04-15 - add new param $appUrl to permit link creation for external apps
 *            - 2008-02-01 - now suppress empty params from url
 */
 class url_viewHelper implements viewHelperInterface{
 	static public $useRewriteRules = null;
+	/**
+	* which string to use as queryString argumentSeparator when not using RewriteRules.
+	* if null at __construct time will be set to php.ini value of arg_separator.output value
+	*/
+	static public $argSeparator = null;
 
 	public $view = null;
 
@@ -26,6 +32,8 @@ class url_viewHelper implements viewHelperInterface{
 			else
 				self::$useRewriteRules = true;
 		}
+		if( self::$argSeparator === null)
+			self::$argSeparator = ini_get('arg_separator.output');
   }
 
   public function getController(){
@@ -85,7 +93,7 @@ class url_viewHelper implements viewHelperInterface{
 						continue;
 					$Qstr[] = $k.$kv_sep.$v;
 				}
-				$Qstr = implode((self::$useRewriteRules?'/':'&amp;'),$Qstr);
+				$Qstr = implode((self::$useRewriteRules?'/':self::$argSeparator),$Qstr);
 			}
 		}
 		if( null === $appUrl)
@@ -93,7 +101,7 @@ class url_viewHelper implements viewHelperInterface{
 		if(self::$useRewriteRules){
 			$url = "$appUrl/$controller/$action".(empty($Qstr)?'':"/$Qstr");
 		}else{
-			$sep = isset($sep)?$sep:'&amp;';
+			$sep = self::$argSeparator;
 			$url = "$appUrl/index.php?ctrl=$controller$sep"."action=$action".(empty($Qstr)?'':"$sep$Qstr");
 		}
 		return $url;

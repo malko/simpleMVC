@@ -30,7 +30,7 @@ class langAssign_viewHelper extends abstractViewHelper{
 		#- ~ }else
 		if(is_array($k)){ #- multiple assignation at once
       foreach($k as $key=>$val)
-        $this->langAssign($key,$val);
+        $this->langAssign($key,$val,$langCode);
 		}elseif(! is_string($v)){
 				$this->view->assign($k,$v);
     }else{

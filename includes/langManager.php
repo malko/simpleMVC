@@ -151,7 +151,7 @@ class langManager{
   */
   static public function lookUpMsg($idMsg,$dicName=null,$langCode=null){
   	if( is_null($dicName) ){
-			@list($controller,$action) = explode(':',abstractController::getCurrentDispatch(),2);
+			list($controller,$action) = explode(':',abstractController::getCurrentDispatch(),2);
 			$dicName = $controller.'_'.$action."|$controller|default";
 		}
 		if( is_null($langCode) ){
