@@ -6,7 +6,7 @@
 	<link rel="stylesheet" href="<?= APP_URL ?>/views/default.css" type="text/css" />
 	<?php
 		if(defined('DEVEL_MODE') && DEVEL_MODE)
-			$this->_js_simpleMVCdevelBar();
+			echo $this->simpleMVCdevelBar();
 	?>
 </head>
 <body>
