@@ -37,6 +37,14 @@ if(get_magic_quotes_gpc()){
     $GLOBALS["_$gpc"] = array_map('stripslashes_deep', $GLOBALS["_$gpc"]);
 }
 
+
+#- display and prepare error to go into simpleMVC toolbar if we're on devel_mode
+if( defined('DEVEL_MODE') && DEVEL_MODE){
+	ini_set('error_prepend_string','<div class="php_error">'.preg_replace('!<br\s*/?>!','',ini_get('error_prepend_string')));
+	ini_set('error_append_string',preg_replace('!<br\s*/?>!','',ini_get('error_append_string')).'</div>');
+	error_reporting(E_ALL | E_STRICT);
+}
+
 ###--- AUTOLOAD ---###
 function __autoload($className){
 	$dirs[] = LIB_DIR;

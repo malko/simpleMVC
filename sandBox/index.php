@@ -10,7 +10,6 @@
 *            - $HeadURL$
 */
 #- next three lines depends on your needs they correspond to my developpment settings and are optionals, they could have be defined in the php.ini for example.
-error_reporting(E_ALL | E_STRICT);
 ini_set('default_charset','utf-8');
 date_default_timezone_set('Europe/Paris');
 
