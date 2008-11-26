@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2008-11-26 - add disabled optional attribute
 *            - 2008-11-07 - add codepress and skip types
 *                         - now radio and chackbox are contained in their label tag
 *            - 2008-10-30 - add static property $useFileEntry and svn infos
@@ -32,7 +33,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - codepress
 	* @param array  $options   list of optionnal parameters:
 	*                          - default is the default value to set if $value is empty.
-	*                          - multiple,class, size, id, onchange, maxlength are replaced by the corresponding html attributes
+	*                          - multiple,class, size, id, onchange, maxlength, disabled are replaced by the corresponding html attributes
 	*                          - default id will be same as name
 	*                          - default class will be same as type
 	*                          - values is an associative list of key value pairs used with select | checkBox | radio
@@ -164,7 +165,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	}
 
 	protected function getAttrStr(array $attrs,array $excludeAttrs=null){
-		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style');
+		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled');
 		$attrStr= '';
 		foreach($attrs as $ok=>$ov){
 			if( is_array($excludeAttrs) && in_array($ok,$excludeAttrs) )
