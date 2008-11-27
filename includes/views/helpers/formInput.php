@@ -4,9 +4,10 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2008-11-27 - better multiple select support
 *            - 2008-11-26 - add disabled optional attribute
 *            - 2008-11-07 - add codepress and skip types
-*                         - now radio and chackbox are contained in their label tag
+*                         - now radio and checkbox are contained in their label tag
 *            - 2008-10-30 - add static property $useFileEntry and svn infos
 * @svnInfos:
 *            - $LastChangedDate$
@@ -102,9 +103,11 @@ class formInput_viewHelper extends abstractViewHelper{
 						$opts .= "<option value=\"$k\"$selected>$v</option>";
 					}
 				}
+				if( isset($options['multiple']) && empty($options['multiple']))
+					unset($options['multiple']);
 				return $this->formatInput(
 					$labelStr,
-					"<select name=\"$name\"".$this->getAttrStr($options).">$opts</select>",
+					"<select name=\"$name".(isset($options['multiple'])?'[]':'')."\"".$this->getAttrStr($options).">$opts</select>",
 					$options['formatStr']
 				);
 				break;//-- dummy break
