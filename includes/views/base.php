@@ -12,6 +12,11 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
 *            - 2008-10-13 - add support for "complex" helper method call (ie: _helperName_methodName)
 *            - 2008-02-15 - now extendeded abstractViewHelper can directly call other viewHelper methods as if it were into views.

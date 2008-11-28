@@ -4,6 +4,11 @@
 * @package simpleMVC
 * @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
 * @author jonathan gotti <jgotti at jgotti dot org>
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
 *            -2008-08-05 - add property onFailureCheckDfltLang to check for messages in default language when not found in current
 *            -2008-05-08 - new method msg() with sprintf support
@@ -151,7 +156,7 @@ class langManager{
   */
   static public function lookUpMsg($idMsg,$dicName=null,$langCode=null){
   	if( is_null($dicName) ){
-			list($controller,$action) = explode(':',abstractController::getCurrentDispatch(),2);
+			list($controller,$action) = abstractController::getCurrentDispatch(true);
 			$dicName = $controller.'_'.$action."|$controller|default";
 		}
 		if( is_null($langCode) ){

@@ -5,6 +5,11 @@
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
 * @since 2007-10
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
 *            - 2008-08-26 - now more unused static properties $defaultActionName,$defaultControllerName
 *            - 2008-08-25 - new __get/__set methods to get/set values from/to $this->view

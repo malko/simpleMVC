@@ -146,7 +146,7 @@ function dateus2fr($date,$noTime=false){
 	if( empty($date) )
 		return '00/00/0000';
 	if(! strpos($date,' '))
-		return implode('/',array_reverse(explode('-',$date)));
+		return implode('-',array_reverse(preg_split('!/|-!',$date)));
 	list($date,$time) = explode(' ',$date);
 	return dateus2fr($date).($noTime?'':' '.$time);
 }
@@ -154,7 +154,7 @@ function datefr2us($date,$noTime=false){
 	if( empty($date) )
 		return '0000-00-00';
 	if(! strpos($date,' '))
-		return implode('-',array_reverse(explode('/',$date)));
+		return implode('-',array_reverse(preg_split('!/|-!',$date)));
 	list($date,$time) = explode(' ',$date);
 	return dateus2fr($date).($noTime?'':' '.$time);
 }

@@ -1,3 +1,12 @@
+<?php
+/**
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
+*/
+?>
 <h1><?= $this->pageTitle ?></h1>
 <form action="<?= $this->url('save') ?>" method="post">
 <table border="0" cellspacing="0" cellpadding="2">

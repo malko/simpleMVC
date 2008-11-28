@@ -4,6 +4,11 @@
 * @package simpleMVC
 * @licence LGPL
 * @author Jonathan Gotti < jgotti at jgotti dot net >
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
 *            - 2008-09-11 - define dummy indexAction that forward to listAction
 *                         - remove setLayout from formAction

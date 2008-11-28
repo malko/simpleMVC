@@ -10,11 +10,16 @@
 * @class url_viewHelper
 * @package simpleMVC
 * @since 2008-01-09
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog - 2008-11-20 - add new static property self::$argSeparator
 *            - 2008-04-15 - add new param $appUrl to permit link creation for external apps
 *            - 2008-02-01 - now suppress empty params from url
 */
-class url_viewHelper implements viewHelperInterface{
+class url_viewHelper extends abstractViewHelper{
 	static public $useRewriteRules = null;
 	/**
 	* which string to use as queryString argumentSeparator when not using RewriteRules.
@@ -25,7 +30,7 @@ class url_viewHelper implements viewHelperInterface{
 	public $view = null;
 
   public function __construct(viewInterface $view){
-    $this->view = $view;
+		parent::__construct($view);
     if( self::$useRewriteRules===null ){
     	if( defined('USE_REWRITE_RULES') )
 				self::$useRewriteRules = (bool) USE_REWRITE_RULES;
@@ -34,10 +39,6 @@ class url_viewHelper implements viewHelperInterface{
 		}
 		if( self::$argSeparator === null)
 			self::$argSeparator = ini_get('arg_separator.output');
-  }
-
-  public function getController(){
-    return $this->view->getController();
   }
 
   static public function setUseRewriteRules($useRewriteRules){

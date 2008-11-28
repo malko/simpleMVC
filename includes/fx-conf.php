@@ -4,6 +4,11 @@
 * @copyleft (l) 2003-2004  Jonathan Gotti
 * @package config
 * @license http://opensource.org/licenses/gpl-license.php GNU Public License
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
 *            - 2008-10-10 - parse conf_file now ignore already defined CONSTANTS when $out is false
 *            - 2008-02-25 - bug correction when values contain multiple % characters (like urlencoded values)

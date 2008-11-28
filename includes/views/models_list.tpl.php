@@ -1,4 +1,11 @@
 <?php
+/**
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
+*/
 	echo "<h1>$this->pageTitle</h1>";
 	echo '
 	<div style="text-align:right;">
