@@ -9,15 +9,32 @@
 * 	echo $this->js($stringScriptToExecuteAtWindowOnLoad);
 * @endcode
 * @class js_viewHelper
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
+*            - 2008-12-05 - now use addeventListener/attachEvent to encapsulate appended script in window.onload when there's no jquery plugins registered
+*                         - new static properties $scriptRootDir and self::$scriptRootDir to allow setting of relatives paths
+*                         - new static method setRootPaths() to set $scriptRootDir and self::$scriptRootDir
 *            - 2008-10-13 - new parameter absolutePath for include method
 *                         - methods are not static any more as view can now make complex call to helpers methods
 */
 class js_viewHelper extends abstractViewHelper{
 
-	static $includedFiles = array();
-	static $pendingScript = '';
-	static $registeredPlugins = array();
+	public static $includedFiles = array();
+	public static $pendingScript = '';
+	public static $registeredPlugins = array();
+	public static $scriptRootDir = ROOT_DIR;
+	public static $scriptRootUrl = ROOT_URL;
+
+	static function setRootPaths($dir=null,$url=null){
+		if( null !== $dir)
+			self::$scriptRootDir = $dir;
+		if( null !== $url)
+			self::$scriptRootUrl = $url;
+	}
 
 	function js($datas=null,$pluginToLoad=null){
 		if( $pluginToLoad !== null)
@@ -59,21 +76,27 @@ class js_viewHelper extends abstractViewHelper{
 	}
 
 	function getPending(){
-
+		static $calledTime;
 		if( ! strlen(self::$pendingScript) )
 			return $this->getIncludes();
+		if( $this->isRegistered('jquery') ){
+			$script = "jQuery().ready(function(){\n".self::$pendingScript."\n});";
+		}else{
+			$calledTime = isset($calledTime)?$calledTime+1:0;
+			$script = "function jsReady$calledTime(){".self::$pendingScript."};\n"
+				."if(window.addEventListener){ window.addEventListener('load',jsReady$calledTime,false); }else if(window.attachEvent){ window.attachEvent('onload', jsReady$calledTime); }";
+		}
 
-		$script = $this->isRegistered('jquery')?"jQuery().ready(function(){\n".self::$pendingScript."\n});" : self::$pendingScript;
 		self::$pendingScript = '';
 
-		return $this->getIncludes()."\n<script type=\"text/javascript\">\n/*<![CDATA[*/\n$script\n/*]]>*/\n</script>\n";
+		return $this->getIncludes()."\n<script type=\"text/javascript\">/*<![CDATA[*/\n$script\n/*]]>*/</script>\n";
 	}
 
 	/**
 	* include js and css files only once.
-	* By default it takes relative path to ROOT_DIR/ROOT_URL and make them absolute path,
+	* By default it takes relative path to self::$scriptRootDir/self::$scriptRootUrl and make them absolute path,
 	* no check will be made if you pass true as $absolutePath. This can be usefull to include external files for example.
-	* @param  string $file         relative path to ROOT_DIR or absolute path with second parameter set to true.
+	* @param  string $file         relative path to self::$scriptRootDir or absolute path with second parameter set to true.
 	* @param  bool   $absolutePath $file will be considered to already be an absolute path and so no check would be done.
 	* @return bool
 	*/
@@ -86,9 +109,9 @@ class js_viewHelper extends abstractViewHelper{
 		}
 		#- check paths
 		if(! $absolutePath ){
-		if( ! is_file(ROOT_DIR.'/'.$file) )
+		if( ! is_file(self::$scriptRootDir.'/'.$file) )
 			return false;
-			$file = ROOT_URL.'/'.$file;
+			$file = self::$scriptRootUrl.'/'.$file;
 		}
 		if( isset(self::$includedFiles[$file]) )
 			return true;
