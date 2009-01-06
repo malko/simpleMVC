@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2009-01-05 - add timepicker and datetimepicker detection
 *            - 2008-11-07 - add possibility to skip automated date type setting
 *            - 2008-10-30 - add svninfos and put it uptodate with local version
 * @svnInfos:
@@ -77,8 +78,13 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				}
 				return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 			}
-			if(empty($options['type']) && $datasDefs[$keyName]['Type'] === 'date' ){
-				return $this->formInput($keyName,$value,'date',$options);
+			if(empty($options['type']) ){
+				if( $datasDefs[$keyName]['Type'] === 'date' )
+					return $this->formInput($keyName,$value,'date',$options);
+				if( $datasDefs[$keyName]['Type'] === 'datetime' )
+					return $this->formInput($keyName,$value,'datetime',$options);
+				if( $datasDefs[$keyName]['Type'] === 'time' )
+					return $this->formInput($keyName,$value,'time',$options);
 			}
 			if( preg_match('!\w+\s*\(\s*(\d+)\s*\)$!',$datasDefs[$keyName]['Type'],$match) ){
 				if(! isset($options['maxlength']) )

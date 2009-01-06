@@ -16,8 +16,8 @@ class facebox_viewHelper extends  jsPlugin_viewHelper{
 	/** set default settings */
 	function init(){
 		$this->js("
-			$.facebox.settings.loading_image = '".ROOT_URL."/js/jqueryplugins/jqueryFacebox/loading.gif';
-    	$.facebox.settings.close_image   = '".ROOT_URL."/js/jqueryplugins/jqueryFacebox/closelabel.gif'
+			$.facebox.settings.loading_image = '".ROOT_URL."/js/jqueryPlugins/jqueryFacebox/loading.gif';
+    	$.facebox.settings.close_image   = '".ROOT_URL."/js/jqueryPlugins/jqueryFacebox/closelabel.gif'
     	"
 		);
 	}

@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2009-01-05 - add support for time picker and datetime picker
 *            - 2008-11-27 - better multiple select support
 *            - 2008-11-26 - add disabled optional attribute
 *            - 2008-11-07 - add codepress and skip types
@@ -24,12 +25,15 @@ class formInput_viewHelper extends abstractViewHelper{
 	* @param mixed  $value     string or list of values (for multiple selectors or checkboxes)
 	* @param string $type      type of input to use
 	*                          - select
-	*                          - text|txt|password
-	*                          - area|textarea
-	*                          - check|checkbox
+	*                          - t[e]xt
+	*                          - password
+	*                          - [text]area
+	*                          - check[box]
 	*                          - radio
 	*                          - hidden
-	*                          - date|datepicker
+	*                          - date[picker]
+	*                          - time[picker]
+	*                          - datetime[picker]
 	*                          - file
 	*                          - codepress
 	* @param array  $options   list of optionnal parameters:
@@ -39,7 +43,8 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - default class will be same as type
 	*                          - values is an associative list of key value pairs used with select | checkBox | radio
 	*                          - label is an optional label for the input
-	*                          - pickerOptStr is used for datepicker fields
+	*                          - pickerOptStr is used for datepicker and timepicker fields
+	*                          - pickerOpts   is used for datetimepicker (something like that: array(0=>dateOptStr,1=>timeOptStr))
 	*/
 	function formInput($name,$value=null,$type='text',array $options=array()){
 		$dfltOpts = array(
@@ -142,6 +147,21 @@ class formInput_viewHelper extends abstractViewHelper{
 				return $this->formatInput(
 					$labelStr,
 					$this->datepicker($name,$value,empty($options['pickerOptStr'])?null:$options['pickerOptStr']),
+					$options['formatStr']
+				);
+				break;//--dummy break
+			case 'time':
+			case 'timepicker':
+				return $this->formatInput(
+					$labelStr,
+					$this->timepicker($name,$value,empty($options['pickerOptStr'])?null:$options['pickerOptStr']),
+					$options['formatStr']
+				);
+			case 'datetime':
+			case 'datetimepicker':
+				return $this->formatInput(
+					$labelStr,
+					$this->_datepicker_withTime($name,$value,empty($options['pickerOpts'])?null:$options['pickerOpts']),
 					$options['formatStr']
 				);
 				break;//--dummy break

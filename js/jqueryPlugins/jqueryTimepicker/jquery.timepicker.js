@@ -3,6 +3,8 @@
 * @licence GPL / MIT
 * @author jonathan gotti < jgotti at jgotti dot org > < jgotti at modedemploi dot fr > for modedemploi.fr
 * @since 2008-12
+* @changelog
+*            - 2009-01-05 - bind setTime on the givenElement
 * sample usage:
 * $('input#time').timepicker();
 * or
@@ -34,6 +36,7 @@
 		init: function(elmt,options){
 			this.opts = $.extend({}, $.fn.timepicker.defaults, options);
 			this.elmt = elmt;
+			$.extend(this.elmt.get(0),{setTime:this.setTime});
 			this.id = elmt.attr('id');
 			this.initPickerElements();
 			this.setTime((elmt.attr('value').length?elmt.attr('value'):'00:00:00 AM'));
@@ -125,6 +128,7 @@
 			var S = $('#timepickerS_'+this.id).attr('value');
 			var v = H+':'+M+':'+S+( (this.opts.format!=24 && this.opts.showAMPM)?' '+$('#timepickerAMPM_'+this.id).text():'' );
 			this.elmt.attr('value',v);
+			this.elmt.change();
 		}
 	});
 })(jQuery);

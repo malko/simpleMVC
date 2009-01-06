@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-01-05 - now listAction do a lookup on list headers using langManager::msg
 *            - 2008-09-11 - define dummy indexAction that forward to listAction
 *                         - remove setLayout from formAction
 *                         - list without listFields setted will ask value from model instead of taking it directly from model->datas
@@ -62,6 +63,7 @@ abstract class modelsController extends abstractController{
 					}
 					$datas[] = $row;
 				}
+				$this->view->listHeaders = array_map(array('langManager','msg'),array_keys($datas[0]));
 			}else{
 				foreach($models as $m){
 					$row = array();
@@ -70,7 +72,7 @@ abstract class modelsController extends abstractController{
 						$row[$k] = $m->{$k};
 					$datas[] = $row;
 				}
-				$this->view->listHeaders = array_values($this->listFields);
+				$this->view->listHeaders = array_map(array('langManager','msg'),array_values($this->listFields));
 			}
 		}
 		$this->view->listDatas = $datas;

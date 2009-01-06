@@ -8,7 +8,7 @@
 */
 ?>
 <h1><?= $this->pageTitle ?></h1>
-<form action="<?= $this->url('save') ?>" method="post">
+<form action="<?= $this->url('save') ?>" method="post" class="adminForm">
 <table border="0" cellspacing="0" cellpadding="2">
 <?php
 	if( !empty($this->datasDefs) ){

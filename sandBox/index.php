@@ -35,7 +35,6 @@ session_start();
 #- db::$_default_verbosity = DEVEL_MODE?1:0; #- only report errors
 
 #- include class-abstractModel if you use them (uncomment next two lines)
-#- require LIB_DIR.'/class-abstractmodel.php';
 #- abstractModel::$useDbProfiler = DEVEL_MODE?true:false;
 
 #- Set default views directories lasts will be try first and vice-versa
@@ -51,6 +50,8 @@ baseView::$defaultLayout = array(
   ':controller_:action.tpl.php|default_:action.tpl.php',
   'footer.tpl.php'
 );
+#- formInput_viewHelper::$useRTE = true;
+#- formInput_viewHelper::$useFileEntry = true;
 
 #- if multilingual then setup langManager
 #- first set directories for dictionaries lookUp
