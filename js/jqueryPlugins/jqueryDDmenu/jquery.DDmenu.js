@@ -4,6 +4,11 @@
 * @licence GPL / MIT
 * @author jonathan gotti < jgotti at jgotti dot org > < jgotti at modedemploi dot fr > for modedemploi.fr
 * @since 2008-11
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * sample usage:
 * $('ul.menu').DDmenu();
 * or
@@ -62,14 +67,14 @@
 			var coords = parent.offset();
 			if(parent.parent('ul').attr('id')===this.menuId){
 				style = {
-					width: parseInt(parent.width())-4.+'px',
-					left: coords.left+'px',
-					top:  (coords.top+parseInt(parent.height()))+'px'
+					width: parent.width(),
+					left:  coords.left,
+					top:   coords.top+parent.height()
 				};
 			}else{
 				style = {
-					top: (coords.top-parent.parent('ul').offset().top)+'px',
-					left:parent.width()+'px'
+					top:  (coords.top-parent.parent('ul').offset().top),
+					left: parent.width()
 				};
 			}
 			sub.css(style);

@@ -2,13 +2,22 @@
 * jquery timepicker plugin.
 * @licence GPL / MIT
 * @author jonathan gotti < jgotti at jgotti dot org > < jgotti at modedemploi dot fr > for modedemploi.fr
-* @since 2008-12
+* @since 2009-01
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
 * @changelog
 *            - 2009-01-05 - bind setTime on the givenElement
 * sample usage:
 * $('input#time').timepicker();
 * or
 * $('input#time').timepicker(options);
+* where options is an object with following possibles values:
+* - format -> 12 or 24 Hours
+* - showAMPM -> only make sense with format=12
+* - showSeconds -> true or false to display or not seconds
 */
 
 (function($){
