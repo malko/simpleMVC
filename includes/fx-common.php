@@ -162,7 +162,7 @@ function datefr2us($date,$noTime=false){
 function html_substr($htmlStr,$start=0,$length=null,$appendStr='...'){
 	if(strlen($htmlStr) < $length)
 		return $htmlStr;
-	$blockTags = '!t[rdhfba](?:ble|oot|ead|ody)?|div|[bh][r1-6]|form|h!i'; #- tags where space are not counting
+	$blockTags = '!t[rdhfba](?:ble|oot|ead|ody)?|div|[bh][r1-6]|form|p!i'; #- tags where space are not counting
 	$tagStack = array();
 	$outStr   = '';
 	$pos = 0;

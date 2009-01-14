@@ -1,5 +1,6 @@
 /**
 * simpleMVC debug toolbar
+* @changelog - 2009-01-14 - add quick cookie management to keep trace of last opened panel
 * @svnInfos:
 *            - $LastChangedDate$
 *            - $LastChangedRevision$
@@ -7,6 +8,28 @@
 *            - $HeadURL$
 */
 jQuery().ready(function(){
+
+var cookies={
+	get:function(name){
+			var re=new RegExp(name+'=([^;]*);?','gi'), result=re.exec(document.cookie)||[];
+			return (result.length>1? unescape(result[1]): undefined);
+	},
+	set:function(name, value, expirationTime, path, domain, secure){
+			var time=new Date;
+			if(expirationTime)
+					time.setTime(time.getTime()+(expirationTime*1000));
+			document.cookie=name+ '='+ escape(value)+ '; '+
+			(!expirationTime? '': '; expires='+time.toUTCString())+
+			(!path? '': '; path='+path)+ (!domain? '': '; domain='+domain)+ (!secure? '': '; secure');
+	},
+	del:function(name, path, domain){
+			var value=this.get(name);
+			document.cookie=name+ '='+ (!path? '': '; path='+path)+
+			(!domain? '': '; domain='+domain)+
+			'; expires=Thu, 01-Jan-70 00:00:01 GMT';
+			return value;
+	},
+};
 
 	//create toolbar
 	$('<div id="sMVCtoolBar"><button id="sMVCshow">Show </button> <button id="sMVCphperr">PHP Errors </button> <button id="sMVCdb">Db::profiler</button></div>\
@@ -38,6 +61,22 @@ jQuery().ready(function(){
 		return $('body').width()-toolBar.width()-($.boxModel?14:32);
 	}
 
+	function setPanelCookie(){
+		// detect opened panel;
+		var visiblePanel = 'none';
+		if( showDiv.is(':visible') )
+			visiblePanel = 'Show';
+		else if( phperrDiv.is(':visible') )
+			visiblePanel = 'Phperr';
+		else if( dbDiv.is(':visible') )
+			visiblePanel = 'Db';
+		if( visiblePanel !== 'none' ){
+			cookies.set('SMVCDevBarPanel',visiblePanel);
+		}else{
+			cookies.del('SMVCDevBarPanel');
+		}
+	}
+
 	//-- Manage show display
 	var showed = $('div.dbg');
 	if( showed.length == 0){
@@ -63,6 +102,7 @@ jQuery().ready(function(){
 			showDiv.width(getWidth())
 				.css('maxHeight',"98%")
 				.toggle();
+			setPanelCookie();
 		});
 	}
 
@@ -82,6 +122,7 @@ jQuery().ready(function(){
 			phperrDiv.width(getWidth())
 				.css('maxHeight',"98%")
 				.toggle();
+			setPanelCookie();
 		});
 	}
 
@@ -100,10 +141,16 @@ jQuery().ready(function(){
 			dbDiv.width(getWidth())
 				.css('maxHeight',"98%")
 				.toggle();
+			setPanelCookie();
 		});
 	}
 	//-- no report to handle so just remove the bar
-	if(toolBar.html().match(/^\s*$/))
+	if(toolBar.html().match(/^\s*$/)){
 		toolBar.remove();
+	}else{
+		var openedPanel = cookies.get('SMVCDevBarPanel');
+		if( openedPanel )
+			eval('bt'+openedPanel+'.click();');
+	}
 
 });

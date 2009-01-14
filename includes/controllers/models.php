@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-01-14 - new property $loadDatas to force loadDatas before rendering list.
 *            - 2009-01-05 - now listAction do a lookup on list headers using langManager::msg
 *            - 2008-09-11 - define dummy indexAction that forward to listAction
 *                         - remove setLayout from formAction
@@ -24,6 +25,11 @@ abstract class modelsController extends abstractController{
 	* key are property names and values will be used as headers.
 	*/
 	public $listFields=array();
+	/**
+	* optional list of related model properties to load to properly render the list
+	* (kindof performance optimisation to avoid each models to be load one by one)
+	*/
+	public $loadDatas = null;
 
 	function init(){
 		parent::init();
@@ -47,6 +53,8 @@ abstract class modelsController extends abstractController{
 
 	function listAction(){
 		$models = abstractModel::getAllModelInstances($this->modelType);
+		if( ! empty($this->loadDatas) )
+			$models->loadDatas($this->loadDatas);
 		$datas = array();
 		if( count($models) ){
 			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
