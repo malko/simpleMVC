@@ -1,4 +1,4 @@
-/*
+/**
 * a simple and lightweight rich text editor
 * @author jonathan gotti < jgotti at jgotti dot org >
 * @licence double licence GPL / MIT
@@ -7,7 +7,14 @@
 * this work is inspired from:
 * - jQuery RTE plugin by 2007 Batiste Bieler (http://batiste.dosimple.ch/blog/2007-09-11-1/)
 * - jquery.wisiwyg by Juan M Martinez (http://private.tietokone.com.ar/jquery.wysiwyg/)
-* @changelog - 2008-04-15 - now classOption can also refer to callback user function
+* @svnInfos:
+*            - $LastChangedDate$
+*            - $LastChangedRevision$
+*            - $LastChangedBy$
+*            - $HeadURL$
+* @changelog
+*            - 2009-01-22 - bug correction that made certain ie6 version to loose link to this.editable after designMode is set to on
+*            - 2008-04-15 - now classOption can also refer to callback user function
 *            - 2008-02-22 - set frameBody height to 100% (permit to click anywhere instead of firstline only in firefox when empty)
 *            - 2008-02-22 - now you can set button that are present in toolbar
 *            - 2008-01-30 - new methods createElement, hasSelection, removeLink
@@ -76,9 +83,10 @@
 						return true;
 					});
 				}
-				if(window.document.getElementById(this.iframe.id).contentDocument){
-					this.editable = window.document.getElementById(this.iframe.id).contentDocument;
-				} else {// IE
+				var contentDoc = window.document.getElementById(this.iframe.id).contentDocument;
+				if(contentDoc){
+					this.editable = contentDoc;
+				}else{// IE
 					this.editable = window.document.frames[this.iframe.id].document;
 				}
 				this.editable.open();
@@ -86,6 +94,8 @@
 				this.editable.close();
 				this.editable.contentEditable = 'true';
 				this.editable.designMode = 'on';
+				if(! contentDoc)// some ie6 version may loose this.editable after setting designMode to on so relink it
+					this.editable = window.document.frames[this.iframe.id].document;
 			}
 			return this;
 		},
@@ -224,7 +234,7 @@
 			this.textarea.val($(this.editable).find('body').html());
 		},
 
-    setSelectors: function() {
+    setSelectors: function(){
     	if(! this.opts.buttonSet.match(/format|class/) )
     		return;
     	var node = this.getSelectedElement();

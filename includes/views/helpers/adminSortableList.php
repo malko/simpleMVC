@@ -66,6 +66,6 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 	}
 
 	function escapeDatas($datas){
-		return ($datas==='')?'&nbsp;':preg_replace(array("!'!","!\r?\n!"),array("\'","\\n"),$datas);
+		return ($datas==='')?'&nbsp;':preg_replace(array("!'!","!\r?\n!"),array("\'","\\n"),"$datas");
 	}
 }
