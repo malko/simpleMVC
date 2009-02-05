@@ -13,6 +13,7 @@
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
+* @changelog - 2008-12-19 - add check for extended class layout setting at init time
 */
 class staticController extends abstractController{
 
@@ -24,6 +25,9 @@ class staticController extends abstractController{
 
   function init(){
     parent::init();
+		if( isset($this->_layout) )
+    	$this->view->setLayout($this->_layout);
+		else
     $this->view->setLayout(self::$layout);
   }
 
