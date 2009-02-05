@@ -31,7 +31,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 		$datasDefs = abstractModel::_getModelStaticProp($modelName,'datasDefs');
 
 		if(! isset($options['label'])){
-			$options['label'] = langManager::msg($keyName);
+			$options['label'] = langManager::msg($keyName,null,$this->view->_langManagerDicName);
 		}
 
 		# commence par checker les relations
@@ -52,7 +52,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 
 			if(! empty($options['value']) )
 				$value = $options['value'];
-			return $this->formInput($keyName,$value,'select',$options);
+			return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 		}elseif(isset($relsDefs['hasMany'][$keyName]) ){
 			//-- @todo voir si on gere ou non les relations hasMany
 		}
@@ -90,7 +90,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				if(! isset($options['maxlength']) )
 					$options['maxlength'] = $match[1];
 			}
-			if( empty($options['values']) && in_array($datasDefs[$keyName]['Type'],array('tinyint(1)','bool'),'true') ){
+			if( empty($options['values']) && in_array($datasDefs[$keyName]['Type'],array('tinyint(1)','tinyint(1) unsigned','bool'),'true') ){
 				$options['values'] =  array(0=>langManager::msg('no'),1=>langManager::msg('yes'));
 				if( empty($options['type']) )
 					$options['type']='radio';

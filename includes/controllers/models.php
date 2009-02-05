@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
 *            - 2009-01-14 - new property $loadDatas to force loadDatas before rendering list.
 *            - 2009-01-05 - now listAction do a lookup on list headers using langManager::msg
 *            - 2008-09-11 - define dummy indexAction that forward to listAction
@@ -52,6 +53,7 @@ abstract class modelsController extends abstractController{
 	}
 
 	function listAction(){
+		$this->setDictName();
 		$models = abstractModel::getAllModelInstances($this->modelType);
 		if( ! empty($this->loadDatas) )
 			$models->loadDatas($this->loadDatas);
@@ -71,7 +73,7 @@ abstract class modelsController extends abstractController{
 					}
 					$datas[] = $row;
 				}
-				$this->view->listHeaders = array_map(array('langManager','msg'),array_keys($datas[0]));
+				$this->view->listHeaders = array_map(array($this,'langMsg'),array_keys($datas[0]));
 			}else{
 				foreach($models as $m){
 					$row = array();
@@ -80,7 +82,7 @@ abstract class modelsController extends abstractController{
 						$row[$k] = $m->{$k};
 					$datas[] = $row;
 				}
-				$this->view->listHeaders = array_map(array('langManager','msg'),array_values($this->listFields));
+				$this->view->listHeaders = array_map(array($this,'langMsg'),array_values($this->listFields));
 			}
 		}
 		$this->view->listDatas = $datas;
@@ -106,6 +108,7 @@ abstract class modelsController extends abstractController{
 	}
 
 	function formAction(){
+		$this->setDictName();
 		$this->view->datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
 		$this->view->actionUrl = $this->view->url('save',$this->getName(),array('modelType'=>$this->modelType));
@@ -156,6 +159,18 @@ abstract class modelsController extends abstractController{
 		$model->delete();
 		self::appendAppMsg('Enregistrement supprimée.','success');
 		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+	}
+
+	###--- lang management helpers ---###
+	public function setDictName(){
+		#- set dicName
+		list($c,$a) = abstractController::getCurrentDispatch(true);
+		$m = $this->modelType;
+		$this->_langManagerDicName = $c."_$m"."$a|$c"."_$m|$c"."_$a"."|$c|default";
+	}
+
+	public function langMsg($msg){
+		return langManager::msg($msg,null,$this->_langManagerDicName);
 	}
 
 }

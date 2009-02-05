@@ -41,7 +41,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - multiple,class, size, id, onchange, maxlength, disabled are replaced by the corresponding html attributes
 	*                          - default id will be same as name
 	*                          - default class will be same as type
-	*                          - values is an associative list of key value pairs used with select | checkBox | radio
+	*                          - values is an associative list of key value pairs (keys are used as values and values are used as labels) used with select | checkBox | radio
 	*                          - label is an optional label for the input
 	*                          - pickerOptStr is used for datepicker and timepicker fields
 	*                          - pickerOpts   is used for datetimepicker (something like that: array(0=>dateOptStr,1=>timeOptStr))
@@ -50,7 +50,7 @@ class formInput_viewHelper extends abstractViewHelper{
 		$dfltOpts = array(
 			'id'    => $name,
 			'class' => $type,
-			'formatStr' => '<div class="formInput">'.(in_array($type,array('radio','check','checkbox'))?'%input %label':'%label %input').'</div>',
+			'formatStr' => '<div class="formInput">'.((in_array($type,array('radio','check','checkbox')) && empty($options['values']))?'%input %label':'%label %input').'</div>',
 		);
 		$options = array_merge($dfltOpts,$options);
 
@@ -84,7 +84,9 @@ class formInput_viewHelper extends abstractViewHelper{
 						"<textarea name=\"$name\"".$this->getAttrStr($options).">$value</textarea>",
 						$options['formatStr']
 					);
-				}else{
+					break;//-- dummy break
+				} #--- else continue to rte
+			case 'rte':
 					$rteOptions = array('value' => $value,'rows'=>10,'cols'=>50);
 					foreach($options as $k=>$o){
 						if( in_array($k,array('rows','cols','disabled','style')) )
@@ -95,8 +97,7 @@ class formInput_viewHelper extends abstractViewHelper{
 						$this->rte($name,$rteOptions),
 						$options['formatStr']
 					);
-				}
-				break;//-- dummy break
+				break;
 			case 'select':
 				$opts = '';
 				if( !empty($options['values']) ){
@@ -166,7 +167,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				);
 				break;//--dummy break
 			case 'file':
-				if( self::$useFileEntry){
+				if( self::$useFileEntry && class_exists('fileEntry_viewHelper',false)){
 					$inputStr = $this->fileEntry($name,$value,$options);
 				}else{
 					$inputStr = "<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";

@@ -8,7 +8,7 @@
 */
 ?>
 <h1><?= $this->pageTitle ?></h1>
-<form action="<?= $this->url('save') ?>" method="post" class="adminForm">
+<form action="<?= $this->actionUrl ?>" method="post">
 <table border="0" cellspacing="0" cellpadding="2">
 <?php
 	if( !empty($this->datasDefs) ){
@@ -27,6 +27,6 @@
 	}
 ?>
 </table>
-<input type="reset" onclick="window.location = '<?= $this->listUrl ?>';"; value="<?= langManager::msg('back'); ?>"  class="noSize"/>
-<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+<input type="reset" onclick="window.location = '<?= $this->listUrl ?>';"; value="<?= langManager::msg('back',null,$this->_langManagerDicName); ?>"  class="noSize"/>
+<input type="submit" value="<?= langManager::msg('save',null,$this->_langManagerDicName); ?>" class="noSize" />
 </form>

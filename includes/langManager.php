@@ -31,7 +31,7 @@ class langManager{
 	static public $onFailureCheckDfltLang = true;
 
 	/**
-	* parametre les languages acceptés, par défaut le premier sera retourné
+	* parametre les languages acceptés
 	* @param array $langs liste des langues accepté avec la langue par défaut en premiere position.
 	*/
 	static public function setAcceptedLanguages(array $langs){
