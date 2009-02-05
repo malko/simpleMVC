@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-02-02 - new static method checkAppMsgExist() and property $appMsgIgnoreRepeated to supress repeated application messages
 *            - 2008-08-26 - now more unused static properties $defaultActionName,$defaultControllerName
 *            - 2008-08-25 - new __get/__set methods to get/set values from/to $this->view
 *                         - new static property abstract::$viewAssignMethod to set the method to use for undefined variable assignement into view
@@ -89,6 +90,7 @@ abstract class abstractController{
 
 	/** set the way appMsg are prepared %T and %M will be respectively replaced byt msgType and msgStr*/
 	static public  $appMsgModel = "<div class='%T'>%M</div>";
+	static public  $appMsgIgnoreRepeated = true;
 
 	/**
 	* crée une nouvelle instance de controller.
@@ -262,6 +264,10 @@ abstract class abstractController{
 		}
 		if(! isset($_SESSION))
 			throw new Exception(__class__.'::appendAppMsg() require a session to be started before any call.');
+		if(self::$appMsgIgnoreRepeated){ //-- check for repeated msg if needed
+			if( self::checkAppMsgExist($msg,$msgType,true) )
+				return true;
+		}
 		$_SESSION['simpleMVC_appMsgs'][] = str_replace(array('%T','%M'),array($msgType,$msg),self::$appMsgModel);
 		return true;
 	}
@@ -281,6 +287,21 @@ abstract class abstractController{
 		if(! $noClean)
 			$_SESSION['simpleMVC_appMsgs'] = array();
 		return $msgs;
+	}
+
+	/**
+	* check if given message is already or not in the pendingAppMsg
+	* @param string $msg     the message string
+	* @param str $msgClass   info|error|success @see abstractController::appendAppMsg
+	* @param bool $onlyLast  check only that the last message is the same or not
+	*/
+	static function checkAppMsgExist($msg,$msgType='info',$onlyLast=false){
+		if( empty($_SESSION['simpleMVC_appMsgs']) )
+			return false;
+		$msg = str_replace(array('%T','%M'),array($msgType,$msg),self::$appMsgModel);
+		if( $onlyLast )
+			return ($msg === end($_SESSION['simpleMVC_appMsgs']))?true:false;
+		return in_array($msg,$_SESSION['simpleMVC_appMsgs']);
 	}
 
 	###--- ACTION CALL MANAGEMENT (where all the magic happen) ---###
