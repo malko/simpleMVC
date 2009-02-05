@@ -4,11 +4,8 @@
 * @licence GPL / MIT
 * @author jonathan gotti < jgotti at jgotti dot org > < jgotti at modedemploi dot fr > for modedemploi.fr
 * @since 2008-11
-* @svnInfos:
-*            - $LastChangedDate$
-*            - $LastChangedRevision$
-*            - $LastChangedBy$
-*            - $HeadURL$
+* @changelog
+*            - 2009-01-27 - new option fixedWidth
 * sample usage:
 * $('ul.menu').DDmenu();
 * or
@@ -18,6 +15,8 @@
 * - show:  one of false (equiv to show), show, slideDown or fadeIn (the default)
 * - hide:  one of false (equiv to hide and the default), hide, slideUp or fadeOut
 * - speed: time for in/out animation can be a single value or a pair [(int) showSpeed, (int) hideSpeed]
+* - fixedWidth: bool default to true. will fixed first level childs to have same width as their parent.
+*               set it to false to let the subMenu's width defined by its contents
 */
 
 (function($){
@@ -33,8 +32,9 @@
 	// plugin defaults settings
 	$.fn.DDmenu.defaults = {
 		show:'fadeIn', // one of false (equiv to show), show, slideDown or fadeIn
-		hide:false,    // one of false (equiv to hide), hide, slideUp or fadeOut
-		speed:[250,0] // time for in/out animation can be a single value or a pair [(int) showSpeed, (int) hideSpeed]
+		hide:'hide',    // one of false (equiv to hide), hide, slideUp or fadeOut
+		speed:[250,0], // time for in/out animation can be a single value or a pair [(int) showSpeed, (int) hideSpeed]
+		fixedWidth: true // does first level childs as same width as their top level parent
 	}
 
 	$.extend(DDMENU.prototype,{
@@ -67,10 +67,11 @@
 			var coords = parent.offset();
 			if(parent.parent('ul').attr('id')===this.menuId){
 				style = {
-					width: parent.width(),
 					left:  coords.left,
-					top:   coords.top+parent.height()
+					top:   coords.top+parent.height()-($.boxModel?0:2)
 				};
+				if( this.opts.fixedWidth )
+					style.width=parent.width();
 			}else{
 				style = {
 					top:  (coords.top-parent.parent('ul').offset().top),
