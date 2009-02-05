@@ -12,7 +12,8 @@ class codePress_viewHelper extends jsPlugin_viewHelper{
 		'autocomp' => 'autocomplete-off',
 		'rows'     => 25,
 		'cols'     => 75,
-		'toolSet'     => 'toggleEditorlanguage|lineNumbers|autoComp|readOnly',
+		#- ~ 'toolSet'     => 'toggleEditorlanguage|lineNumbers|autoComp|readOnly',
+		'toolSet'     => 'toggleEditorlanguage|lineNumbers|autoComp',
 	);
 
 	function codepress($name,$value=null,array $options=null){
@@ -40,16 +41,16 @@ class codePress_viewHelper extends jsPlugin_viewHelper{
 				";
 			}
 			if( false !== strpos($options['toolSet'],'lineNumbers'))
-				$toolBar .= "<button onclick=\"$name.toggleLineNumbers();return false;\">show/hide line numbers</button>";
+				$toolBar .= "<button onclick=\"$name.toggleLineNumbers();return false;\">Toggle line numbers</button>";
 
 			if( false !== strpos($options['toolSet'],'autoComp'))
-				$toolBar .= "<button onclick=\"$name.toggleAutoComplete();return false;\">turn on/off auto-complete</button>";
+				$toolBar .= "<button onclick=\"$name.toggleAutoComplete();return false;\">toggle auto-completion</button>";
 
 			if( false !== strpos($options['toolSet'],'readOnly'))
-				$toolBar .= "<button onclick=\"$name.toggleReadOnly();return false;\">turn on/off read only</button>";
+				$toolBar .= "<button onclick=\"$name.toggleReadOnly();return false;\">read/write mode</button>";
 
 			if( false !== strpos($options['toolSet'],'toggleEditor'))
-				$toolBar .= "<button onclick=\"$name.toggleEditor();return false;\">turn on/off Editor</button>";
+				$toolBar .= "<button onclick=\"$name.toggleEditor();return false;\">Toggle editor mode</button>";
 
 			if( $toolBar )
 				$toolBar = "<div class=\"cpToolBar\">$toolBar</div>";
