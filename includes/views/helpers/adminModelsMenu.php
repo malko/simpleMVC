@@ -8,7 +8,7 @@ class adminModelsMenu_viewHelper extends abstractViewHelper{
 		$models = array_map('basename',glob(LIB_DIR.'/models/*.php'));
 		$items = array();
 		$itemStr = '<li><a href="'.$this->url('list','adminmodels',array('modelType'=>'%1$s'),true).'">%1$s</a>'
-			.($withConfigOption?'<a href="'.$this->url('configure','adminmodels',array('modelType'=>'%1$s'),true).'"><img src="'.IMG_GUI_URL.'/icones/admin/bouton_modifier_icone.png" alt="edit __toString" border="0"/></a>':'')
+			.($withConfigOption?'<a href="'.$this->url('configure','adminmodels',array('modelType'=>'%1$s'),true).'"><img src="'.ELEMENTS_URL.'/icones/admin/bouton_modifier_icone.png" alt="edit __toString" border="0"/></a>':'')
 			.'</li>';
 		foreach($models as $m){
 			if( preg_match('!^BASE_!',$m) )
