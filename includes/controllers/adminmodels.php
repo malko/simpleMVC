@@ -37,11 +37,7 @@ class adminmodelsController extends modelsController{
 		if( file_exists($this->configFile) ){
 			$config = parse_conf_file($this->configFile,true);
 			if( !empty($config['FORM_'.$this->modelType]) ){
-				$formSettings = explode('|',$config['FORM_'.$this->modelType]);
-				foreach($formSettings as $setting){
-					list($field,$type) = explode(':',$setting);
-					$inputOpts[$field] = array('type'=>$type);
-				}
+				$inputOpts = json_decode($config['FORM_'.$this->modelType],true);
 				if(! empty($inputOpts) )
 					$this->inputOpts = $inputOpts;
 			}
@@ -66,12 +62,16 @@ class adminmodelsController extends modelsController{
 		$this->primaryKey    = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 		$this->listedFields  = (!empty($this->config['LIST_'.$this->modelType]))?explode('|',$this->config['LIST_'.$this->modelType]):array();
 		#--- forms config
-		$formSettings  = (!empty($this->config['FORM_'.$this->modelType]))?explode('|',$this->config['FORM_'.$this->modelType]):array();
-		foreach($formSettings as $setting){
-			list($k,$v) = explode(':',$setting,2);
-			$_formSettings[$k] = $v;
+		$formSettings  = (!empty($this->config['FORM_'.$this->modelType]))?json_decode($this->config['FORM_'.$this->modelType],true):array();
+		foreach($formSettings as $k=>$setting){
+			if( !empty($setting['type']) ){
+				$inputTypes[$k] = $setting['type'];
+				unset($setting['type']);
 		}
-		$this->formSettings = empty($_formSettings)?array():$_formSettings;
+			$inputOptions[$k] = empty($setting)?'':htmlentities(json_encode($setting));
+		}
+		$this->inputTypes = empty($inputTypes)?array():$inputTypes;
+		$this->inputOptions = empty($inputOptions)?array():$inputOptions;
 		$this->view->listUrl = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
 		#--- locale settings
 		$this->langs = langManager::$acceptedLanguages;
@@ -108,13 +108,17 @@ class adminmodelsController extends modelsController{
 	function setFormInputsAction(){
 		if(! empty($_POST) ){
 			$c = array();
-			foreach($_POST as $k=>$v){
-				if( $v==='--- default ---')
+			foreach($_POST['inputTypes'] as $k=>$v){
+				$options = array();
+				if( $v !== '--- default ---')
+					$options['type'] =  $v;
+				if( ! empty($_POST['inputOptions'][$k] ) )
+					$options = array_merge($options,json_decode($_POST['inputOptions'][$k],true));
+				if( empty($options) )
 					continue;
-				$c[] = "$k:$v";
+				$c[$k] = $options;
 			}
-			$c = implode('|',$c);
-			$config['FORM_'.$this->modelType] = empty($c)?'--UNSET--':$c ;
+			$config['FORM_'.$this->modelType] = empty($c)?'--UNSET--':json_encode($c) ;
 			write_conf_file($this->configFile,$config,true);
 		}
 		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType));

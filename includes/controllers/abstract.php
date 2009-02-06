@@ -11,6 +11,9 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-02-06 - change view instanciation to work with new singletoned views
+*                         - __call will send unknown method call to linked view if available instead of throwing an exception
+*                         - now forward keep current instance of controller when controllerName parameter is same as the current controller
 *            - 2009-02-02 - new static method checkAppMsgExist() and property $appMsgIgnoreRepeated to supress repeated application messages
 *            - 2008-08-26 - now more unused static properties $defaultActionName,$defaultControllerName
 *            - 2008-08-25 - new __get/__set methods to get/set values from/to $this->view
@@ -114,7 +117,7 @@ abstract class abstractController{
 	*/
 	public function init(){
 		if(is_null($this->view)){
-			$this->view = new self::$defaultViewClass($this);
+			$this->view = call_user_func(array(self::$defaultViewClass,'getInstance'),$this);
 			foreach(self::$defaultViewDirs as $d)
 				$this->view->addViewDir($d);
 		}else{
@@ -336,8 +339,8 @@ abstract class abstractController{
 				$this->view->render($method);
 			$this->_currentActionEnd($method);
 			return $result;
-		}elseif($method==='url'){
-			return call_user_func_array(array($this->view,'url'),$args);
+		}elseif($this->view instanceof viewInterface){ #- default to send method call to view
+			return call_user_func_array(array($this->view,$method),$args);
 		}else{
 			throw new Exception(get_class($this)."::$method() method doesn't exist");
 		}
@@ -359,7 +362,7 @@ abstract class abstractController{
 
 	###--- FORWARD AND REDIRECTION MANAGEMENT MANAGEMENT ---###
 	public function forward($actionName,$controllerName=null){
-		if(is_null($controllerName)){
+		if(is_null($controllerName) || in_array($controllerName,array($this->getName(),get_class($this)),true)){
 			$this->$actionName();
 		}else{
 			if(! preg_match('!(C|_c)ontroller$!',$controllerName) )

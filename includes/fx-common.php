@@ -8,6 +8,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-02-06 - move javascript and style from show to sMVCdevelBar
 *            - 2008-10-21 - autoload modification to check modelCollection extended classes in corresponding model file
 *            - 2008-09-12 - now try to load a specific config file for the current used front
 *            - 2008-05-06 - more understandable show output for trace
@@ -261,54 +262,31 @@ function match($pattern,$str,$id=1,$all=FALSE){
 }
 ###--- DEBUG HELPER ---###
 function show(){
-  static $jsDone, $nb;
-  if( isset($jsDone) ){
-    ++$nb;
-  }else{
-    $jsDone = true;
-    $nb = 1;
-    echo "
-    <script type=\"text/javascript\"><!--//
-      function toggleDbg(el){
-        if(el.style.display==='none'){
-          el.style.display = 'block';
-        }else{
-          el.style.display = 'none';
-        }
-      }
-      //-->
-    </script>
-    <style type=\"text/css\">
-      div.dbg strong  { font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:0; }
-      div.dbg pre { text-align:left;background:#F0F0F0;border-style:dashed;border-width:1px;max-height:350px;overflow:auto;margin-top:0; }
-    </style>
-    ";
-  }
-  $args  = func_get_args();
-  $argc  = func_num_args();
-  $param = $args[$argc-1];
-  $halt  = false;
 
-	if($param!=='trace'){
+	$args  = func_get_args();
+	$argc  = func_num_args();
+	$param = $args[$argc-1];
+	$halt  = false;
+
+	if($param!=='trace'){ //-- detect trace
 		$getTrace = (is_string($param) && substr_count($param,'trace'))?array():false;
 	}else{
 		$getTrace = array();
 		array_pop($args);
 	}
-
-  if($argc>1 && $param === 'exit'){
-    $halt = true;
-    array_pop($args);
-  }
-  if( is_string($param) && preg_match('!^color:([^;]+)!',$param,$m)){
-    array_pop($args);
-    $color = $m[1];
-    if(substr_count($param,'exit')){
-      $halt = true;
-    }
-  }else{
-    $color = 'red';
-  }
+	if($argc>1 && $param === 'exit'){ //-- detect exit
+		$halt = true;
+		array_pop($args);
+	}
+	if( is_string($param) && preg_match('!^color:([^;]+)!',$param,$m)){ //-- detect color
+		array_pop($args);
+		$color = $m[1];
+		if(substr_count($param,'exit')){
+			$halt = true;
+		}
+	}else{
+		$color = 'red';
+	}
 
 	$trace    = debug_backtrace();
 	if(false!==$getTrace){
@@ -337,20 +315,20 @@ function show(){
 		$args[]=str_replace("\t","  ",implode("\n".str_repeat('__',49)."\n\n",$getTrace));
 	}
 
-  $str = array();
-  foreach($args as $arg){
-    $str[] = print_r($arg,1);
-  }
-  $str = implode("\n".str_repeat('--',50)."\n",$str);
-  $preStyle = 'style="color:'.$color.';border-color:'.$color.';"';
-  $bStyle   = 'style="color:'.$color.';"';
+	$str = array();
+	foreach($args as $arg){
+		$str[] = print_r($arg,1);
+	}
+	$str = implode("\n".str_repeat('--',50)."\n",$str);
+	$preStyle = 'style="color:'.$color.';border:dashed '.$color.' 1px;max-height:350px;overflow:auto;margin-top:0;"';
+	$bStyle   = 'style="color:'.$color.';text-decoration:underline;margin-bottom:0"';
 	$trace = str_replace(ROOT_DIR.'/','',$trace[0]['file'])
 		.(empty($trace[1]['function'])? '' : ' in '.(isset($trace[1]['class'])?$trace[1]['class'].$trace[1]['type']:'').$trace[1]['function'].'()')
 		.':'.$trace[0]['line'];
-  echo "<div class=dbg><strong $bStyle onclick=\"toggleDbg(document.getElementById('dbg$nb'));\">Show ( $trace )</strong><br /><pre $preStyle id='dbg$nb'><xmp>$str</xmp></pre></div>";
-  if($halt){
-    echo "<h5 style=color:red;text-align:center;>SCRIPT EXITED BY SHOW</h5>";
-    exit();
-  }
-  return false; # just for convenience
+	echo "<div class=\"show\" style=\"background:#F0F0F0;text-align:left;font-size:12px;\"><strong $bStyle>Show ( $trace )</strong><br /><pre $preStyle><xmp>$str</xmp></pre></div>";
+	if($halt){
+		echo "<h5 style=color:red;text-align:center;>SCRIPT EXITED BY SHOW</h5>";
+		exit();
+	}
+	return false; # just for convenience
 }

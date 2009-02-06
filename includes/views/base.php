@@ -18,6 +18,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-02-06 - now viewInterface implements singleton pattern
 *            - 2008-10-13 - add support for "complex" helper method call (ie: _helperName_methodName)
 *            - 2008-02-15 - now extendeded abstractViewHelper can directly call other viewHelper methods as if it were into views.
 *            - 2007-12-05 - new method setController() required by abstractController forward to work properly
@@ -60,7 +61,8 @@ abstract class abstractViewHelper implements viewHelperInterface{
 *@interface viewInterface
 */
 interface viewInterface{
-	function __construct(abstractController $controller=null,array $layout=null);
+	//function __construct(abstractController $controller=null,array $layout=null);
+	static public function getInstance(abstractController $controller=null,array $layout=null);
 	function __set($k,$v);
 	function __get($k);
 	function __isset($k);
@@ -103,7 +105,24 @@ class baseView implements viewInterface{
 
 	public $_appMsgs = array();
 
-	function __construct(abstractController $controller=null,array $layout=null){
+	static protected $_instance = null;
+
+	static public function getInstance(abstractController $controller=null,array $layout=null){
+		if( self::$_instance instanceof baseView ){
+			$view = self::$_instance;
+			if( null !== $controller )
+				$view->setController($controller);
+			if( null !== $layout)
+				$view->setLayout($layout);
+		}else{
+			$view = new baseView($controller,$layout);
+			self::$_instance = $view;
+		}
+		return $view;
+
+	}
+
+	protected function __construct(abstractController $controller=null,array $layout=null){
 		if(! is_null($controller) )
 			$this->setController($controller);
 		$this->setLayout($layout);

@@ -52,6 +52,7 @@ var cookies={
 		zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
 		border:'solid #333 1px',borderTop:'none',borderLeft:'none'
 	};
+	var pannelTitleStyle = { color:'#555', fontSize:'18px', margin:'10px 0', borderBottom:'solid #555 1px' };
 
 	function _toInt(value){ var i = parseInt(value); return isNaN(i)?0:i; }
 	function getWidth(){
@@ -67,7 +68,7 @@ var cookies={
 		}
 		pannel = $(pannel);
 		pannel.append(content).css(pannelStyle);
-		$('h1',pannel).css({color:'#555',fontSize:'18px',margin:'10px 0',borderBottom:'solid #555 1px'});
+		$('h1',pannel).css(pannelTitleStyle);
 		bt.bind('click',{p:pannel},function(e){
 			var p = e.data.p;
 			$('.sMVCpannel').not(p).hide();
@@ -95,15 +96,16 @@ var cookies={
 	}
 
 	//-- Manage show display
-	var showed = $('div.dbg');
+	var showed = $('div.show');
 	if( showed.length == 0){
 		btShow.hide().remove();
 		showDiv.hide().remove();
 	}else{
 		addPanel(btShow,showDiv,showed,true);
-		$('div.dbg').css('margin','0 20px');
+		showed.css('margin','0 20px');
+		$('strong',showed).click(function(){$(this).siblings('pre').toggle();}).css({ cursor:'pointer'});
 		$('.toggle',showDiv).click(function(){
-			var titles   = $('div.dbg strong');
+			var titles = $('div.show strong');
 			var opened   = titles.siblings('pre:visible').length
 			var closed = titles.length - opened;
 			if( opened > closed)
@@ -130,7 +132,13 @@ var cookies={
 		dbDiv.hide().remove();
 	}else{
 		report.children('caption').click(); // open profiler table
-		addPanel(btDb,dbDiv,report,$('tbody tr',report).length);
+		var dbMsgs = $('b.dbMsg'); // append eventual class-db errors
+		addPanel(btDb,dbDiv,report,(dbMsgs.length ? $('tbody tr',report).length+'/'+dbMsgs.length : $('tbody tr',report).length));
+		if( dbMsgs.length){
+			dbDiv.append('<h2>DB::messages</h2>').append(dbMsgs);
+			$('h2',dbDiv).css(pannelTitleStyle).css('font-size','14px');
+
+		}
 	}
 
 	//-- Manage models menu

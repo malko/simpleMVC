@@ -38,7 +38,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - codepress
 	* @param array  $options   list of optionnal parameters:
 	*                          - default is the default value to set if $value is empty.
-	*                          - multiple,class, size, id, onchange, maxlength, disabled are replaced by the corresponding html attributes
+	*                          - multiple,class, size, id, onchange, maxlength, rows,cols,style and disabled are replaced by the corresponding html attributes
 	*                          - default id will be same as name
 	*                          - default class will be same as type
 	*                          - values is an associative list of key value pairs (keys are used as values and values are used as labels) used with select | checkBox | radio
