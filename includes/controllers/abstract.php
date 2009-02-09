@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-02-08 - $appMsgIgnoreRepeated is now a int value to permitt better repeated appMsgs management
 *            - 2009-02-06 - change view instanciation to work with new singletoned views
 *                         - __call will send unknown method call to linked view if available instead of throwing an exception
 *                         - now forward keep current instance of controller when controllerName parameter is same as the current controller
@@ -93,7 +94,12 @@ abstract class abstractController{
 
 	/** set the way appMsg are prepared %T and %M will be respectively replaced byt msgType and msgStr*/
 	static public  $appMsgModel = "<div class='%T'>%M</div>";
-	static public  $appMsgIgnoreRepeated = true;
+	/** set the way repeated appMsgs are treated
+	* - 0: won't perform any check and so will display all messages,
+	* - 1: avoid consecutive message repetition by checking that last message is different)
+	* - 2: will drop any messages that were previously appended to appMsgs nevermind the position.
+	*/
+	static public  $appMsgIgnoreRepeated = 2;
 
 	/**
 	* crée une nouvelle instance de controller.
@@ -267,8 +273,8 @@ abstract class abstractController{
 		}
 		if(! isset($_SESSION))
 			throw new Exception(__class__.'::appendAppMsg() require a session to be started before any call.');
-		if(self::$appMsgIgnoreRepeated){ //-- check for repeated msg if needed
-			if( self::checkAppMsgExist($msg,$msgType,true) )
+		if(self::$appMsgIgnoreRepeated > 0){ //-- check for repeated msg if needed
+			if( self::checkAppMsgExist($msg,$msgType,self::$appMsgIgnoreRepeated>1?false:true) )
 				return true;
 		}
 		$_SESSION['simpleMVC_appMsgs'][] = str_replace(array('%T','%M'),array($msgType,$msg),self::$appMsgModel);

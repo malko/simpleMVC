@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-02-08 - add some automated support for orderable models
 *            - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
 *            - 2009-01-14 - new property $loadDatas to force loadDatas before rendering list.
 *            - 2009-01-05 - now listAction do a lookup on list headers using langManager::msg
@@ -54,11 +55,17 @@ abstract class modelsController extends abstractController{
 
 	function listAction(){
 		$this->setDictName();
+		$supportedAddons = abstractModel::_getModelStaticProp($this->modelType,'modelAddons');
+		$orderable = in_array('orderable',$supportedAddons);
 		$models = abstractModel::getAllModelInstances($this->modelType);
 		if( ! empty($this->loadDatas) )
 			$models->loadDatas($this->loadDatas);
 		$datas = array();
 		if( count($models) ){
+			if( $orderable ){
+				$orderableField = $models->current()->getOrderableField();
+				$models->sort($orderableField);
+			}
 			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 			if( empty($this->listFields) ){
 				$modelDatasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
@@ -86,6 +93,21 @@ abstract class modelsController extends abstractController{
 			}
 		}
 		$this->view->listDatas = $datas;
+		/*
+		the following is not a proper way to do tricks as it will perform additional loop on the listed elements
+		but it will permitt me to code it quick and dirty for now (it's late and will work for today) and leave place for further optimisation */
+		if( $models->count() && $orderable ){
+			if( isset($this->listFields[$orderableField]) ){
+				$datas = $this->view->listDatas;
+				$lastPos = $models->count()-1;
+				foreach($datas as $k=>$v){
+					$datas[$k][$orderableField] = $v[$orderableField].'&nbsp;'
+						.($v[$orderableField]>0?'<a href="'.$this->url('moveup').'/id/'.$v['id'].'">&uarr;</a>':'')
+						.($v[$orderableField]<$lastPos?'<a href="'.$this->url('movedown').'/id/'.$v['id'].'">&darr;</a>':'');
+				}
+				$this->view->listDatas = $datas;
+			}
+		}
 	}
 
 	function addAction(){
@@ -98,7 +120,7 @@ abstract class modelsController extends abstractController{
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
 		}
 		$model = abstractModel::getModelInstance($this->modelType,$_GET['id']);
-		if($model === false){
+		if(! $model instanceof $this->modelType ){
 			self::appendAppMsg('Enregistrement inexistant en base de données','error');
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
 		}
@@ -126,7 +148,7 @@ abstract class modelsController extends abstractController{
 			$model = abstractModel::getModelInstanceFromDatas($this->modelType,$_POST);
 		}else{
 			$model = abstractModel::getModelInstance($this->modelType,$_POST[$modelPKName]);
-			if( $model === false){
+			if(! $model instanceof $this->modelType ){
 				self::appendAppMsg('Mise à jour d\'un élément inexistant en base de données.','error');
 				return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 			}
@@ -152,7 +174,7 @@ abstract class modelsController extends abstractController{
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
 		}
 		$model =  abstractModel::getModelInstance($this->modelType,$_GET['id']);
-		if($model === false){
+		if(! $model instanceof $this->modelType ){
 			self::appendAppMsg('Enregistrement introuvable en base de données.','error');
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
 		}
@@ -160,6 +182,35 @@ abstract class modelsController extends abstractController{
 		self::appendAppMsg('Enregistrement supprimée.','success');
 		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
 	}
+
+	###--- methods for orderable models ---###
+	function moveupAction(){
+		if(! isset($_GET['id']) ){
+			self::appendAppMsg('Manque d\'information sur l\'action à effectuer.','error');
+			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+		}
+		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
+		if(! $m instanceof $this->modelType ){
+			self::appendAppMsg('Enregistrement introuvable en base de données.','error');
+			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+		}
+		$m->moveUp();
+		return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
+	}
+	function movedownAction(){
+		if(! isset($_GET['id']) ){
+			self::appendAppMsg('Manque d\'information sur l\'action à effectuer.','error');
+			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+		}
+		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
+		if(! $m instanceof $this->modelType ){
+			self::appendAppMsg('Enregistrement introuvable en base de données.','error');
+			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+		}
+		$m->moveDown();
+		return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
+	}
+
 
 	###--- lang management helpers ---###
 	public function setDictName(){

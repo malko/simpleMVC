@@ -43,7 +43,7 @@
 			<strong>Notes: </strong>
 			options have to be passed as valid json as describe in json_decode function, it means that keys and values must be doublequoted.
 			<br />
-			Exemple: {"values":["value1","value2"],"width":"160"}<br />
+			Exemple: {"values":["value1","value2"],"size":"15"}<br />
 			List of possible options as defined in formInput_viewHelper documentation:
 			<ul style="padding:0;margin:0 0 0 15px;">
 				<li> default is the default value to set if $value is empty.</li>
@@ -107,7 +107,7 @@
 
 
 <?php
-$this->_js_script('
+$this->js('
 	// make fieldname clickable to ease _toStr setting
 	$(".sMVC_dataField").click(function(){
 		$("input[name=_toStr]").val($("input[name=_toStr]").val()+" "+this.innerHTML);
@@ -125,6 +125,5 @@ $this->_js_script('
 		$("fieldset div.langMessages").hide();
 		$("div#langMessages_"+l).show();
 	}).change();
-
-');
+','jquery');
 ?>

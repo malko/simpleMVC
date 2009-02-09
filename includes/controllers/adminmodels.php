@@ -133,7 +133,6 @@ class adminmodelsController extends modelsController{
 			$dict = $this->checkDisctionnaries($l,true);
 			if( false === $dict )
 				return $this->forward('configure');
-			show($dict,$_POST['msgs'][$l]);
 			foreach($_POST['msgs'][$l] as $id=>$msg)
 				$dict[$id] = strlen($msg)?$msg:'--UNSET--'; // unset empty values
 			write_conf_file(APP_DIR."/locales/$l/adminmodels_$this->modelType",$dict,true);

@@ -18,7 +18,7 @@
 		foreach($this->datasDefs as $k=>$d){
 			$opts = $inputOpts;
 			if( isset($this->inputOpts[$k] ) )
-			$opts = array_merge($inputOpts,$this->inputOpts[$k]);
+				$opts = array_merge($inputOpts,$this->inputOpts[$k]);
 			if((! isset($this->_model_)) && !empty($this->{$k})){
 				$opts['value'] = $this->{$k};
 			}
