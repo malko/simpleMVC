@@ -15,6 +15,9 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-02-08 - loadPlugin now check for registeredPlugins before trying to load it
+*                         - js and others methods now return $this for method chaining
+*                         - add some documentation comments
 *            - 2008-12-05 - now use addeventListener/attachEvent to encapsulate appended script in window.onload when there's no jquery plugins registered
 *                         - new static properties $scriptRootDir and self::$scriptRootDir to allow setting of relatives paths
 *                         - new static method setRootPaths() to set $scriptRootDir and self::$scriptRootDir
@@ -36,45 +39,84 @@ class js_viewHelper extends abstractViewHelper{
 			self::$scriptRootUrl = $url;
 	}
 
+	/**
+	* multiple purpose and sort of shorthand method.
+	* It can be call in different manner, as a shorthand for script / includes and/or loadPlugin, depending on parameters.
+	* @param mixed $datas may be a string of script as in script() method
+	*                     also can be a single js or css or a list of them to includes (ie: 'style.css' array('style.css','script.js'))
+	*                     or it can be null in which case it will end by calling the getPending method instead of returning $this.
+	* @param mixed        $plugins array or string list of plugins to load (string item delimiter is '|')
+	* @return mixed $this for method chainging or string (result of getPending method) if $datas is null
+	*/
 	function js($datas=null,$pluginToLoad=null){
 		if( $pluginToLoad !== null)
 			$this->loadPlugin($pluginToLoad);
 		if( null === $datas)
 			return $this->getPending();
-		if( is_array($datas) || preg_match('!\.(js|css)$!',$datas) )
-			return $this->includes($datas);
+		if( is_array($datas) || preg_match('!\.(js|css)$!',$datas) ){
+			$this->includes($datas);
+			return $this;
+		}
 		return $this->script($datas);
 	}
 	/**
 	* preload jsPlugins
 	* @param mixed         $plugins array or string list of plugins to load (string item delimiter is '|')
-	* @return includes string
+	* @return $this for method chaining
 	*/
 	function loadPlugin($plugins){
 		if( ! is_array($plugins) )
 			$plugins = explode('|',$plugins);
 		foreach($plugins as $p){
+			if(! $this->isRegistered($p) ) #- dont load already registered plugin
 			$this->view->helperLoad($p);
 		}
+		return $this;
 	}
 
+	/**
+	* internal method used by jsPlugins helpers to register themselves and avoid multiple load.
+	* you will probably never used this on your own.
+	* @param jsPlugin_viewHelper $plugin the plugin instance to register
+	* @return $this for method chaining
+	*/
 	function registerPlugin(jsPlugin_viewHelper $plugin){
 		$pluginName = strtolower(str_replace('_viewHelper','',get_class($plugin)));
 		self::$registeredPlugins[$pluginName]=true;
+		return $this;
 	}
 
+	/**
+	* return list of registeredPlugins
+	* @return array
+	*/
 	function getRegisteredPlugins(){
 		return array_keys(self::$registeredPlugins);
 	}
 
+	/**
+	* check whether a plugin is registered or not
+	* @param string $pluginName name of the plugin you want to now if it's registered
+	* @return bool
+	*/
 	function isRegistered($pluginName){
 		return isset(self::$registeredPlugins[$pluginName])?true:false;
 	}
 
+	/**
+	* append script to be executed at window.onload time
+	* @param string $script script to append
+	* @return $this for method chaining
+	*/
 	function script($script){
 		self::$pendingScript .= "\n$script\n";
+		return $this;
 	}
 
+	/**
+	* return script tag with pending script to be executed at window.onload time preceded by script/links tags for js and css files included.
+	* @return string
+	*/
 	function getPending(){
 		static $calledTime;
 		if( ! strlen(self::$pendingScript) )
@@ -119,6 +161,10 @@ class js_viewHelper extends abstractViewHelper{
 		return true;
 	}
 
+	/**
+	* return script/links tags for js and css files includes
+	* @return string
+	*/
 	function getIncludes(){
 		$incStr = '';
 		foreach(self::$includedFiles as $k=>$v){
