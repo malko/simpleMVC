@@ -1,11 +1,12 @@
 /**
 * simpleMVC debug toolbar
-* @changelog - 2009-01-14 - add quick cookie management to keep trace of last opened panel
 * @svnInfos:
 *            - $LastChangedDate$
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
+* @changelog - 2009-02-07 - cookies path set to slash as default
+*            - 2009-01-14 - add quick cookie management to keep trace of last opened panel
 */
 jQuery().ready(function(){
 
@@ -20,11 +21,11 @@ var cookies={
 					time.setTime(time.getTime()+(expirationTime*1000));
 			document.cookie=name+ '='+ escape(value)+ '; '+
 			(!expirationTime? '': '; expires='+time.toUTCString())+
-			(!path? '': '; path='+path)+ (!domain? '': '; domain='+domain)+ (!secure? '': '; secure');
+			'; path='+(path?path:'/')+ (!domain? '': '; domain='+domain)+ (!secure? '': '; secure');
 	},
 	del:function(name, path, domain){
 			var value=this.get(name);
-			document.cookie=name+ '='+ (!path? '': '; path='+path)+
+			document.cookie=name+ '='+ '; path='+(path?path:'/')+
 			(!domain? '': '; domain='+domain)+
 			'; expires=Thu, 01-Jan-70 00:00:01 GMT';
 			return value;
