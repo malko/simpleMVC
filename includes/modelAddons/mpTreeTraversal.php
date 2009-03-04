@@ -9,6 +9,8 @@
 * @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
 * @author jonathan gotti <jgotti at jgotti dot org>
 * @since 2008-05
+* @changelog 
+*            - 2009-03-04 - change invalid variable name inside makeSibling method
 *
 to correctly handle this addon here's some static properties and methods that the given model must support
 
@@ -24,6 +26,9 @@ class sample_mpTreeTraversalNode implements mpTreeTraversalModelAddonInterface{
 	}
 	static function getTreeCollection($startnode=FALSE,$depth=FALSE,$removeStartNode=false,$fromDB=false){
 		return mpTreeTraversalModelAddon::getModelTreeCollection(self::$modelName,$startnode,$depth,$removeStartNode,$fromDB);
+	}
+	static function HtmlOptions($labelFld,$selected=null,$removed=null,$startnode=null,$depth=null){
+		return mpTreeTraversalModelAddon::modelHtmlOptions(self::$modelName,$labelFld,$selected,$removed,$startnode,$depth);
 	}
 	function delete(){
 		#- ~ $clone = clone $this;
@@ -476,7 +481,7 @@ class mpTreeTraversalModelAddon extends modelAddon{
 		$i = $this->modelInstance;
 		if( null!==$sibling ){
 			if(! $sibling instanceof $this->modelName)
-				$sibling = abstractModel::getModelInstance($this->modelName,$parent);
+				$sibling = abstractModel::getModelInstance($this->modelName,$sibling);
 			if( $sibling->isChildOf($i) ) # daddy couldn't become a brother
 				throw new Exception(__class__."::makeSibling() can't make node($i->PK) a child of himself");
 		}
@@ -558,7 +563,7 @@ class mpTreeTraversalModelAddon extends modelAddon{
 			if(! $startnode instanceof $modelName ){
 				$startnode = abstractModel::getModelInstance($modelName,$startnode);
 				if( ! $startnode instanceof $modelName )
-					throw new Exception("mpTreeTraversalModelAddon::mmodelHtmlOptions() request with an invalid startnode parameter ($startnode)");
+					throw new Exception("mpTreeTraversalModelAddon::modelHtmlOptions() request with an invalid startnode parameter ($startnode)");
 			}
 			$levelDelta = $startnode->{$fld_level};
 		}

@@ -34,7 +34,7 @@
 			// then correct url handlings
 			var path = decodeURIComponent(this.url.replace(/^.*\?DynCssPath=(.*)$/,'$1')).replace(/[^\/]+\.css$/,'');
 			res = res.replace(/url\s*\(\s*(?!\/|http:\/\/)/ig,'url('+path);
-			$('head').append('<style type="text/css">'+res+'</style>');
+			$('head').append('<style type="text/css" isDynCss="true">'+res+'</style>');
 		}
 	};
 	$.extend({ DynCss: DynCss.load});
