@@ -3,6 +3,8 @@
 * @licence GPL / MIT
 * @author jonathan gotti < jgotti at jgotti dot org > < jgotti at modedemploi dot fr > for modedemploi.fr
 * @since 2009-01
+* @changelog
+*            - 2009-02-10 - add onAfterParse callback support
 * sample usage:
 * - First step: at the very begining of your css styleSheet define your variables like this:
 *     DynCss.rules={ bgred:'background:red;', green:'#00ff00'} // <- this must be valid javascript
@@ -16,8 +18,19 @@
 (function($){
 	DynCss = {
 		rules: {},
-		load : function(path){
-			$.get(path,{DynCssPath:encodeURI(path)},DynCss.parse,'text');
+		datas: [],
+		/**
+		* load a dynamic css file.
+		* @param string path         dynamic css file URI
+		* @param mixed  onAfterParse callback function (or just it's name as string) to execute when parse is done
+		*                            callback prototype has to look like this: function(styleElement,DynCssRules){...}
+		*                            where styleElement is the newly created style tag containings parsed css
+		*                            and DynCssRules are the defined vars in the dynamic css
+		*/
+		load : function(path,onAfterParse){
+			var parseId = DynCss.datas.length;
+			DynCss.datas[parseId] = [path,onAfterParse];
+			$.get(path,{DynCssId:parseId},DynCss.parse,'text');
 		},
 		parse:function(res,state){
 			// extract  DynCss rules
@@ -32,9 +45,17 @@
 				}
 			}
 			// then correct url handlings
-			var path = decodeURIComponent(this.url.replace(/^.*\?DynCssPath=(.*)$/,'$1')).replace(/[^\/]+\.css$/,'');
-			res = res.replace(/url\s*\(\s*(?!\/|http:\/\/)/ig,'url('+path);
-			$('head').append('<style type="text/css" isDynCss="true">'+res+'</style>');
+			var parseId = this.url.replace(/^.*\?DynCssId=(\d+)$/,'$1');
+			var datas = DynCss.datas[parseId];
+			res = res.replace(/url\s*\(\s*(?!\/|http:\/\/)/ig,'url('+datas[0].replace(/[^\/]+\.css$/,''));
+			var e = $('<style type="text/css" isDynCss="true">'+res+'</style>').appendTo('head');
+			// finally execute onAfterParse callback
+			if( undefined !== datas[1] ){
+				if( typeof(datas[1]) === 'string')
+					eval(datas[1]+'(e.get(0),DynCss.rules);');
+				else
+					datas[1](e.get(0),DynCss.rules);
+			}
 		}
 	};
 	$.extend({ DynCss: DynCss.load});

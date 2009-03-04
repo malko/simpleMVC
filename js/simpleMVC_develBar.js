@@ -5,11 +5,12 @@
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
-* @changelog - 2009-02-07 - cookies path set to slash as default
+* @changelog
+*            - 2009-02-10 - add support for DynCss
+*            - 2009-02-07 - cookies path set to slash as default
 *            - 2009-01-14 - add quick cookie management to keep trace of last opened panel
 */
 jQuery().ready(function(){
-
 var cookies={
 	get:function(name){
 			var re=new RegExp(name+'=([^;]*);?','gi'), result=re.exec(document.cookie)||[];
@@ -43,17 +44,19 @@ var cookies={
 	var btDataMenu  = $('#sMVCmodels');
 	var dataMenu = $('ul#sMVCmodelsList');
 	var btToggle = $('#sMVCtoolBarToggle');
+	var btCss,cssDiv;
 
 	//-- styling toolbar
 	toolBar.css({position:'absolute',right:0,top:0,padding:0,zIndex:1000,background:'#F0F0F0'});
-	$('button',toolBar).css({border:'solid #555 1px','border-top':'none',color:'#333',cursor:'pointer',background:'#F0F0F0',margin:0});
-
 	var pannelStyle = {
 		background:'#F0F0F0', position:'absolute', left:0, top:0,
 		zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
 		border:'solid #333 1px',borderTop:'none',borderLeft:'none'
 	};
 	var pannelTitleStyle = { color:'#555', fontSize:'18px', margin:'10px 0', borderBottom:'solid #555 1px' };
+	var toolBarButtonStyle = {border:'solid #555 1px','border-top':'none',color:'#333',cursor:'pointer',background:'#F0F0F0',margin:0};
+	$('button',toolBar).css(toolBarButtonStyle);
+
 
 	function _toInt(value){ var i = parseInt(value); return isNaN(i)?0:i; }
 	function getWidth(){
@@ -168,6 +171,19 @@ var cookies={
 			dataMenu.toggle();
 		});
 	}
+
+	//-- Manage DynCss
+	simpleMVCDynCssAppend= function(e){
+		if( ! $('#sMVCcss').length){ //- create elements
+			btCss = $('<button id="sMVCcss">DynCss</button></div>').appendTo(toolBar).css(toolBarButtonStyle);
+			cssDiv= $('<div id="sMVCcss_div" class="sMVCpannel"><h1>jqueryDynCss generated</h1>').appendTo('#sMVCpannels');
+			addPanel(btCss,cssDiv);
+		}
+		$('<pre></pre>').html(e.innerHTML).appendTo(cssDiv);
+		if( cookies.get('SMVCDevToggle') != 1)
+			btCss.hide();
+	}
+
 
 	//-- toggle button
 	btToggle.click(function(){

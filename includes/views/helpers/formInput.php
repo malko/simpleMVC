@@ -167,7 +167,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				);
 				break;//--dummy break
 			case 'file':
-				if( self::$useFileEntry && class_exists('fileEntry_viewHelper',false)){
+				if( self::$useFileEntry){
 					$inputStr = $this->fileEntry($name,$value,$options);
 				}else{
 					$inputStr = "<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
