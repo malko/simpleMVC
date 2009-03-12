@@ -9,6 +9,9 @@
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
+* @changelog
+*            - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
+*                         - better handling of editing langMessage from empty dictionnaries
 */
 class adminmodelsController extends modelsController{
 	private $configFile = '';
@@ -78,7 +81,7 @@ class adminmodelsController extends modelsController{
 		$_idMsgs = array_merge(array('save','back','Add new item'),$this->datasDefs,$hasOnes);
 		foreach($this->langs as $l){
 			$messages[$l] = parse_conf_file(langManager::lookUpDic('adminmodels_'.$this->modelType,$l),true);
-			$idMsgs[$l] = array_unique(array_merge($_idMsgs,array_keys($messages[$l])));
+			$idMsgs[$l]   = array_unique(empty($messages[$l])?$_idMsgs:array_merge($_idMsgs,array_keys($messages[$l])));
 		}
 
 		$this->messages = $messages;

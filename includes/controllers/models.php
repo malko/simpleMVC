@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-08 - little modif in setDictName to check dictionnaries from generated with adminmodelsController
 *            - 2009-02-08 - add some automated support for orderable models
 *            - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
 *            - 2009-01-14 - new property $loadDatas to force loadDatas before rendering list.
@@ -217,7 +218,10 @@ abstract class modelsController extends abstractController{
 		#- set dicName
 		list($c,$a) = abstractController::getCurrentDispatch(true);
 		$m = $this->modelType;
-		$this->_langManagerDicName = $c."_$m"."$a|$c"."_$m|$c"."_$a"."|$c|default";
+		if( $this instanceof adminmodelsController && $this->getName()!='adminmodels')
+			$this->_langManagerDicName = $c."_$m"."$a|$c"."_$m|adminmodels_$m|$c"."_$a"."|$c|default";
+		else
+			$this->_langManagerDicName = $c."_$m"."$a|$c"."_$m|$c"."_$a"."|$c|default";
 	}
 
 	public function langMsg($msg){
