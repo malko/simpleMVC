@@ -179,7 +179,7 @@ class adminmodelsController extends modelsController{
 		return $newContent;
 	}
 	private function getModelFilePath($modelType){
-		$modelType = preg_replace('![^a-z0-9_]!','',$modelType);
+		$modelType = preg_replace('![^a-z0-9_]!i','',$modelType);
 		$modelFile = LIB_DIR.'/models/'.$modelType.'.php';
 		return file_exists($modelFile)?$modelFile:false;
 	}
