@@ -10,11 +10,12 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-13 - put configFile as protected instead of private to permitt extended class to access it
 *            - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
 *                         - better handling of editing langMessage from empty dictionnaries
 */
 class adminmodelsController extends modelsController{
-	private $configFile = '';
+	protected $configFile = '';
 	function init(){
 		parent::init();
 		self::appendAppMsg("Don't forget to edit the adminModelsController to check for user rights to access it or anyone could be editing your datas","error");
