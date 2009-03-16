@@ -8,6 +8,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-16 - use spl_register_autoload for better autoload support when included in other application.
 *            - 2009-02-06 - move javascript and style from show to sMVCdevelBar
 *            - 2008-10-21 - autoload modification to check modelCollection extended classes in corresponding model file
 *            - 2008-09-12 - now try to load a specific config file for the current used front
@@ -46,7 +47,14 @@ if( defined('DEVEL_MODE') && DEVEL_MODE){
 }
 
 ###--- AUTOLOAD ---###
-function __autoload($className){
+if( function_exists('spl_autoload_register')){
+	spl_autoload_register('smvcAutoload');
+}else{
+	function __autoload($className){
+		return smvcAutoload($className);
+	}
+}
+function smvcAutoload($className){
 	$dirs[] = LIB_DIR;
 	if( defined('FRONT_NAME') ){
 		if( preg_match('!(?:_c|C)ontroller$!',$className,$m) ){ #- look for controller
