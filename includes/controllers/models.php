@@ -10,6 +10,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-19 - rewrite support for orderable models
+*                         - set_layout now consider for adminmodelsModelType templates  
 *            - 2009-03-08 - little modif in setDictName to check dictionnaries from generated with adminmodelsController
 *            - 2009-02-08 - add some automated support for orderable models
 *            - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
@@ -42,12 +44,12 @@ abstract class modelsController extends abstractController{
 			self::appendAppMsg('Vous devez specifier le type de model à administrer','error');
 			$this->redirectAction('index','default');
 		}
+		$this->view->modelType = $this->modelType;
 		$this->view->setLayout(array(
 			'header.tpl.php',
-			':controller_:action.tpl.php|models_:action.tpl.php|default_:action.tpl.php',
+			($this->getName()=='adminmodels'?strtolower($this->modelType).'_:action.tpl.php|':'').':controller_:action.tpl.php|models_:action.tpl.php|default_:action.tpl.php',
 			'footer.tpl.php'
 		));
-		$this->view->modelType = $this->modelType;
 	}
 
 	function indexAction(){
@@ -62,10 +64,18 @@ abstract class modelsController extends abstractController{
 		if( ! empty($this->loadDatas) )
 			$models->loadDatas($this->loadDatas);
 		$datas = array();
+
 		if( count($models) ){
 			if( $orderable ){
-				$orderableField = $models->current()->getOrderableField();
+				list($orderableField,$orderableGroupField) = $models->current()->_getOrderableFields();
 				$models->sort($orderableField);
+				$orderableLastPos = array();
+				if(! $orderableGroupField ){
+					$orderableLastPos[] = $models->current()->orderableGetLastPK();
+				}else{
+					$orderableLastPos = $models->filterBy($orderableField,0)->orderableGetLastPK();
+					$models->sort($orderableGroupField);
+				}
 			}
 			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 			if( empty($this->listFields) ){
@@ -86,29 +96,23 @@ abstract class modelsController extends abstractController{
 				foreach($models as $m){
 					$row = array();
 					$row['id'] = $m->PK.'/modelType/'.$this->modelType;
-					foreach($this->listFields as $k=>$v)
-						$row[$k] = $m->{$k};
+					foreach($this->listFields as $k=>$v){
+						switch($k){
+							case $orderableField:
+								$row[$k] = $m->{$k}. ($m->{$k}>0?'<a href="'.$this->url('moveup').'/id/'.$m->PK.'">&uarr;</a>':'')
+									.(in_array($m->PK,$orderableLastPos)?'':'<a href="'.$this->url('movedown').'/id/'.$m->PK.'">&darr;</a>');
+								break;
+							default:
+								$row[$k] = $m->{$k};
+								break;
+						}
+					}
 					$datas[] = $row;
 				}
 				$this->view->listHeaders = array_map(array($this,'langMsg'),array_values($this->listFields));
 			}
 		}
 		$this->view->listDatas = $datas;
-		/*
-		the following is not a proper way to do tricks as it will perform additional loop on the listed elements
-		but it will permitt me to code it quick and dirty for now (it's late and will work for today) and leave place for further optimisation */
-		if( $models->count() && $orderable ){
-			if( isset($this->listFields[$orderableField]) ){
-				$datas = $this->view->listDatas;
-				$lastPos = $models->count()-1;
-				foreach($datas as $k=>$v){
-					$datas[$k][$orderableField] = $v[$orderableField].'&nbsp;'
-						.($v[$orderableField]>0?'<a href="'.$this->url('moveup').'/id/'.$v['id'].'">&uarr;</a>':'')
-						.($v[$orderableField]<$lastPos?'<a href="'.$this->url('movedown').'/id/'.$v['id'].'">&darr;</a>':'');
-				}
-				$this->view->listDatas = $datas;
-			}
-		}
 	}
 
 	function addAction(){
