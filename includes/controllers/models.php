@@ -11,7 +11,7 @@
 *            - $HeadURL$
 * @changelog
 *            - 2009-03-19 - rewrite support for orderable models
-*                         - set_layout now consider for adminmodelsModelType templates  
+*                         - set_layout now consider for adminmodelsModelType templates
 *            - 2009-03-08 - little modif in setDictName to check dictionnaries from generated with adminmodelsController
 *            - 2009-02-08 - add some automated support for orderable models
 *            - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
@@ -66,6 +66,7 @@ abstract class modelsController extends abstractController{
 		$datas = array();
 
 		if( count($models) ){
+			$orderableField = null;
 			if( $orderable ){
 				list($orderableField,$orderableGroupField) = $models->current()->_getOrderableFields();
 				$models->sort($orderableField);
@@ -99,8 +100,8 @@ abstract class modelsController extends abstractController{
 					foreach($this->listFields as $k=>$v){
 						switch($k){
 							case $orderableField:
-								$row[$k] = $m->{$k}. ($m->{$k}>0?'<a href="'.$this->url('moveup').'/id/'.$m->PK.'">&uarr;</a>':'')
-									.(in_array($m->PK,$orderableLastPos)?'':'<a href="'.$this->url('movedown').'/id/'.$m->PK.'">&darr;</a>');
+								$row[$k] = $m->{$k}. ($m->{$k}>0?'<a href="'.$this->url('moveup').'/id/'.$row['id'].'">&uarr;</a>':'')
+									.(in_array($m->PK,$orderableLastPos)?'':'<a href="'.$this->url('movedown').'/id/'.$row['id'].'">&darr;</a>');
 								break;
 							default:
 								$row[$k] = $m->{$k};
