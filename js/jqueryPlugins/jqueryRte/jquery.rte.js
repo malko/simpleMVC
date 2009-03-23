@@ -13,6 +13,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-23 - add indent/outdent commands
 *            - 2009-01-22 - bug correction that made certain ie6 version to loose link to this.editable after designMode is set to on
 *            - 2008-04-15 - now classOption can also refer to callback user function
 *            - 2008-02-22 - set frameBody height to 100% (permit to click anywhere instead of firstline only in firefox when empty)
@@ -138,10 +139,12 @@
 			var img = image?'<img src="'+this.opts.imgPath+image+'" alt="'+label+'" border="0" />':label;
 			var b = $('<a href="#" title="'+label+(className?'" class="'+className:'')+'">'+img+' </a>');
 			this.toolbar.append(b);
-			if( cmd.toString().match(/^(bold|italic|undo|redo|underline|formatblock|removeformat|justify|insert)/i) ){
-				if(! cmd.match(this.opts._buttonExp) ){
-					b.remove();
-					return this;
+			if( cmd.toString().match(/^(bold|italic|undo|redo|underline|formatblock|removeformat|justify|insert(un)?orderedlist|indent|outdent)/i) ){
+				if(! cmd.match(this.opts._buttonExp)){
+					if( (! cmd.match(/^(in|out)dent/)) || !this.opts._buttonExp.toString().match(/list/)){
+						b.remove();
+						return this;
+					}
 				}
 				b.bind('click',{rte:this},function(e){ e.data.rte.formatText(cmd); return false;});
 			}else{
@@ -181,6 +184,8 @@
 				.appendFormatButton('spacer')
 				.appendFormatButton('insertorderedlist','ordered list','text_list_numbers.png')
 				.appendFormatButton('insertunorderedlist','unordered list','text_list_bullets.png')
+				.appendFormatButton('indent','indent','text_indent.png')
+				.appendFormatButton('outdent','outdent','text_indent_remove.png')
 				.appendFormatButton('spacer');
 			/* no undo redo for now seems buggy
 			if(! $.browser.msie ){ //--  not implemented under ie sorry for thoose who use it
