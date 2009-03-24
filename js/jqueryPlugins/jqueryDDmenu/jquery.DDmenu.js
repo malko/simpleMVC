@@ -73,7 +73,7 @@
 			if(parent.parent('ul').attr('id')===this.menuId){
 				style = {
 					left:  coords.left,
-					top:   coords.top+parent.height()-($.boxModel?0:2)
+					top:   coords.top+parent.height()-($.support!=undefined?($.support.boxModel?0:2):($.boxModel?0:2))
 				};
 				if( this.opts.fixedWidth )
 					style.width=parent.width();

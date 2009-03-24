@@ -13,6 +13,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-24 - remove use of deprecated jQuery.browser.msie detection
 *            - 2009-03-23 - add indent/outdent commands
 *            - 2009-01-22 - bug correction that made certain ie6 version to loose link to this.editable after designMode is set to on
 *            - 2008-04-15 - now classOption can also refer to callback user function
@@ -77,14 +78,14 @@
 			}else{
 				var css = this.opts.css_url?"<link type='text/css' rel='stylesheet' href='"+this.opts.css_url+"' />":'';
 				this.content = this.textarea.val();
-				if($.trim(this.content)=='' && ! $.browser.msie){// Mozilla need this to display caret
+				var contentDoc = window.document.getElementById(this.iframe.id).contentDocument; //-- IE won't get a contentDoc
+				if($.trim(this.content)=='' && contentDoc){// Mozilla need this to display caret
 					this.content = '<br />';
 					this.textarea.parent('form').bind('submit',{rte:this},function(e){
 						var t=e.data.rte.textarea;t.val(t.val().replace(/(^<br( \/)?>|<br( \/)?>$)/,''));
 						return true;
 					});
 				}
-				var contentDoc = window.document.getElementById(this.iframe.id).contentDocument;
 				if(contentDoc){
 					this.editable = contentDoc;
 				}else{// IE
