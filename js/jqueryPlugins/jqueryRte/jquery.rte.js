@@ -13,6 +13,9 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-27 - add rangeObject parameter to insertNode() method
+*                         - getSelection will now trigger focus on editable document (prevent image insertion outside editable document when not focused under ie)
+*            - 2009-03-26 - now edited documents will use standard mode in ie6 instead of quirks mode
 *            - 2009-03-24 - remove use of deprecated jQuery.browser.msie detection
 *            - 2009-03-23 - add indent/outdent commands
 *            - 2009-01-22 - bug correction that made certain ie6 version to loose link to this.editable after designMode is set to on
@@ -79,6 +82,7 @@
 				var css = this.opts.css_url?"<link type='text/css' rel='stylesheet' href='"+this.opts.css_url+"' />":'';
 				this.content = this.textarea.val();
 				var contentDoc = window.document.getElementById(this.iframe.id).contentDocument; //-- IE won't get a contentDoc
+				//- var contentDoc = this.iframe.contentDocument; //-- IE won't get a contentDoc
 				if($.trim(this.content)=='' && contentDoc){// Mozilla need this to display caret
 					this.content = '<br />';
 					this.textarea.parent('form').bind('submit',{rte:this},function(e){
@@ -89,15 +93,15 @@
 				if(contentDoc){
 					this.editable = contentDoc;
 				}else{// IE
-					this.editable = window.document.frames[this.iframe.id].document;
+					this.editable = this.iframe.contentWindow.document;
 				}
 				this.editable.open();
-				this.editable.write('<?xml version="1.0" encoding="UTF-8" ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"</head><body class='frameBody' style='height:100%;margin:0;'>"+this.content+"</body></html>");
+				this.editable.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"</head><body class='frameBody' style='height:100%;margin:0;'>"+this.content+"</body></html>");
 				this.editable.close();
 				this.editable.contentEditable = 'true';
 				this.editable.designMode = 'on';
 				if(! contentDoc)// some ie6 version may loose this.editable after setting designMode to on so relink it
-					this.editable = window.document.frames[this.iframe.id].document;
+					this.editable = this.iframe.contentWindow.document;
 			}
 			return this;
 		},
@@ -317,11 +321,17 @@
 			}
 			return returnNode?this:node;
 		},
-
-		insertNode: function(node,returnNode){
+		/**
+		* you must create the node in the editable document context to get it work with ie.
+		* you can use the rte.createElement method to achieve this.
+		* @param domNode    node the node to add
+		* @param bool       returnNode will return node instead of rte instance if set to true
+		* @param rangeOject permit you to pass your own rangeObject it's usefull when replacing the default insertImage method.
+		*/
+		insertNode: function(node,returnNode,rangeObject){
 			if(this.textarea.is(':visible'))
 				return returnNode?this:node;
-			var r = this.getSelectedElement(true);
+			var r = rangeObject?rangeObject:this.getSelectedElement(true);
 			if(r.insertNode){ // normal way
 				r.insertNode(node);
 			}else{ // ugly ie hack
@@ -334,6 +344,9 @@
 			return returnNode?this:node;
 		},
 
+		//- insertImage:function(url){
+//-
+		//- }
 		/** really clean content from any tag (called as a callback) */
 		cleanContents: function(event){
 			var rte = event.data.rte
@@ -362,7 +375,7 @@
 			return ( r.toString() == '')?false:true;
 
 		},
-		removeLinkCB: function(e){ return e.data.rte.removeLink(); },
+		removeLinkCB: function(e){ e.data.rte.removeLink(); return false; },
 		removeLink: function(){
 			var p = this.getSelectedElement();
 			if(p.tagName !== undefined && p.tagName.match(/a/i)){
@@ -378,6 +391,7 @@
     getSelectedElement: function(returnRange) {
 			if(this.textarea.is(':visible'))
 				return false;
+			this.editable.body.focus(); // ensure editable to be focused
 			if(this.editable.selection) { // IE selections
 				selection = this.editable.selection;
 				range = selection.createRange();
