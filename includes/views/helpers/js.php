@@ -15,6 +15,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-27 - add jqueryUI plugin
 *            - 2009-02-08 - loadPlugin now check for registeredPlugins before trying to load it
 *                         - js and others methods now return $this for method chaining
 *                         - add some documentation comments
@@ -186,4 +187,22 @@ class js_viewHelper extends abstractViewHelper{
 */
 class jquery_viewHelper extends jsPlugin_viewHelper{
 	public $requiredFiles = array('js/jquery.js');
+}
+/**
+* dummy jsPlugin that load jquery-ui usefull for jsPlugins that require jquery-ui
+* @class jqueryUI_viewHelper
+*/
+class jqueryUI_viewHelper extends jsPlugin_viewHelper{
+	public $requiredFiles = array(
+		'js/jqueryPlugins/bgiframe/jquery.bgiframe.min.js',
+		'js/jquery-ui.js',
+		'js/css/redmond/jquery-ui-1.7.1.custom.css'
+	);
+	public $requiredPlugins = array(
+		'jquery'
+	);
+
+	function init(){
+		$this->_js_script('$.ui.dialog.defaults.bgiframe = true;');
+	}
 }

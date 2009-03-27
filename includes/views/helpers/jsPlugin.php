@@ -6,11 +6,13 @@
 * - define static $requireFiles and eventual $requiredPlugins
 * - eventually define an init() method to take particuliar actions at load time.
 * @class jsPlugin_viewHelper
+* @changelog
+*            - 2009-03-24 - add common method getuniqueId
 */
 abstract class jsPlugin_viewHelper extends abstractViewHelper{
 	public $requiredFiles   = array();
 	public $requiredPlugins = array();
-	function __construct(viewInterface $view){
+	public function __construct(viewInterface $view){
 		parent::__construct($view);
 		#- ensure that js plugin is loaded
 		$this->helperLoad('js');
@@ -27,5 +29,11 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 			$this->init();
 		#- register plugin
 		$this->view->_js_registerPlugin($this);
+	}
+	final static public function uniqueId(){
+		static $id;
+		if( ! isset($id) )
+			$id=0;
+		return 'jsPlugin'.(++$id);
 	}
 }
