@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin 
 *            - 2009-01-05 - add support for time picker and datetime picker
 *            - 2008-11-27 - better multiple select support
 *            - 2008-11-26 - add disabled optional attribute
@@ -168,7 +169,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				break;//--dummy break
 			case 'file':
 				if( self::$useFileEntry){
-					$inputStr = $this->fileEntry($name,$value,$options);
+					$inputStr = $this->_filemanager_entry($name,$value,$options);
 				}else{
 					$inputStr = "<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
 				}

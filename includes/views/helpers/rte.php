@@ -2,6 +2,8 @@
 /**
 * helper to easily incorporate jquery based Textarea
 * @package simpleMVC
+* @changelog
+*            - 2009-03-27 - integration of filemanager plugin for image selection and replace dialogs with jqueryUI dialogs
 */
 
 class rte_viewHelper extends  jsPlugin_viewHelper{
@@ -11,116 +13,134 @@ class rte_viewHelper extends  jsPlugin_viewHelper{
 		'js/jqueryPlugins/jqueryRte/rte.css'
 	);
 	public $requiredPlugins = array(
-		'facebox',
-		'jquery'
+		'filemanager'
 	);
 	protected $areaRegistered=false;
 
 	function init(){
-		$iframeSrc = $this->url('uploadform','docs',array('embed'=>"'+inputId+'"),true);
-		$this->js("
-			function createRteFaceBox(title,content,onSubmit){
-				var div = $('<div id=\"rteUrlDialog\"><h3>'+title+'</h3>'+content+'<div style=\"text-align:right\"><input type=\"submit\"></div></div>');
-				$('label',div).css({width:'80px',display:'block',float:'left'});
-				$('input[type=submit]',div).click(onSubmit);
-				return div;
-			}
-			rteBrowseServer = function (inputId){
-				var iframe = $('#rteIframeContainer');
-				if(iframe.length){
-					iframe.show();
-				}else{
-					$('#rteUrlDialog').after('<div id=\"rteIframeContainer\"><hr /><iframe src=\"$iframeSrc\" style=\"width:450px;height:250px;border:none;\"></iframe></div>');
-				}
-				return false;
-			}
-
-			rteMainBoxPro = function(rte){ return rteMainBox(rte,true);}
-			rteMainBox = function(rte,pro){
-				var d = rte.createElement('div');
-				var toplink = '<a href=\"#haut\" title=\"retour haut de page\"><img border=\"0\" alt=\"retour haut de page\" onmouseout=\"this.src=\'".ELEMENTS_URL."/hp_off.gif\'\" onmouseover=\"this.src=\'".ELEMENTS_URL."/hp_on.gif\'\" src=\"".ELEMENTS_URL."/hp_off.gif\"/></a>';
-				if( rte.hasSelection() ){
-					d.className = 'contentContent';
-					rte.surroundContents(d);
-					$(d).wrap('<div class=content'+(pro?'Pro':'')+'></div>');
-					$(d).before('<div class=top>&nbsp;</div>');
-					$(d).after('<div class=bottom>'+toplink+'</div>');
-				}else{
-					rte.insertNode(d);
-					$(d,rte.editable).replaceWith('<div class=content'+(pro?'Pro':'')+'><div class=top>&nbsp;</div><div class=contentContent>Contenu</div><div class=bottom>'+toplink+'</div></div>');
-				}
-			}
-
-			// use to manage file selection callback
-			$.extend($.fn.rte.defaults,{
-				imgPath:'".ROOT_URL."/js/jqueryPlugins/jqueryRte/',
-				css_url:'".ROOT_URL."/front/views/default.css',
-				classOptions:[
-					['small','small'],
-					['hr:spacer','spacer']
-				],
-				createLink:function(e){
-					var rte = e.data.rte;
-					if( rte.textarea.is(':visible') )
-						return false;
-					if(! rte.hasSelection())
-						return alert('La selection est vide, impossible de créer un lien.');
-					// we must keep trace of range before focus change under IE
-					var range = rte.getSelectedElement(true);
-					var div = createRteFaceBox(
-						'Create link',
-						'<label for=\"rteUrlDialog_url\" class=\"label\">link url</label>\
-						 <input type=\"text\" name=\"url\" id=\"rteUrlDialog_url\"/><br /><br />\
-						<label for=\"rteUrlDialog_target\" class=\"label\">link target</label>\
-						<select name=\"target\" id=\"rteUrlDialog_target\">\
-							<option></option><option>_ blank</option><option>_self</option><option>_parent</option><option>top</option>\
-						</select><br /><br />',
-						function(e){
-							var href   = $('#rteUrlDialog_url').val();
-							var target = $('#rteUrlDialog_target').val();
-							if( href ==='')
-								return false;
-							var a = rte.createElement('a');
-							a.href = href;
-							if(target)
-								a.target = target;
-							$.facebox.close();
-							rte.surroundContents(a,false,range);
-						}
-					);
-					$.facebox(div);
-					return false;
-				},
-				insertImage:function(e){
-					var rte   = e.data.rte;
-					var range = rte.getSelectedElement(true);
-					var div = createRteFaceBox(
-						'Ajouter une image',
-						'<label for=\"rteUrlDialog_src\" class=\"label\">image url</label>\
-						 <input type=\"text\" name=\"src\" id=\"rteUrlDialog_src\"/> <input type=\"button\" value=\"browse\" /><br /><br />\
-						<label for=\"rteUrlDialog_align\" class=\"label\">image alignment</label>\
-						<select name=\"align\" id=\"rteUrlDialog_align\">\
-							<option value=\"\">normal</option><option>float:left;</option><option>float:right;</option>\
-						</select><br /><br />',
-						function(e){
-							var src   = $('#rteUrlDialog_src',div).val();
-							var style = $('#rteUrlDialog_align',div).val();
-							if(src ==='')
+		//-- define default rte options
+		if( ! defined('FRONT_URL'))
+			define('FRONT_URL',ROOT_URL.'/front');
+		$fmOptions = json_encode(filemanager_viewHelper::$defaultOptions);
+		$this->_js_script("
+		//--- display dialog for image selection inside rte ---//
+		cbRteImageDialog=function(rte,range){
+			if( typeof(rteImageDialog)=='undefined' ){
+				rteImageDialog = $('<div id=\"dialog\" title=\"Insert an image\" class=\"ui-widget\">\
+					<label for=\"rteImageSrc\">Image Path</label>\
+					<input type=\"text\" name=\"rteImageSrc\" id=\"rteImageSrc\" class=\"ui-corner-all\" />\
+					<label for=\"rteImageAlt\">Alternative Text</label>\
+					<input type=\"text\" name=\"rteImageAlt\" id=\"rteImageAlt\"  class=\"ui-corner-all\" />\
+					<label for=\"rteImageAlign\">Alignment</label>\
+					<select name=\"rteImageAlign\" id=\"rteImageAlign\"class=\"ui-corner-all\">\
+						<option value=\"\">normal</option><option value=\"float:left;\">left</option><option value=\"float:right;\">right</option>\
+					</select>\
+				</div>\
+				');
+				var buttons = {
+					'save':function(){
+						$(this).dialog('close'); //- hide dialog
+						var rte = rteImageDialog.get(0).rte;
+						var range = rteImageDialog.get(0).range;
+						var src = $('#rteImageSrc',this).val();
+						var alt = $('#rteImageAlt',this).val();
+						var align = $('#rteImageAlign',this).val();
+						if(src ==='')
 								return false;
 							var i = rte.createElement('img');
 							i.src = src;
-							if(style!=='')
-								$(i).attr('style',style);
-							$.facebox.close();
-							rte.insertNode(i);
-						}
-					);
-					$('input[value=browse]',div).click(function(){rteBrowseServer('rteUrlDialog_src');});
-					$.facebox(div);
+							if(align!=='')
+								$(i).attr('style',align);
+							if(alt!=='')
+								$(i).attr('alt',alt);
+							rte.insertNode(i,false,range);
+						return false;
+					},
+					'cancel':function(){ $(this).dialog('close');return false;}
+				};
+				rteImageDialog.appendTo('body')
+					.css({fontSize:'12px'})
+					.dialog({autoOpen:false,resizable:false,buttons:buttons,width:'300px'});
+				$('label',rteImageDialog).css({display:'block'})
+				$('input,select',rteImageDialog).css({width:'230px'})
+				$('input#rteImageSrc',rteImageDialog).filemanagerEntry($fmOptions);
+			}
+			var rteDg = rteImageDialog.get(0);
+			rteDg.rte = rte;
+			rteDg.range = range;
+			rteImageDialog.dialog('open');
+		}
+		//--- display dialog for link selection inside rte ---//
+		cbRteLinkDialog=function(rte,range){
+			if( typeof(rteLinkDialog)=='undefined' ){
+				rteLinkDialog = $('<div id=\"dialog\" title=\"Insert a link\" class=\"ui-widget\">\
+					<label for=\"rteLinkHref\">Link url</label>\
+					<input type=\"text\" name=\"rteLinkHref\" id=\"rteLinkHref\" class=\"ui-corner-all\" />\
+					<label for=\"rteLinkTarget\">Link target</label>\
+					<select name=\"rteLinkTarget\" id=\"rteLinkTarget\"class=\"ui-corner-all\">\
+						<option></option><option>_ blank</option><option>_self</option><option>_parent</option><option>top</option>\
+					</select>\
+				</div>\
+				');
+				var buttons = {
+					'save':function(){
+						$(this).dialog('close'); //- hide dialog
+						var rte = rteLinkDialog.get(0).rte;
+						var range = rteLinkDialog.get(0).range;
+						var href = $('#rteLinkHref',this).val();
+						var target = $('#rteLinkTarget',this).val();
+						if( href==='')
+							return false;
+						var a = rte.createElement('a');
+						a.href = href;
+						if(target)
+							a.target = target;
+						rte.surroundContents(a,false,range);
+						return false;
+					},
+					'cancel':function(){ $(this).dialog('close');return false;}
+				};
+				rteLinkDialog.appendTo('body')
+					.css({fontSize:'12px'})
+					.dialog({autoOpen:false,resizable:false,buttons:buttons,width:'300px',modal:true});
+				$('label',rteLinkDialog).css({display:'block'})
+				$('input,select',rteLinkDialog).css({width:'230px'})
+				$('input#rteLinkHref',rteLinkDialog).filemanagerEntry($fmOptions);
+			}
+			var rteDg = rteLinkDialog.get(0);
+			rteDg.rte = rte;
+			rteDg.range = range;
+			rteLinkDialog.dialog('open');
+		}
+		$.extend($.fn.rte.defaults,{
+			imgPath:'".ROOT_URL."/js/jqueryPlugins/jqueryRte/',
+			//css_url:'".FRONT_URL."/views/default.css',
+			classOptions:[
+				['small','small'],
+				['hr:spacer','spacer']
+			],
+			insertImage:function(e){
+				var rte = e.data.rte;
+				if( rte.textarea.is(':visible') )
+						return false;
+				var range = rte.getSelectedElement(true);
+				cbRteImageDialog(rte,range);
+				return false;
+			},
+			createLink:function(e){
+				var rte = e.data.rte;
+				if( rte.textarea.is(':visible') )
+					return false;
+				if(! rte.hasSelection()){
+					alert('La selection est vide, impossible de créer un lien.');
 					return false;
 				}
-			});
-		");
+				// we must keep trace of range before focus change under IE
+				var range = rte.getSelectedElement(true);
+				cbRteLinkDialog(rte,range);
+				return false;
+			}
+		});");
 	}
 
 	/**
@@ -137,6 +157,13 @@ class rte_viewHelper extends  jsPlugin_viewHelper{
 	*  @return string.
 	*/
 	function rte($areaSelector,$areaOptions=null){
+		static $fmLoaded =false;
+		if($fmLoaded){
+			$preStr='';
+		}else{
+			$preStr = $this->filemanager('rteFm',array('isDialog'=>true,'prefixValue'=>USER_DATAS_URL));
+			$fmLoaded=true;
+		}
 		if( !$this->areaRegistered ){
 			$this->areaRegistered = true;
 			$this->js("$('.jqueryRte').rte();");
@@ -157,7 +184,7 @@ class rte_viewHelper extends  jsPlugin_viewHelper{
 				}
 				$attrs[] = $k.'="'.preg_replace('/(?<!\\\\)"/','\"',$v).'"';
 			}
-			return '<textarea name="'.$areaSelector.'"'.(empty($attrs)?'':' '.implode(' ',$attrs))." class=\"jqueryRte\">$value</textarea>\n";
+			return $preStr.'<textarea name="'.$areaSelector.'"'.(empty($attrs)?'':' '.implode(' ',$attrs))." class=\"jqueryRte\">$value</textarea>\n";
 		}
 	}
 
