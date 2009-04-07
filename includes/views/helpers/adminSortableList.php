@@ -27,7 +27,7 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		}
 		$_headers = 'var headers = ['.implode(', ',$_headers).",{label:'&nbsp;',unsortable:true,width:'55px'}];";
 
-		$tableId = 'sortTable'.(++self::$lastTableId);
+		$tableId = 'sortTable'.($this->view->modelType?$this->view->modelType:(++self::$lastTableId));
 		foreach($datas as $row){
 			$pk = $row[$PK];
 			unset($row[$PK]);$row['id'] = $pk;
@@ -36,29 +36,32 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		$datas   = "var $tableId = [\n        ".implode(",\n        ",$jsData)."\n      ];\n";
 		$controller = $this->getController()->getName();
 		#- $baseUrl = APP_URL.'/'.$controller->getName.'/';
+		$msgEdit = htmlentities(langManager::msg('Edit'));
+		$msgDel  = htmlentities(langManager::msg('Delete'));
 		$this->js("
 			var options = { rowRendering: function(row,data){
 				$(row).addClass(data.rowid%2?'row':'altrow');
 				var bcell  = row.cells[row.cells.length-1];
 				var itemId = data.data[data.data.length-1];
-				bcell.innerHTML = '<img onclick=\"window.location=\'".
-					APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr).
-					"\';\" alt=\"".langManager::msg('Edit')."\" title=\"".langManager::msg('Edit')."\" src=\"".ELEMENTS_URL."/icones/admin/bouton_modifier_icone.png\"/>'+
-					' <img onclick=\"return adminlistDelRow(\'$controller\',\''+itemId+
-					'\');\" alt=\"".langManager::msg('Delete')."\" title=\"".langManager::msg('Delete')."\" src=\"".ELEMENTS_URL."/icones/admin/edittrash.png\"/>';
+				var btE = $('<img src=\"".GUI_IMG_URL."/icones/admin/document-properties.png\" title=\"$msgEdit\" alt=\"$msgEdit\" />');
+				var btD = $('<img src=\"".GUI_IMG_URL."/icones/admin/list-remove.png\" title=\"$msgDel\" alt=\"$msgDel\" />');
+				btE.click(function(){
+					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr)."';
+				});
+				btD.click(function(){
+					if(! confirm('".str_replace("'","\'",langManager::msg("Are you sure you want to delete this item?"))."')){
+						return false;
+					}
+					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
+					return true;
+				});
+				$(bcell).html('').append(btE,btD).find('img').css('cursor','pointer');
 			}};
 			sortTable.init('$tableId',headers,options);
 		");
 		return "
 		<table cellspacing=\"0\" cellpadding=\"2\" border=\"0\" class=\"adminList\" id=\"$tableId\"></table>
 		<script type=\"text/javascript\">
-			function adminlistDelRow(ctrl,rowid){
-				if(! confirm('".str_replace("'","\'",langManager::msg("Are you sure you want to delete this item?"))."')){
-					return false;
-				}
-				window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("'+ctrl+'","del","'+rowid+'"),self::$actionStr)."';
-				return true;
-			}
 			$datas
 			$_headers
 		</script>
