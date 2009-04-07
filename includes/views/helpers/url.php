@@ -15,7 +15,9 @@
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
-* @changelog - 2008-11-20 - add new static property self::$argSeparator
+* @changelog
+*            - 2009-04-03 - add method wordCleaner
+*            - 2008-11-20 - add new static property self::$argSeparator
 *            - 2008-04-15 - add new param $appUrl to permit link creation for external apps
 *            - 2008-02-01 - now suppress empty params from url
 */
@@ -106,5 +108,8 @@ class url_viewHelper extends abstractViewHelper{
 			$url = "$appUrl/index.php?ctrl=$controller$sep"."action=$action".(empty($Qstr)?'':"$sep$Qstr");
 		}
 		return $url;
+	}
+	function wordCleaner($word){
+		return preg_replace(array('![^a-z0-9]+!i','!(^_|_$)!'),array('_',''),removeMoreAccents($word));
 	}
 }
