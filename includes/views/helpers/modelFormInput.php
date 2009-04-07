@@ -34,6 +34,10 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			$options['label'] = langManager::msg($keyName,null,$this->view->_langManagerDicName);
 		}
 
+		if( (!empty($options['uneditable'])) && $modelName instanceof abstractModel ){
+			$options['disabled'] = "disabled";
+			usnet($options['uneditable']);
+		}
 		# commence par checker les relations
 		if( isset($relsDefs['hasOne'][$keyName]) ){
 			if( $modelName instanceof abstractModel && is_object($modelName->{$keyName}) ){

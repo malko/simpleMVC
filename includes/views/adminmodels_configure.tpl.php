@@ -35,6 +35,8 @@
 			Check fields you want to be displayed in adminModels list actions.
 			<br />
 			You also can specify an optional format string to render this field in the list, @see abstractModel::__toString() documentation for more infos on what can be put here.
+			<br />
+			Field list order may be arrange by simple drag&drop.
 		</div>
 		<ul id="fldList">
 		<?php
@@ -62,13 +64,16 @@
 			List of possible options as defined in formInput_viewHelper documentation:
 			<ul style="padding:0;margin:0 0 0 15px;">
 				<li> default is the default value to set if $value is empty.</li>
-				<li> multiple,class, size, id, onchange, maxlength, disabled are replaced by the corresponding html attributes</li>
+				<li>
+				multiple,class, size, id, onchange, maxlength, rows, cols, style, checked and disabled are replaced by the corresponding html attributes</li>
 				<li> default id will be same as name</li>
 				<li> default class will be same as type</li>
 				<li> values is an associative list of key value pairs (keys are used as values and values are used as labels) used with select | checkBox | radio</li>
 				<li> label is an optional label for the input</li>
-				<li> pickerOptStr is used for datepicker and timepicker fields</li>
-				<li> pickerOpts   is used for datetimepicker (something like that: array(0=>dateOptStr,1=>timeOptStr))</li>
+				<li> pickerOptStr is used for datepicker or timepicker fields</li>
+				<li> pickerOpts   is used for datetimepicker (something like that: {"pickerOpts":["dateOptStr","timeOptStr"]}</li>
+				<li> rteOpts      is used for rte options</li>
+				<li> uneditable   setted to true will allow field to be filled only at item creation time, and will be disabled the rest of the time. 
 			</ul>
 			<strong>Warning: </strong>Options are not checked for validation so be carrefull to pass a valid json string as define in php json_encode.
 		</div>
@@ -142,5 +147,23 @@ $this->js('
 		$("fieldset div.langMessages").hide();
 		$("div#langMessages_"+l).show();
 	}).change();
+	//-- add form option client side validation
+
+	//--- test options are valid json
+	$("#forms input[id^=inputOptions]").keyup(function(){
+		var val = $(this).val();
+		if( val.length<1)
+			return $(this).removeClass("ui-state-error");
+		if( (/[^,:\\{\\}\\[\\]0-9.\\-+Eaeflnr-u \\n\\r\\t]/.test(val.replace(/"(\\\\.|[^"\\\\])*"/g, ""))) )
+			return $(this).addClass("ui-state-error");
+		var  e;
+		try{
+			var test =  eval("(" + $(this).val() + ")");
+			$(this).removeClass("ui-state-error");
+		}catch(e){
+			$(this).addClass("ui-state-error");
+		}
+	});
+	
 ','jqueryUI');
 ?>
