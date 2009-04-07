@@ -9,6 +9,8 @@
 *                                     - unsortable (opt) boolean value set this to true if you don't want the column to be sortable
 *
 * @since 2006-08-24
+* @changelog
+*            - 2009-04-01 - add saveUserPrefs options to save user preferences by cookies
 * @example
 * here's a very basic sample usage
 * first include this file:
@@ -46,11 +48,12 @@ sortTable = {
 	headers:{},   // headers of tables indexed by table ids
 	// list of defaults options for rendering.
 	dfltOptions:{
-		pageSize: 10,
+		pageSize: 30,
 		pageNb: 1,
 		// html to append to header cells to show the sorting order //
 		upArrow: ' &uarr;',
 		downArrow: ' &darr;',
+		saveUserPrefs:true, // whether or not to use cookies to save user prefs
 		// list of possible page size users can set manually, put false if you don't want to allow them to change pageSize
 		userPageSize: [10,20,30,50,['all','all']],
 		/* rowRendering and cellRendering are some 'post processing' callback function to allow you to make particular job on the table datas.
@@ -117,6 +120,27 @@ sortTable = {
 			loading.style.display = isWorking?'block':'none';
 		}
 	},
+	cookies:{
+		get:function(name){
+				var re=new RegExp(name+'=([^;]*);?','gi'), result=re.exec(document.cookie)||[];
+				return (result.length>1? unescape(result[1]): false);
+		},
+		set:function(name, value, expirationTime, path, domain, secure){
+				var time=new Date;
+				if(expirationTime)
+						time.setTime(time.getTime()+(expirationTime*1000));
+				document.cookie=name+ '='+ escape(value)+ '; '+
+				(!expirationTime? '': '; expires='+time.toUTCString())+
+				'; path='+(path?path:'/')+ (!domain? '': '; domain='+domain)+ (!secure? '': '; secure');
+		},
+		del:function(name, path, domain){
+				var value=this.get(name);
+				document.cookie=name+ '='+ '; path='+(path?path:'/')+
+				(!domain? '': '; domain='+domain)+
+				'; expires=Thu, 01-Jan-70 00:00:01 GMT';
+				return value;
+		}
+	},
 	// keep trace of each table options
 	options:{},
 	//-- @private property to determine the sort algorithm to use
@@ -158,14 +182,26 @@ sortTable = {
 			}
 		}
 		this.options[tid] = options;
-
+		if( options.saveUserPrefs){
+			var cpageSize = this.cookies.get('sortTable_'+tid+'pageSize');
+			if( cpageSize) this.options[tid].pageSize = cpageSize;
+			var cpageNb = this.cookies.get('sortTable_'+tid+'pageNb');
+			if( cpageNb) this.options[tid].pageNb = cpageNb;
+			var csCol = this.cookies.get('sortTable_'+tid+'sortingCol');
+			var csWay = this.cookies.get('sortTable_'+tid+'sortingWay');
+			this.sortingWay[tid] = csWay!==false?(csWay=='asc'?'desc':'asc'):false;
+		}
 		// render the table
 		if(options.showActivity){
 			options.showActivity(tid,1);
-			setTimeout("sortTable._mk_headers('"+tid+"');	sortTable._populate('"+tid+"'); sortTable._mk_footer('"+tid+"');",5);
+			setTimeout("sortTable._mk_headers('"+tid+"');"+(typeof(csCol)=='string'?"sortTable.sort('"+tid+"','"+csCol+"');":"sortTable._populate('"+tid+"');")+" sortTable._mk_footer('"+tid+"');",5);
 		}else{
 			this._mk_headers(tid);
-			this._populate(tid);
+			if(typeof(csCol)=='string'){
+				this.sort(tid,csCol);
+			}else{
+				this._populate(tid);
+			}
 			this._mk_footer(tid);
 		}
 	},
@@ -188,6 +224,10 @@ sortTable = {
 		}
 		this.options[tid].pageSize = pageSize;
 		this.setPageNb(tid,this.options[tid].pageNb);
+		if( this.options[tid]['saveUserPrefs'] ){
+			this.cookies.set('sortTable_'+tid+'pageSize',pageSize);
+			this.cookies.set('sortTable_'+tid+'pageNb',this.options[tid].pageNb);
+		}
 	},
 
 	/**
@@ -200,6 +240,9 @@ sortTable = {
 		var nbRes     = this.getDatas(tid).length;
 		var maxPageNb = Math.ceil(nbRes / this.options[tid].pageSize);
 		this.options[tid].pageNb = (pageNb>maxPageNb)?maxPageNb:pageNb;
+		if( this.options[tid]['saveUserPrefs'] ){
+			this.cookies.set('sortTable_'+tid+'pageNb',this.options[tid].pageNb);
+		}
 		// refresh display
 		if(this.options[tid].showActivity){
 			this.options[tid].showActivity(tid,1);
@@ -504,6 +547,10 @@ sortTable = {
 
 		// redraw table rows
 		this._populate(tid);
+		if( this.options[tid]['saveUserPrefs'] ){
+			this.cookies.set('sortTable_'+tid+'sortingCol',this.sortingCol[tid]);
+			this.cookies.set('sortTable_'+tid+'sortingWay',this.sortingWay[tid]);
+		}
 		if(this.options[tid].showActivity){
 			this.options[tid].showActivity(tid,false);
 		}
