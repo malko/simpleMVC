@@ -36,7 +36,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 
 		# commence par checker les relations
 		if( isset($relsDefs['hasOne'][$keyName]) ){
-			if( $modelName instanceof abstractModel){
+			if( $modelName instanceof abstractModel && is_object($modelName->{$keyName}) ){
 				$value = $modelName->{$keyName}->PK;
 			}elseif(isset($relsDefs['hasOne'][$keyName]['localField']) && isset($datasDefs[$relsDefs['hasOne'][$keyName]['localField']]['Default']) ){
 				$value = $datasDefs[$relsDefs['hasOne'][$keyName]['localField']]['Default'];

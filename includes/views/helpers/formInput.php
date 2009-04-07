@@ -4,7 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
-*            - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin 
+*            - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin
 *            - 2009-01-05 - add support for time picker and datetime picker
 *            - 2008-11-27 - better multiple select support
 *            - 2008-11-26 - add disabled optional attribute
@@ -28,7 +28,8 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - select
 	*                          - t[e]xt
 	*                          - password
-	*                          - [text]area
+	*                          - [text]area|forcetextarea
+	*                          - rte
 	*                          - check[box]
 	*                          - radio
 	*                          - hidden
@@ -39,13 +40,14 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - codepress
 	* @param array  $options   list of optionnal parameters:
 	*                          - default is the default value to set if $value is empty.
-	*                          - multiple,class, size, id, onchange, maxlength, rows,cols,style and disabled are replaced by the corresponding html attributes
+	*                          - multiple,class, size, id, onchange, maxlength, rows,cols,style,checked and disabled are replaced by the corresponding html attributes
 	*                          - default id will be same as name
 	*                          - default class will be same as type
 	*                          - values is an associative list of key value pairs (keys are used as values and values are used as labels) used with select | checkBox | radio
 	*                          - label is an optional label for the input
 	*                          - pickerOptStr is used for datepicker and timepicker fields
 	*                          - pickerOpts   is used for datetimepicker (something like that: array(0=>dateOptStr,1=>timeOptStr))
+	*                          - rteOpts      is used for rte options
 	*/
 	function formInput($name,$value=null,$type='text',array $options=array()){
 		$dfltOpts = array(
@@ -79,7 +81,8 @@ class formInput_viewHelper extends abstractViewHelper{
 				break; //-- dummy break
 			case 'area':
 			case 'textarea':
-				if(! self::$useRTE ){
+			case 'forcetextarea':
+				if((! self::$useRTE) || $type==='forcetextarea'){
 					return $this->formatInput(
 						$labelStr,
 						"<textarea name=\"$name\"".$this->getAttrStr($options).">$value</textarea>",
@@ -90,7 +93,7 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'rte':
 					$rteOptions = array('value' => $value,'rows'=>10,'cols'=>50);
 					foreach($options as $k=>$o){
-						if( in_array($k,array('rows','cols','disabled','style')) )
+						if( in_array($k,array('rows','cols','disabled','style','rteOpts')) )
 							$rteOptions[$k] = $o;
 					}
 					return $this->formatInput(
@@ -137,6 +140,8 @@ class formInput_viewHelper extends abstractViewHelper{
 					}
 					return $this->formatInput($labelStr,$opts,$options['formatStr']);
 				}else{
+					if( isset($options['checked']))
+						$options['checked'] = empty($options['checked'])?null:'checked';
 					return $this->formatInput(
 						$labelStr,
 						"<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
@@ -190,7 +195,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	}
 
 	protected function getAttrStr(array $attrs,array $excludeAttrs=null){
-		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled');
+		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked');
 		$attrStr= '';
 		foreach($attrs as $ok=>$ov){
 			if( is_array($excludeAttrs) && in_array($ok,$excludeAttrs) )
