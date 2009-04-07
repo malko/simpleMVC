@@ -1,45 +1,60 @@
-<form action="<?= $this->url('setToString',null,array('modelType'=>$this->modelType)) ?>" method="post">
-	<fieldset id="string">
-		<legend>Setting how to display <?= $this->modelType ?> as string</legend>
-		<div>
-		<div class="selectors">
-		<?php
-			if( $this->datasFields )
-				echo "List of datas Fields: $this->datasFields<br />";
-			if( $this->hasOnes )
-				echo "List of hasOne relations : $this->hasOnes<br />";
-		?>
-		</div>
-		<label>
-			<?= $this->modelType ?>::$__toString
-			<input type="text" name="_toStr" value="<?=$this->_toStr?>" />
-		</label>
-		<br />
-		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
-		</div>
-	</fieldset>
+<style>
+	#settings form{ padding:0;margin:0;}
+	#settings #fldList { padding:0;margin:0;}
+	#settings #fldList li{ list-style-type:none; list-style-image:none;margin:5px 0;}
+	#settings #fldList .placeholder{height:3em;}
+	#settings .formInput{padding:5px;}
+	#settings input {white-space:pre;}
+</style>
+<h1><?=$this->modelType?> settings </h1>
+<div id="settings">
+<form action="<?= $this->url('setToString',null,array('modelType'=>$this->modelType)) ?>" method="post" id="string">
+	<h3><a name="string"><?= $this->modelType ?>::$__toString</a></h3>
+	<div>
+	<div class="selectors">
+	<?php
+		if( $this->datasFields )
+			echo "List of datas Fields: $this->datasFields<br />";
+		if( $this->hasOnes )
+			echo "List of hasOne relations : $this->hasOnes<br />";
+	?>
+	</div>
+	<label>
+		<?= $this->modelType ?>::$__toString
+		<input type="text" name="_toStr" value="<?=$this->_toStr?>" />
+	</label>
+	<br />
+	<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+	</div>
 </form>
 
-<form action="<?= $this->url('setList',null,array('modelType'=>$this->modelType)) ?>" method="post">
-	<fieldset id="list">
-		<legend>Setting <?= $this->modelType ?> fields to display in list</legend>
-		<div>
+<form action="<?= $this->url('setList',null,array('modelType'=>$this->modelType)) ?>" method="post"  id="list">
+	<h3><a name="list">List</a></h3>
+	<div>
+		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
+			Check fields you want to be displayed in adminModels list actions.
+			<br />
+			You also can specify an optional format string to render this field in the list, @see abstractModel::__toString() documentation for more infos on what can be put here.
+		</div>
+		<ul id="fldList">
 		<?php
 			if( $this->datasDefs ){
-				$values = array_combine($this->datasDefs,$this->datasDefs);
-				echo $this->formInput('fields',$this->listedFields,'checkbox',array('values'=>$values))."\n";
+				foreach($this->datasDefs as $fld){
+					$formatInput = $this->formInput("formatStr[$fld]",isset($this->listedFields[$fld])?htmlentities($this->listedFields[$fld]):null,'text',array('label'=>'format string','size'=>'50'));
+					echo $this->formInput("fields[$fld]",$fld,'checkbox',array('checked'=>isset($this->listedFields[$fld]),'label'=>$fld,'formatStr'=>'<li>%input %label'.$formatInput.'</li>'))."\n";
+				}
 			}
 		?>
+		</ul>
 		<br />
 		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
-		</div>
-	</fieldset>
+	</div>
 </form>
 
-<form action="<?= $this->url('setFormInputs',null,array('modelType'=>$this->modelType)) ?>" method="post">
-	<fieldset id="forms">
-		<legend>Setting how to display forms</legend>
-		<div style="background:#ffc;padding:5px;border:solid silver 1px;color:#555;">
+<form action="<?= $this->url('setFormInputs',null,array('modelType'=>$this->modelType)) ?>" method="post" id="forms">
+	<h3><a name="forms">Forms</a></h3>
+	<div>
+		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
 			<strong>Notes: </strong>
 			options have to be passed as valid json as describe in json_decode function, it means that keys and values must be doublequoted.
 			<br />
@@ -61,7 +76,7 @@
 		<div>
 		<?php
 			if( $this->datasDefs ){
-				$types = array('--- default ---','skip','select','text','password','textarea','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
+				$types = array('--- default ---','skip','select','text','password','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
 				$types = array_combine($types,$types);
 				foreach($this->datasDefs as $f){
 					if( $f === $this->primaryKey)
@@ -76,54 +91,56 @@
 		<br />
 		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
 		</div>
-	</fieldset>
+	</div>
 </form>
 
-<form action="<?= $this->url('setMessages',null,array('modelType'=>$this->modelType)) ?>" method="post">
-	<fieldset id="messages">
-		<legend>Setting how to display field names</legend>
-		<div>
-		<?php
-			echo $this->formInput('setLang',langManager::getDefaultLang(),'select',array('values'=>$this->langs,'label'=>'Display Lang'));
-			if( $this->idMsgs ){
-				foreach($this->idMsgs as $lang=>$ids){
-					echo "<div id=\"langMessages_$lang\" class=\"langMessages\"><h2>$lang messages</h2>";
-					foreach($ids as $f){
-						if( $f === $this->primaryKey)
-							continue;
-						echo $this->formInput("msgs[$lang][".str_replace(']','\]',$f).']',(isset($this->messages[$lang][$f])?$this->messages[$lang][$f]:null),'text',array('label'=>$f))."\n";
-					}
-					echo "</div>";
+<form action="<?= $this->url('setMessages',null,array('modelType'=>$this->modelType)) ?>" method="post" id="messages">
+	<h3><a name="messages">Field names</a></h3>
+	<div>
+	<?php
+		echo $this->formInput('setLang',langManager::getDefaultLang(),'select',array('values'=>$this->langs,'label'=>'Display Lang'));
+		if( $this->idMsgs ){
+			foreach($this->idMsgs as $lang=>$ids){
+				echo "<div id=\"langMessages_$lang\" class=\"langMessages\"><h2>$lang messages</h2>";
+				foreach($ids as $f){
+					if( $f === $this->primaryKey)
+						continue;
+					echo $this->formInput("msgs[$lang][".str_replace(']','\]',$f).']',(isset($this->messages[$lang][$f])?$this->messages[$lang][$f]:null),'text',array('label'=>$f))."\n";
 				}
+				echo "</div>";
 			}
-		?>
-		<br />
-		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
-		</div>
-	</fieldset>
+		}
+	?>
+	<br />
+	<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+	</div>
 </form>
-
+</div>
 <input type="reset" onclick="window.location = '<?= $this->listUrl ?>';"; value="<?= langManager::msg('back'); ?>"  class="noSize"/>
 
 
 <?php
 $this->js('
+	//-- make this an accordion
+	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:false,collapsible:true});
+
 	// make fieldname clickable to ease _toStr setting
 	$(".sMVC_dataField").click(function(){
-		$("input[name=_toStr]").val($("input[name=_toStr]").val()+" "+this.innerHTML);
+		var v = $("input[name=_toStr]").val();
+		$("input[name=_toStr]").val((v?v+" ":"")+this.innerHTML);
 	}).css({cursor:"pointer"});
-	// create sort of accordions
-	$("fieldset").css({border:"solid black 1px",background:"#fff"});
-	$("fieldset legend").click(function(){
-		$("fieldset legend").not(this).siblings("div").slideUp("fast");
-		$(this).siblings().slideDown("fast");
-	}).css({fontWeight:"bold",cursor:"pointer"})
-	$("fieldset#list legend").click();
-	$("label",$("fieldset#list")).css("display","block");
+
+	//-- make list fields sortable
+	$("#fldList").sortable({
+		placeholder: "ui-state-highlight placeholder ui-corner-all",
+		forcePlaceholderSize:true
+	}).find("li").addClass("ui-widget-content ui-corner-all");
+
+	//-- manage lang pannel
 	$("select#setLang").change(function(){
 		var l = this.options[this.selectedIndex].innerHTML;
 		$("fieldset div.langMessages").hide();
 		$("div#langMessages_"+l).show();
 	}).change();
-','jquery');
+','jqueryUI');
 ?>

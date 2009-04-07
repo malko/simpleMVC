@@ -10,6 +10,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-04-06 - add support for activable models
+*            - 2009-03-31 - autodetection of field that need to be loaded when loadDatas is empty
 *            - 2009-03-19 - rewrite support for orderable models
 *                         - set_layout now consider for adminmodelsModelType templates
 *            - 2009-03-08 - little modif in setDictName to check dictionnaries from generated with adminmodelsController
@@ -60,12 +62,23 @@ abstract class modelsController extends abstractController{
 		$this->setDictName();
 		$supportedAddons = abstractModel::_getModelStaticProp($this->modelType,'modelAddons');
 		$orderable = in_array('orderable',$supportedAddons);
+		$activable = in_array('activable',$supportedAddons);
 		$models = abstractModel::getAllModelInstances($this->modelType);
+
+		if(empty($this->loadDatas)){ //-- attempt to autodetect datas that may need to be loaded
+			$relDefs = abstractModel::modelHasRelDefs($this->modelType,null,true);
+			foreach(array_keys($this->listFields) as $fld){
+				if( isset($relDefs['hasOne'][$fld]) || isset($relDefs['hasMany'][$fld]) )
+					$this->loadDatas = empty($this->loadDatas)?$fld:"$this->loadDatas|$fld";
+			}
+		}
 		if( ! empty($this->loadDatas) )
 			$models->loadDatas($this->loadDatas);
 		$datas = array();
 
 		if( count($models) ){
+			$this->view->_js_loadPlugin('jqueryUI');
+			//-- prepare common modelAddons management
 			$orderableField = null;
 			if( $orderable ){
 				list($orderableField,$orderableGroupField) = $models->current()->_getOrderableFields();
@@ -98,13 +111,24 @@ abstract class modelsController extends abstractController{
 					$row = array();
 					$row['id'] = $m->PK.'/modelType/'.$this->modelType;
 					foreach($this->listFields as $k=>$v){
+						if($this->listFormats[$k]){
+							$row[$k] = $m->__toString($this->listFormats[$k]);
+							continue;
+						}
 						switch($k){
 							case $orderableField:
-								$row[$k] = $m->{$k}. ($m->{$k}>0?'<a href="'.$this->url('moveup').'/id/'.$row['id'].'">&uarr;</a>':'')
-									.(in_array($m->PK,$orderableLastPos)?'':'<a href="'.$this->url('movedown').'/id/'.$row['id'].'">&darr;</a>');
+								$row[$k] = $m->{$k}.($m->{$k}>0?'<a href="'.$this->url('moveup').'/id/'.$row['id'].'" title="move up"><img src="'.GUI_IMG_URL.'/icones/admin/go-up.png" alt="move up" /></a>':'<span style="padding:0 8px;"></span>')
+									.(in_array($m->PK,$orderableLastPos)?'':'<a href="'.$this->url('movedown').'/id/'.$row['id'].'"><img src="'.GUI_IMG_URL.'/icones/admin/go-down.png" alt="move up" /></a>');
 								break;
 							default:
-								$row[$k] = $m->{$k};
+								if(! ($activable && in_array($k,$m->_activableFields,'true')) ){
+									$row[$k] = $m->{$k};
+								}else{
+									$active=$m->{$k}?true:false;
+									$title = ($active?'de-':'').'activate';
+									$row[$k] = '<a href="'.$this->url('setActive').'/state/'.($active?0:1).'/prop/'.$k.'/id/'.$row['id']
+										.'" title="'.$title.'"><img src="'.GUI_IMG_URL.'/icones/admin/dialog-'.($active?'yes':'no').'.png" alt="'.$title.'" /></a>';
+								}
 								break;
 						}
 					}
@@ -141,6 +165,18 @@ abstract class modelsController extends abstractController{
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
 		$this->view->actionUrl = $this->view->url('save',$this->getName(),array('modelType'=>$this->modelType));
 		$this->view->listUrl   = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
+	}
+
+	function setActiveAction(){
+		if( ! isset($_GET['id'])){
+			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
+		}
+		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
+		if( ! $m instanceof abstractModel)
+			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
+		$m->{$_GET['prop']} = $_GET['state'];
+		$m->save();
+		return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
 	}
 
 	function saveAction(){

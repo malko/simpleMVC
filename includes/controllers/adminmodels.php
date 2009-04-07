@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-03-13 - made some change to list configuration to support ordering and formatStr
 *            - 2009-03-13 - put configFile as protected instead of private to permitt extended class to access it
 *            - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
 *                         - better handling of editing langMessage from empty dictionnaries
@@ -18,6 +19,9 @@ class adminmodelsController extends modelsController{
 	protected $configFile = '';
 	function init(){
 		parent::init();
+		#-  setting specific to this app
+		modelGenerator::$tablePrefixes='modedemploi_';
+		modelGenerator::$excludePrefixedTables=true;
 		self::appendAppMsg("Don't forget to edit the adminModelsController to check for user rights to access it or anyone could be editing your datas","error");
 		$this->configFile = CONF_DIR.'/simpleMVCAdmin_'.FRONT_NAME.'_config.php';
 		if(! is_writable($this->configFile) ){
@@ -29,8 +33,10 @@ class adminmodelsController extends modelsController{
 		if( file_exists($this->configFile) ){
 			$config = parse_conf_file($this->configFile,true);
 			if( isset($config['LIST_'.$this->modelType]) ){
-				$listFields = explode('|',$config['LIST_'.$this->modelType]);
-				$this->listFields = array_combine($listFields,$listFields);
+				$listFields = json_decode($config['LIST_'.$this->modelType],true);
+				$listKeys = array_keys($listFields);
+				$this->listFields = array_combine($listKeys,$listKeys);
+				$this->listFormats=$listFields;
 			}
 		}
 		parent::listAction();
@@ -54,9 +60,9 @@ class adminmodelsController extends modelsController{
 		$this->view->_js_loadPlugin('jquery');
 		#--- to string configuration
 		$this->_toStr = $this->readModel__ToStr($this->modelType);
-		$this->datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
+		$datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
 		$hasOnes     = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne'));
-		foreach($this->datasDefs as $v)
+		foreach($datasDefs as $v)
 			$this->datasFields .= "<span class=\"sMVC_dataField\">%$v</span> &nbsp; ";
 		foreach($hasOnes as $v)
 			$this->hasOnes .= "<span class=\"sMVC_dataField\">%$v</span> &nbsp; ";
@@ -64,7 +70,14 @@ class adminmodelsController extends modelsController{
 		#- check for config file
 		$this->config        = parse_conf_file($this->configFile,true);
 		$this->primaryKey    = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
-		$this->listedFields  = (!empty($this->config['LIST_'.$this->modelType]))?explode('|',$this->config['LIST_'.$this->modelType]):array();
+		$this->listedFields  = (isset($this->config['LIST_'.$this->modelType]))?json_decode($this->config['LIST_'.$this->modelType],true):array();
+		if( count($this->listedFields) ){ //-- restore selected order
+			foreach(array_reverse($this->listedFields) as $k=>$v){
+				unset($datasDefs[array_search($k,$datasDefs)]);
+				array_unshift($datasDefs,$k);
+			}
+		}
+		$this->datasDefs = $datasDefs;
 		#--- forms config
 		$formSettings  = (!empty($this->config['FORM_'.$this->modelType]))?json_decode($this->config['FORM_'.$this->modelType],true):array();
 		foreach($formSettings as $k=>$setting){
@@ -101,8 +114,16 @@ class adminmodelsController extends modelsController{
 	* set model fields to display in list
 	*/
 	function setListAction(){
-		#- write config if needed
-		$config['LIST_'.$this->modelType] = empty($_POST['fields'])?'--UNSET--':implode('|',$_POST['fields']);
+		if( empty($_POST['fields'])){
+			$config['LIST_'.$this->modelType] = '--UNSET--';
+		}else{
+			$flds = array();
+			foreach($_POST['fields'] as $fld){
+				$flds[$fld] =  isset($_POST['formatStr'][$fld])?$_POST['formatStr'][$fld]:false;
+			}
+			$config['LIST_'.$this->modelType] = json_encode($flds);
+		}
+		#- write config
 		write_conf_file($this->configFile,$config,true);
 		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType));
 	}

@@ -12,7 +12,8 @@
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
-* @changelog 
+* @changelog
+*            - 2009-04-02 - now setOrderableGroupFieldValue() method automaticly set correct type for groupValue if not a related hasOne istance
 *            - 2009-03-19 - major rewrite to support grouping of orderable models
 * @todo add onBeforeSave check to make some space if required
 * @todo reflexion on the need to add set{OrderableField} to overloaded methods
@@ -120,6 +121,8 @@ class orderableModelAddon extends modelAddon{
 			$currentGroupValue = $currentGroupValue->PK;
 		if($groupValue instanceof abstractModel)
 			$groupValue = $groupValue->PK;
+		else
+			abstractModel::setModelDatasType($this->modelName,$gField,$groupValue);
 		if($currentGroupValue===$groupValue) //equal so no need to do anything
 			return $groupValue;
 		//we have to do something on it
