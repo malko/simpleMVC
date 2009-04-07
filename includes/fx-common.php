@@ -155,7 +155,7 @@ function dateus2fr($date,$noTime=false){
 	if( empty($date) )
 		return '00/00/0000';
 	if(! strpos($date,' '))
-		return implode('-',array_reverse(preg_split('!/|-!',$date)));
+		return implode('/',array_reverse(preg_split('!/|-!',$date)));
 	list($date,$time) = explode(' ',$date);
 	return dateus2fr($date).($noTime?'':' '.$time);
 }
@@ -228,7 +228,7 @@ function html_substr($htmlStr,$start=0,$length=null,$appendStr='...'){
 			continue;
 		}
 		#- then consider all as single char
-		$outStr .= $htmlStr[0];
+		$outStr .= substr($htmlStr,0,1);
 		$htmlStr = substr($htmlStr,1);
 	}
 	#- close opened tags
