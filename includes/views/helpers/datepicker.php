@@ -21,15 +21,14 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 	function init(){
 		$lg=langManager::getCurrentLang();
 		$this->_js_script("
-			$.datepicker.setDefaults($.extend({
+			$.datepicker.setDefaults($.extend({},".($lg!=='en'?"$.datepicker.regional['$lg'],":'')."{
 					showOn:'both',
 					buttonText:'".($lg==='fr'?'Choisir une date':'pick a date')."',
 					buttonImage: '".ELEMENTS_URL."/icones/date.png',
 					dateFormat: 'yy-mm-dd',
 					highlightWeek: true,
 					defaultDate: +1
-				}".
-				($lg!=='en'?",$.datepicker.regional['$lg']":'')."
+				}
 			));
 		");
 	}
@@ -40,8 +39,9 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 		}elseif(is_array($datePickerOptionStr)){
 			$datePickerOptionStr = json_encode($datePickerOptionStr);
 		}
-		$this->_js_script('
-		$("#'.$idElement.'").datepicker('.$datePickerOptionStr.')');
+		if( empty($value) || $value==='0000-00-00')
+			$value = date('Y-m-d');
+		$this->_js_script('$("#'.$idElement.'").datepicker('.$datePickerOptionStr.')');
 
 		return 	'<input type="text" id="'.$idElement.'" name="'.$idElement.'" value="'.$value.'" />';
 	}
