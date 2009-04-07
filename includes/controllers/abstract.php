@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-04-03 - add __isset method to also check for datas in view.
 *            - 2009-02-08 - $appMsgIgnoreRepeated is now a int value to permitt better repeated appMsgs management
 *            - 2009-02-06 - change view instanciation to work with new singletoned views
 *                         - __call will send unknown method call to linked view if available instead of throwing an exception
@@ -353,17 +354,21 @@ abstract class abstractController{
 	}
 
 	public function __get($k){
-		if(! $this->view instanceof viewInterface ){
+		if(! $this->view instanceof viewInterface )
 			throw new Exception($this->getName()." trying to get unknow $k property.");
-		}
 		return $this->view->{$k};
 	}
 
 	public function __set($k,$v){
-		if(! $this->view instanceof viewInterface ){
+		if(! $this->view instanceof viewInterface )
 			throw new Exception($this->getName()." trying to set unknow $k property without any viewInterface instance.");
-		}
 		return $this->view->{self::$viewAssignMethod}($k,$v);
+	}
+
+	public function __isset($k){
+		if(! $this->view instanceof viewInterface )
+			throw new Exception($this->getName()." trying to get unknow $k property.");
+		return $this->view->__isset($k);
 	}
 
 	###--- FORWARD AND REDIRECTION MANAGEMENT MANAGEMENT ---###
