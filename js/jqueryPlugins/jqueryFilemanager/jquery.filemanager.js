@@ -2,6 +2,7 @@
 * define filemanager, filemanagerButton, filemanagerEntry plugins
 * @require jquery.ui >= 1.7
 * @changelog
+*           - 2009-04-02 - resize rootList when container is scrolled to keep a info buttons clickable
 *           - 2009-03-24 - add filemanagerButton extension
 *           - 2009-03-23 - add option parameter prefixValue for filemanagerEntries
 *                        - implements folderClicked and folderLoaded callbacks
@@ -89,7 +90,7 @@ function show(){
 			fmb.fmId = 'fmanagerButton_'+eid;
 			fmb.dialogId = 'fmanagerButtonDialog_'+eid;
 			fmb.dialog = $('<div id="'+fmb.dialogId+'" title="File selection" style="display:none;">\
-			<div id="'+fmb.fmId+'" style="width:250px;overflow:auto;height:300px;"></div></div>');
+			<div id="'+fmb.fmId+'" style="width:auto;overflow:auto;height:300px;"></div></div>');
 			fmb.dialog.appendTo('body')
 			fmb.fileClicked = cbFileClicked;
 			if( typeof(opts) === 'undefined')
@@ -97,7 +98,7 @@ function show(){
 			opts.fileClicked = fmb.fileClicked;
 			fmb.dialog.find('#'+fmb.fmId).filemanager(opts);
 			fmb.fm = $('#'+fmb.fmId).data('filemanager');
-			fmb.dialog.dialog({autoOpen:false,resizable:false,width:'278px',close:function(){fm.infos.hide()}});
+			fmb.dialog.dialog({autoOpen:false,resizable:true,width:'278px',close:function(){fm.infos.hide()}});
 			fmb.elmt.click(function(){
 				fm.infos.hide(); //hide any infoBox on opening
 				fmb.dialog.dialog('moveToTop').dialog('open');
@@ -180,6 +181,13 @@ function show(){
 			$('<ul class="jqueryFilemanager"></ul>').appendTo(this.container).append(rootItem);
 			//load rootDir
 			fm.loadPath(rootItem,this.opts.rootDir);
+			//-- resize elements on parent scroll
+			fm.container.scroll(function(){
+				var container = $(this);
+				var fm = this.filemanager;
+				$('.rootItem',container).parent('ul').width(container.scrollLeft()+container.width());
+			});
+
 		},
 		//-- AJAX HELPER METHODS --//
 		post: function(datas,successCB){
@@ -406,7 +414,9 @@ function show(){
 			}
 			// add info button
 			a.hover(
-				function(){ $(this).addClass('ui-state-hover').children('button').css('visibility','visible'); },
+				function(){
+					$(this).addClass('ui-state-hover').children('button').css('visibility','visible');
+				},
 				function(){ $(this).removeClass('ui-state-hover').children('button').css('visibility','hidden'); }
 			);
 			this.itemAddInfoButton(item);
