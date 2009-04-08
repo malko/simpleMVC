@@ -36,7 +36,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 
 		if( (!empty($options['uneditable'])) && $modelName instanceof abstractModel ){
 			$options['disabled'] = "disabled";
-			usnet($options['uneditable']);
+			unset($options['uneditable']);
 		}
 		# commence par checker les relations
 		if( isset($relsDefs['hasOne'][$keyName]) ){
