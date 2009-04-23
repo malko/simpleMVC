@@ -64,7 +64,14 @@
 				.arrangeElements() //put all together
 				.initIframe();     // set iframe content and make it editable.
 			this.initEventHandlers();
-			this.toggleEditMode();
+
+			if(this.textarea.is(':disabled')){
+				$(this.iframe).hide();
+			}else{
+				this.textarea.hide();
+			}
+
+			//- this.toggleEditMode();
 
 		},
 
@@ -284,8 +291,10 @@
 
 		toggleEditModeCB: function(e){ e.data.rte.toggleEditMode(); return false},
 		toggleEditMode: function(){
+			if(this.textarea.is(':disabled'))
+				return this;
 			if(this.textarea.is(':visible')){
-				this.textarea.hide();;
+				this.textarea.hide();
 				$(this.iframe).show();
 			}else{
 				this.textarea.show();

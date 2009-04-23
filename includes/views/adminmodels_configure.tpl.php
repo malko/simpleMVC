@@ -165,5 +165,5 @@ $this->js('
 		}
 	});
 	
-','jqueryUI');
+','jqueryui');
 ?>

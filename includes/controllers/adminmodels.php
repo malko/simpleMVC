@@ -27,6 +27,7 @@ class adminmodelsController extends modelsController{
 		if(! is_writable($this->configFile) ){
 			self::appendAppMsg("$this->configFile isn't writable.",'error');
 		}
+		$this->pageTitle = langManager::msg($this->modelType);
 	}
 
 	function listAction(){

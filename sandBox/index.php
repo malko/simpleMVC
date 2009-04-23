@@ -50,8 +50,14 @@ baseView::$defaultLayout = array(
   ':controller_:action.tpl.php|default_:action.tpl.php',
   'footer.tpl.php'
 );
+#- some helpers configuration
 #- formInput_viewHelper::$useRTE = true;
 #- formInput_viewHelper::$useFileEntry = true;
+#- filemanager_viewHelper::$defaultOptions['prefixValue']='';
+#- rte_viewHelper::$defaultRteOptions=array(
+#- 	'imgPath' => ROOT_URL.'/js/jqueryPlugins/jqueryRte/',
+#- 	'css_url' => FRONT_URL.'/views/default.css'
+#- );
 
 #- if multilingual then setup langManager
 #- first set directories for dictionaries lookUp

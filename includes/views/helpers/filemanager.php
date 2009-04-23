@@ -12,7 +12,7 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 		'js/jqueryPlugins/jqueryFilemanager/jquery.filemanager.css',
 	);
 	public $requiredPlugins = array(
-		'jqueryUI'
+		'jqueryui'
 	);
 
 	static public $defaultOptions = array(

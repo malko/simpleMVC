@@ -8,6 +8,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-04-20 - now more show when not in DEVEL_MODE
 *            - 2009-03-16 - use spl_register_autoload for better autoload support when included in other application.
 *            - 2009-02-06 - move javascript and style from show to sMVCdevelBar
 *            - 2008-10-21 - autoload modification to check modelCollection extended classes in corresponding model file
@@ -31,12 +32,12 @@ if(file_exists(CONF_DIR.'/config.php')) #- general config
 
 #- remove possible unwanted magic_quotes
 if(get_magic_quotes_gpc()){
-   function stripslashes_deep($value) {
-       $value = is_array($value) ?array_map('stripslashes_deep', $value) :stripslashes($value);
-       return $value;
-   }
-   foreach(array('POST', 'GET', 'REQUEST', 'COOKIE') as $gpc)
-    $GLOBALS["_$gpc"] = array_map('stripslashes_deep', $GLOBALS["_$gpc"]);
+	function stripslashes_deep($value) {
+		$value = is_array($value) ?array_map('stripslashes_deep', $value) :stripslashes($value);
+		return $value;
+	}
+	foreach(array('POST', 'GET', 'REQUEST', 'COOKIE') as $gpc)
+		$GLOBALS["_$gpc"] = array_map('stripslashes_deep', $GLOBALS["_$gpc"]);
 }
 
 #- display and prepare error to go into simpleMVC toolbar if we're on devel_mode
@@ -103,7 +104,8 @@ function smvcAutoload($className){
 			$dir .= "/$_dir";
 		}while($cname);
 	}
-	show($_dbg,'trace');
+	if( defined('DEVEL_MODE') && DEVEL_MODE)
+		show($_dbg,'trace');
 	throw new Exception("classe $className introuvable.");
 }
 ###--- SOME FORMAT AND CLEAN METHOD ---###
@@ -268,9 +270,11 @@ function match($pattern,$str,$id=1,$all=FALSE){
 	}
 	return FALSE;
 }
+
 ###--- DEBUG HELPER ---###
 function show(){
-
+	if( ! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		return FALSE;
 	$args  = func_get_args();
 	$argc  = func_num_args();
 	$param = $args[$argc-1];
@@ -296,7 +300,7 @@ function show(){
 		$color = 'red';
 	}
 
-	$trace    = debug_backtrace();
+	$trace = debug_backtrace();
 	if(false!==$getTrace){
 		$_trace = $trace;
 		array_shift($_trace);

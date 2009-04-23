@@ -16,7 +16,7 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 		#- ~ 'js/jqueryPlugins/jqueryDatepicker/18n/ui.datepicker-fr.js',
 		#- ~ 'js/jqueryPlugins/jqueryDatepicker/jquery-ui-personalized-1.6b.packed.js'
 	);
-	public $requiredPlugins = array('jqueryUI');
+	public $requiredPlugins = array('jqueryui');
 
 	function init(){
 		$lg=langManager::getCurrentLang();
@@ -24,7 +24,7 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 			$.datepicker.setDefaults($.extend({},".($lg!=='en'?"$.datepicker.regional['$lg'],":'')."{
 					showOn:'both',
 					buttonText:'".($lg==='fr'?'Choisir une date':'pick a date')."',
-					buttonImage: '".ELEMENTS_URL."/icones/date.png',
+					buttonImage: '".GUI_IMG_URL."/icones/date.png',
 					dateFormat: 'yy-mm-dd',
 					highlightWeek: true,
 					defaultDate: +1

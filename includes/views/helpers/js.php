@@ -190,9 +190,9 @@ class jquery_viewHelper extends jsPlugin_viewHelper{
 }
 /**
 * dummy jsPlugin that load jquery-ui usefull for jsPlugins that require jquery-ui
-* @class jqueryUI_viewHelper
+* @class jqueryui_viewHelper
 */
-class jqueryUI_viewHelper extends jsPlugin_viewHelper{
+class jqueryui_viewHelper extends jsPlugin_viewHelper{
 	public $requiredFiles = array(
 		'js/jqueryPlugins/bgiframe/jquery.bgiframe.min.js',
 		'js/jquery-ui.js',
@@ -207,7 +207,11 @@ class jqueryUI_viewHelper extends jsPlugin_viewHelper{
 	}
 
 	function button($icon,$label=null,array $opts=null){
-		$o = array('click'=>false,'tagName'=>'button','id'=>false);
+		$o = array(
+			'type'=>'submit', //-- reset /submit /button
+			'tagName'=>'button',
+			'id'=>false
+		);
 		if(null === $label ){
 			$btStyle=$spanStyle="";
 		}else{
@@ -215,9 +219,9 @@ class jqueryUI_viewHelper extends jsPlugin_viewHelper{
 			$spanStyle=' style="position:absolute;left:-20px;_left:0px;"';
 		}
 		if( null !== $opts) $o = array_merge($o,$opts);
-		return '<'.$o['tagName'].($o['id']?' id="'.$o['id'].'"':'').' class="ui-state-default ui-corner-all"'.$btStyle.
-			' onclick="'.($o['click']?$o['click']:'return false;').'">'.
-			'<span class="ui-icon ui-icon-'.$icon.'"'.$spanStyle.'></span></'.$o['tagName'].'>';
+		if( empty($o['id']) ) $o['id']=$this->uniqueId();
+		return '<'.$o['tagName'].' id="'.$o['id'].'" type="'.$o['type'].'" class="ui-state-default ui-corner-all"'.$btStyle.'>'.
+			'<span class="ui-icon ui-icon-'.$icon.'"'.$spanStyle.'></span>'.$label.'</'.$o['tagName'].'>';
 
 	}
 }

@@ -16,6 +16,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-04-22 - new static property $keepEmptyVars (false as default
+*                         - new special empty string key in $params url parmeter will be passed to wordCleaner and added at the end of generated url
 *            - 2009-04-03 - add method wordCleaner
 *            - 2008-11-20 - add new static property self::$argSeparator
 *            - 2008-04-15 - add new param $appUrl to permit link creation for external apps
@@ -28,6 +30,8 @@ class url_viewHelper extends abstractViewHelper{
 	* if null at __construct time will be set to php.ini value of arg_separator.output value
 	*/
 	static public $argSeparator = null;
+	/** if true then empty vars are removed from generated url */
+	static public $keepEmptyVars = false;
 
 	public $view = null;
 
@@ -56,7 +60,7 @@ class url_viewHelper extends abstractViewHelper{
 	*                           - tableau associatif de paires clés valeurs à passer dans l'url
 	*                           - query string à ajouter à la fin de l'url.
 	*                           si c'est un tableau la chaine généré sera automatiquement
-	*                           urlencodé (seulement les valeurs pas les cles)
+	*                           urlencodé (seulement les valeurs pas les cles) et si une clef '' est fournis , sa valeur elle sera ajouté à la fin apres etre passé par wordCleaner 
 	*                           si c'est une chaine c'est à vous de le faire.
 	*                           (les chaines doivent etre des querystring standard
 	*                            l'appli la remettra en forme si utilisation des rewriteRules)
@@ -80,7 +84,7 @@ class url_viewHelper extends abstractViewHelper{
 					$_params = explode($sep,$params);
 					$params = array();
 					foreach($_params as $p){
-						@list($k,$v) = explode('=',$p,2);
+						list($k,$v) = array_pad(explode('=',$p,2),2,null);
 						$params[$k] = $v;
 					}
 					$alreadyEncoded = true; #- les chaines doivent déjà etre encodés!
@@ -88,14 +92,21 @@ class url_viewHelper extends abstractViewHelper{
 			}
 			if(is_array($params)){
 				$Qstr = array();
+				if( isset($params['']))
+					$params[''] = $this->wordCleaner($params['']);
 				if(! $alreadyEncoded )
 					$params = array_map('urlencode',$params);
+
 				$kv_sep = (self::$useRewriteRules)?'/':'=';
+				$ignoredKey = array('ctrl','action','');
 				foreach($params as $k=>$v){
-					if($k==='ctrl' || $k==='action' || strlen($v)===0)
+					if( in_array($k,$ignoredKey,true) || (empty($v) && ! self::$keepEmptyVars) )
 						continue;
 					$Qstr[] = $k.$kv_sep.$v;
 				}
+				if( isset($params['']))
+					$Qstr[] = $this->wordCleaner($params['']);
+
 				$Qstr = implode((self::$useRewriteRules?'/':self::$argSeparator),$Qstr);
 			}
 		}

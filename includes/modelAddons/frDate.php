@@ -1,6 +1,11 @@
 <?php
 /**
 * modelAddon to ease french / us date manipulation
+* it add some methods to each date(time) fields in models::$datas
+* for a field named mydate added methods will be:
+* - setFrMydate('dd/mm/yyyy') to set a date so you can do $modelInstance->frMydate='dd/mm/yyyy' too
+* - getFrMydate() return mydate in 'dd/mm/yyyy' format so you can use $modelInstance->frMydate to get it
+* - strftimeFrMydate('strftime format string') same as using strftime (will try to change LC_TIME and restore it )
 * @package class-db
 * @subpackage modelAddons
 * @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
@@ -11,13 +16,10 @@
 *            - $LastChangedRevision: 99 $
 *            - $LastChangedBy: malko $
 *            - $HeadURL$
-class orderableModel extends BASE_orderableModel{
-	//** must be a real dataField not a relName (neither hasOne or hasMany)
-	public $_orderableField = 'ordre';
-	//** may be a real dataField or a hasOne relName (only with a localField in relDef) but must not be an hasMany one
-	//** this one is optional
-  public $_orderableGroupField = false;
-	static protected $modelAddons = array('orderable');
+* @changelog
+*            - 2009-04-09 - add strftimeFr[dateField] methods
+class frDateModel extends BASE_frDateModel{
+	static protected $modelAddons = array('frDate');
 }
 */
 
@@ -40,6 +42,7 @@ class frDateModelAddon extends modelAddon{
 					if( isset($datasDefs["fr$k"]) || $this->modelInstance->_methodExists("setFr$k") || $this->modelInstance->_methodExists("getFr$k") )
 						continue;
 					self::$_internals[$this->modelName][] = 'setFr'.ucFirst($k);
+					self::$_internals[$this->modelName][] = 'strftimeFr'.ucFirst($k);
 					self::$_internals[$this->modelName][] = 'getFr'.ucFirst($k);
 				}
 			}
@@ -48,13 +51,23 @@ class frDateModelAddon extends modelAddon{
 	}
 
 	public function __call($m,$a){
-		if( preg_match('!^getFr(.*)!i',$m,$match)){
+		if( preg_match('!^getFr(.*)$!i',$m,$match)){
 			$field = abstractModel::_cleanKey($this->modelName,'datasDefs',$match[1]);
 			return dateus2fr($this->modelInstance->{$field});
 		}
-		if( preg_match('!^setFr(.*)!i',$m,$match)){
+		if( preg_match('!^setFr(.*)$!i',$m,$match)){
 			$field = abstractModel::_cleanKey($this->modelName,'datas',$match[1]);
 			return $this->modelInstance->{$field} = datefr2us($a[0]);
+		}
+		if( preg_match('!^strftimeFr(.*)$!i',$m,$match)){
+			$field = abstractModel::_cleanKey($this->modelName,'datas',$match[1]);
+			$loc = setlocale(LC_TIME,0);
+		 	$tmpLoc = setlocale(LC_TIME,array('fr_FR.utf8','fr_FR.UTF8','fr_FR.utf-8','fr_FR.UTF-8','fr_FR','fr'));
+			$str = strftime($a[0],strtotime($this->modelInstance->{$field}));
+			if(preg_match('!utf-?8!i',$tmpLoc))
+				$str =  utf8_encode($str);
+			setlocale(LC_TIME,$loc);
+      return $str;
 		}
 	}
 }

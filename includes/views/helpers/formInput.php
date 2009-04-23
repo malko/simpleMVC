@@ -187,7 +187,7 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'codepress':
 				return $this->formatInput(
 					$labelStr,
-					$this->codepress($name,$value,empty($options['codepress'])?null:$options['codepress']),
+					$this->codepress($name,$value,$options),
 					$options['formatStr']
 				);
 				break;//-- dummy break

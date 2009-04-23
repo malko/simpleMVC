@@ -77,7 +77,7 @@ abstract class modelsController extends abstractController{
 		$datas = array();
 
 		if( count($models) ){
-			$this->view->_js_loadPlugin('jqueryUI');
+			$this->view->_js_loadPlugin('jqueryui');
 			//-- prepare common modelAddons management
 			$orderableField = null;
 			if( $orderable ){
