@@ -16,7 +16,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
-*            - 2009-04-22 - new static property $keepEmptyVars (false as default
+*            - 2009-04-28 - now url() $action parameter can be a full dispatch string (like controllerName:actionName)
+*            - 2009-04-22 - new static property $keepEmptyVars (false as default)
 *                         - new special empty string key in $params url parmeter will be passed to wordCleaner and added at the end of generated url
 *            - 2009-04-03 - add method wordCleaner
 *            - 2008-11-20 - add new static property self::$argSeparator
@@ -52,24 +53,23 @@ class url_viewHelper extends abstractViewHelper{
 	}
 
 	/**
-	* prepare une url interne au site
-	* @param string $action     nom de l'action cible du lien
-	* @param string $controller nom du controller cible du lien
-	*                           si null le controller en cours sera utilisé
-	* @param mixed  $params     peut etre soit un tableau ou une chaine:
-	*                           - tableau associatif de paires clés valeurs à passer dans l'url
-	*                           - query string à ajouter à la fin de l'url.
-	*                           si c'est un tableau la chaine généré sera automatiquement
-	*                           urlencodé (seulement les valeurs pas les cles) et si une clef '' est fournis , sa valeur elle sera ajouté à la fin apres etre passé par wordCleaner 
-	*                           si c'est une chaine c'est à vous de le faire.
-	*                           (les chaines doivent etre des querystring standard
-	*                            l'appli la remettra en forme si utilisation des rewriteRules)
-	* @param bool   $alreadyEncoded ne sert que quand $params est un tableau afin
-	*                           d'eviter l'urlencodage automatique.
-	* @param string $appUrl     sert d'url de base à la place de APP_URL (permet de formater de liens pour d'autres applications)
-	* @return str url cible.
+	* compile an internal application url
+	* @param string $action     name of the target mvc action
+	*                           (may also be a full dispatch string like 'controllerName:actionName' in wich case $controller parameter will be ignored)
+	* @param string $controller name of the target controller if null then the current controller setted in attached view will be used.
+	*                           @note will be ignored if $action parameter is a full dispatch string ('controllerName:actionName')
+	* @param mixed  $params     can be a string or an array :
+	*                           - sting: is used as a queryString to add at the end of generated URL. string must be already urlencoded
+	*                             this must be a "standard" URL queryString it will be correctly rewrited if rewriteRules are in use.
+	*                           - array: is list of key=>values to put at the end of generated URL (will be transformed to queryString)
+	*                             values will be urlencoded and if a "special" empty string key ('') is given the value will be passed to wordCleaner() and then added to the very end of generated URL without any key
+	* @param bool $alreadyEncoded only make sense with $params as an array to avoid automatic urlEncoding of values
+	* @param string $appUrl     allow you to set the base url to use in place of default APP_URL it's usefull to prepare links for other apps
+	* @return string target URL.
 	*/
 	function url($action,$controller=null,$params=null,$alreadyEncoded=false,$appUrl=null){
+		if( strpos($action,':')!==false) # manage $action as a full dispatch string
+			list($controller,$action)=explode(':',$action,2);
 		# gestion du controller
 		if( is_null($controller) )
 			$controller = $this->getController()->getName();

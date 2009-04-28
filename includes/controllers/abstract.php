@@ -434,13 +434,14 @@ abstract class abstractController{
 	}
 	/**
 	* like redirect but in a more easyer way.
-	* @param str   $action
-	* @param str   $controller default to the current controller name
+	* @param str   $action     target action name or full dispatch string (controllerName:actionName)
+	* @param str   $controller default to the current controller name and ignored if $action is a full dispatch string
 	* @param mixed $params     string or array of additionnal params to append to the uri
 	*                          any value for action or ctrl params will be removed.
 	* @param bool/int $withResponseCode  put true to specify a permanent redirection (code 301)
 	*                                    you also can pass an int as $http_response_code (404 for example)
 	* @param bool  $keepGoing  put true if you don't want to trigger a user exit().
+	* @see url_viewHelper::ur() methods for more infos on first three parameters
 	*/
 	function redirectAction($action,$controller=null,$params=null,$withResponseCode=false,$keepGoing=false){
 		$url = $this->view->url($action,$controller,$params);
