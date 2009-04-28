@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-04-28 - new method forward() call form with only one string dispatch parameter as returned by getCurrentDispatch() (ie: 'controller:action') (old way still working)
 *            - 2009-04-03 - add __isset method to also check for datas in view.
 *            - 2009-02-08 - $appMsgIgnoreRepeated is now a int value to permitt better repeated appMsgs management
 *            - 2009-02-06 - change view instanciation to work with new singletoned views
@@ -372,8 +373,19 @@ abstract class abstractController{
 	}
 
 	###--- FORWARD AND REDIRECTION MANAGEMENT MANAGEMENT ---###
+	/**
+	* forward the dispatching to another action in same or other controller.
+	* @param string $actionName      previously it could only take the target 'actionName'
+	*                                but it may now also be passed as a full dispatch form ie: 'controllerName:actionName'.
+	* @param string $controllerName  this parameter is only required if you want to forward action to another controller
+	*                                and if $actionName isn't given in dispatch form (ie: 'controllerName:actionName')
+	*                                @note if this parameter is given with $actionName in dispatch form it will simply be override by
+	*                                controllerName given in the dispatch
+	*/
 	public function forward($actionName,$controllerName=null){
-		if(is_null($controllerName) || in_array($controllerName,array($this->getName(),get_class($this)),true)){
+		if( strpos($actionName,':') )
+			list($controller,$actionName)=explode(':',$actionName,2);
+		if(empty($controllerName) || in_array($controllerName,array($this->getName(),get_class($this)),true)){
 			$this->$actionName();
 		}else{
 			if(! preg_match('!(C|_c)ontroller$!',$controllerName) )
