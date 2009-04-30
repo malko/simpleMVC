@@ -9,13 +9,15 @@ DEVEL_MODE = TRUE
 
 #- DEFAULT DISPATCHING
 DEFAULT_DISPATCH = default:index
+ERROR_DISPATCH = default:error
 #- DATABASE CONNECTION
-DB_CONNECTION  = mysqldb://dbname;dbhost;dbuser;dbpass
+# DB_CONNECTION  = mysqldb://dbname;dbhost;dbuser;dbpass
 
 #- SOME PATH CONFIGURATION REQUIRED OR USEFULL FOR FURTHER DEVELOPPMENT.
 ROOT_URL     = http://example.com/
 APP_URL      = %ROOT_URL%/%FRONT_NAME%
 APP_DIR      = %ROOT_DIR%/%FRONT_NAME%
 
+GUI_IMG_URL  = %ROOT_DIR%/images
 # DO WE USE REWITES RULES
 USE_REWRITE_RULES = TRUE

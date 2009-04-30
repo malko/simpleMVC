@@ -106,7 +106,7 @@ try{
 		show($e->getMessage(),'color:orange;trace;exit');
 	abstractController::appendAppMsg($e->getMessage(),'error');
 	$controller = new defaultController;
-	$controller->redirectAction('error','default',null,404);
+	$controller->redirectAction(ERROR_DISPATCH,null,null,404);
 }
 #- action call
 try{
@@ -115,6 +115,6 @@ try{
 	if( DEVEL_MODE )
 		show($e->getMessage(),$e->getTrace(),'color:maroon;trace;exit');
 	abstractController::appendAppMsg($e->getMessage(),'error');
-	$controller->redirectAction('error','default',null,404);
+	$controller->redirectAction(ERROR_DISPATCH,null,null,404);
 }
 
