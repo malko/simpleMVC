@@ -13,7 +13,7 @@ class filemanagerController extends abstractController{
 
 	function init(){
 		self::appendAppMsg('PLEASE DON\'T FORGET TO PROTECT YOUR FILEMANAGER CONNECTOR FOR OBVIOUS SECURITY REASONS','error');
-		show('PLEASE DON\'T FORGET TO PROTECT YOUR FILEMANAGER CONNECTOR FOR OBVIOUS SECURITY REASONS');
+		echo '{"error":"PLEASE DON\'T FORGET TO PROTECT YOUR FILEMANAGER CONNECTOR FOR OBVIOUS SECURITY REASONS"}';
 		exit();
 		#- ~ parent::init();// <<-- on initialise pas de vue
 		$this->connector = new fileManager(self::$connectorConfig['docRoot'],self::$connectorConfig['urlRoot'],self::$connectorConfig['accessCallBack']);
