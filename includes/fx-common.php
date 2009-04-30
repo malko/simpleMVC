@@ -57,6 +57,8 @@ if( function_exists('spl_autoload_register')){
 }
 function smvcAutoload($className){
 	$dirs[] = LIB_DIR;
+	if(preg_match('!^(db|modelgenerator|abstractModel)$!',$className))
+		return require LIB_DIR."/db/class-$className.php";
 	if( defined('FRONT_NAME') ){
 		if( preg_match('!(?:_c|C)ontroller$!',$className,$m) ){ #- look for controller
 			$dirs[] = LIB_DIR.'/controllers';

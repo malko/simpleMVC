@@ -19,11 +19,10 @@ class adminmodelsController extends modelsController{
 	protected $configFile = '';
 	function init(){
 		parent::init();
-		#-  setting specific to this app
-		modelGenerator::$tablePrefixes='modedemploi_';
-		modelGenerator::$excludePrefixedTables=true;
 		self::appendAppMsg("Don't forget to edit the adminModelsController to check for user rights to access it or anyone could be editing your datas","error");
 		$this->configFile = CONF_DIR.'/simpleMVCAdmin_'.FRONT_NAME.'_config.php';
+		if(! is_file($this->configFile) && is_writable(CONF_DIR))
+			touch($this->configFile);
 		if(! is_writable($this->configFile) ){
 			self::appendAppMsg("$this->configFile isn't writable.",'error');
 		}
@@ -178,7 +177,7 @@ class adminmodelsController extends modelsController{
 			self::appendAppMsg("Model directory must be writable.",'error');
 			return $this->redirect($_SERVER['HTTP_REFERER']);
 		}
-		$g = new modelGenerator(DB_CONNECTION,LIB_DIR.'/models',1);
+		$g = new modelgenerator(DB_CONNECTION,LIB_DIR.'/models',1);
 		$g->onExist = 'o';
 		$g->doGeneration('DB_CONNECTION','');
 		#- then ensure correct rights for files
