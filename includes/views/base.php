@@ -174,7 +174,7 @@ class baseView implements viewInterface{
 		}
 
 		#- try helpers method calls
-		if(! preg_match('!^_([a-z-]+?)_(.*)!',$m,$match) ){ #- call to default helper methods
+		if(! preg_match('!^_([a-zA-Z0-9]+?)_(.*)!',$m,$match) ){ #- call to default helper methods
 			$helper = $this->getHelper($m,true);
 			return call_user_func_array(array($helper,$m),$a);
 		}else{ #- considering we are in presence of a "complex" helper method call ie: _helperName_methodName()
