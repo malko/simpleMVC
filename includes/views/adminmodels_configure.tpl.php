@@ -1,10 +1,12 @@
 <style>
 	#settings form{ padding:0;margin:0;}
-	#settings #fldList { padding:0;margin:0;}
-	#settings #fldList li{ list-style-type:none; list-style-image:none;margin:5px 0;}
-	#settings #fldList .placeholder{height:3em;}
-	#settings .formInput{padding:5px;}
-	#settings input {white-space:pre;}
+	#settings .sortable { padding:0;margin:0;}
+	#settings .sortable li{ list-style-type:none; list-style-image:none;margin:5px 0;padding:5px;}
+	#settings .sortable .placeholder{height:3em;}
+	#settings input{white-space:pre;}
+	div.fieldSet .ui-widget-header{ display:block;}
+	div.fieldSet .ui-widget-header, div.fieldSet, div.formInput{ padding:5px;margin-bottom:5px;}
+	div.fieldSet .ui-widget-header .ui-icon{ float:right;}
 </style>
 <h1><?=$this->modelType?> settings </h1>
 <div id="settings">
@@ -21,7 +23,7 @@
 	</div>
 	<label>
 		<?= $this->modelType ?>::$__toString
-		<input type="text" name="_toStr" value="<?=$this->_toStr?>" />
+		<input type="text" name="_toStr" value="<?=htmlentities($this->_toStr,ENT_COMPAT,'UTF-8')?>" />
 	</label>
 	<br />
 	<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
@@ -38,7 +40,7 @@
 			<br />
 			Field list order may be arrange by simple drag&drop.
 		</div>
-		<ul id="fldList">
+		<ul id="fldList" class="sortable">
 		<?php
 			if( $this->datasDefs ){
 				foreach($this->datasDefs as $fld){
@@ -64,8 +66,7 @@
 			List of possible options as defined in formInput_viewHelper documentation:
 			<ul style="padding:0;margin:0 0 0 15px;">
 				<li> default is the default value to set if $value is empty.</li>
-				<li>
-				multiple,class, size, id, onchange, maxlength, rows, cols, style, checked and disabled are replaced by the corresponding html attributes</li>
+				<li>multiple,class, size, id, onchange, maxlength, rows, cols, style, checked and disabled are replaced by the corresponding html attributes</li>
 				<li> default id will be same as name</li>
 				<li> default class will be same as type</li>
 				<li> values is an associative list of key value pairs (keys are used as values and values are used as labels) used with select | checkBox | radio</li>
@@ -73,29 +74,71 @@
 				<li> pickerOptStr is used for datepicker or timepicker fields</li>
 				<li> pickerOpts   is used for datetimepicker (something like that: {"pickerOpts":["dateOptStr","timeOptStr"]}</li>
 				<li> rteOpts      is used for rte options</li>
-				<li> uneditable   setted to true will allow field to be filled only at item creation time, and will be disabled the rest of the time. 
+				<li> uneditable   setted to true will allow field to be filled only at item creation time, and will be disabled the rest of the time.</li>
 			</ul>
 			<strong>Warning: </strong>Options are not checked for validation so be carrefull to pass a valid json string as define in php json_encode.
 		</div>
 		<br />
-		<div>
-		<?php
-			if( $this->datasDefs ){
-				$types = array('--- default ---','skip','select','text','password','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
-				$types = array_combine($types,$types);
-				foreach($this->datasDefs as $f){
-					if( $f === $this->primaryKey)
-						continue;
-					echo "<div class=\"formInput\">"
-						.$this->formInput("inputTypes[$f]",(isset($this->inputTypes[$f])?$this->inputTypes[$f]:null),'select',array('values'=>$types,'label'=>$f,'formatStr'=>'%label %input'))
-						.$this->formInput("inputOptions[$f]",(isset($this->inputOptions[$f])?$this->inputOptions[$f]:null),'text',array('size'=>50,'label'=>'options','formatStr'=>' %label %input'))
-						."</div>\n";
-				}
-			}
-		?>
-		<br />
-		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+		<div id="fieldList">
+			<?php
+					if( $this->datasDefs ){
+						$types = array('--- default ---','skip','select','text','password','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
+						$types = array_combine($types,$types);
+						$fieldGroupMethod = '';
+						if( is_object($this->fieldOrder)){
+							foreach($this->fieldOrder as $k=>$group){
+								if( $k === 'fieldGroupMethod'){
+									$fieldGroupMethod = $group;
+									continue;
+								}
+								#- ~ echo "<fieldset><legend>$group->name</legend>\n";
+								if( empty($group->name) ){
+									echo '<div class="fieldSet">'
+									.'<label class="ui-widget-header">Primary ungrouped inputs</label>'
+									.'<input type="hidden" name="fieldsOrder[primary]" value="" />';
+								}else{
+									echo '<div class="fieldSet" id="fieldSet_'.$k.'">'
+									.'<label class="ui-widget-header">Group Name: <input type="text" name="fieldSet[]" value="'.htmlentities($group->name,ENT_COMPAT,'UTF-8').'" /></label>'
+									.'<input type="hidden" name="fieldsOrder[]" value="" />';
+
+								}
+								if( !empty($group->fields)){
+									foreach($group->fields as $f){
+										if( $f === $this->primaryKey )
+											continue;
+										echo "\n\t<div class=\"formInput\">"
+											.$this->formInput("inputTypes[$f]",(isset($this->inputTypes[$f])?$this->inputTypes[$f]:null),'select',array('values'=>$types,'label'=>$f,'formatStr'=>'%label %input'))
+											.$this->formInput("inputOptions[$f]",(isset($this->inputOptions[$f])?$this->inputOptions[$f]:null),'text',array('size'=>50,'label'=>'options','formatStr'=>' %label %input'))
+											."</div>\n";
+									}
+								}
+								echo "\n</div>\n";
+								#- ~ echo "</fieldset>\n";
+							}
+						}else{
+							echo '<div class="fieldSet"><label class="ui-widget-header">primary ungrouped inputs</label><input type="hidden" name="fieldsOrder[primary]" value="" />';
+							$fields = is_array($this->fieldOrder)?array_keys(array_merge(array_flip($this->fieldOrder),array_flip($this->datasDefs))):$this->datasDefs;
+							foreach($fields as $f){
+								if( $f === $this->primaryKey)
+									continue;
+								echo "<div class=\"formInput\">"
+									.$this->formInput("inputTypes[$f]",(isset($this->inputTypes[$f])?$this->inputTypes[$f]:null),'select',array('values'=>$types,'label'=>$f,'formatStr'=>'%label %input'))
+									.$this->formInput("inputOptions[$f]",(isset($this->inputOptions[$f])?$this->inputOptions[$f]:null),'text',array('size'=>50,'label'=>'options','formatStr'=>' %label %input'))
+									."</div>\n";
+							}
+							echo "\n</div>\n";
+						}
+					}
+				?>
 		</div>
+		<br />
+		<div id="fieldGroupMethod"<?=empty($fieldGroupMethod)?' style="display:none;"':''?> class="ui-widget-content ui-corner-all">Grouping Method:
+			<label><input type="radio" name="fieldGroupMethod" value="fieldset"<?= 'fieldset'===$fieldGroupMethod?' checked="checked"':''?>/> FieldSet</label>
+			<label><input type="radio" name="fieldGroupMethod" value="tabs" <?= 'tabs'===$fieldGroupMethod?' checked="checked"':''?>/> Tabs</label>
+			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
+		</div>
+		<button type="button" id="addFieldSet">Create an input group container (fieldset)</button>
+		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
 	</div>
 </form>
 
@@ -106,7 +149,7 @@
 		echo $this->formInput('setLang',langManager::getDefaultLang(),'select',array('values'=>$this->langs,'label'=>'Display Lang'));
 		if( $this->idMsgs ){
 			foreach($this->idMsgs as $lang=>$ids){
-				echo "<div id=\"langMessages_$lang\" class=\"langMessages\"><h2>$lang messages</h2>";
+				echo "<div id=\"langMessages_$lang\" class=\"langMessages ui-widget-content ui-corner-all\"><h2 class=\"ui-widget-header\">$lang messages</h2>";
 				foreach($ids as $f){
 					if( $f === $this->primaryKey)
 						continue;
@@ -120,31 +163,76 @@
 	<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
 	</div>
 </form>
+<button type="button" onclick="window.location = '<?= $this->listUrl ?>';";  style="float:right;"><?= langManager::msg('back to list'); ?></button>
+<div class="ui-helper-clearfix"></div>
 </div>
-<input type="reset" onclick="window.location = '<?= $this->listUrl ?>';"; value="<?= langManager::msg('back'); ?>"  class="noSize"/>
 
 
 <?php
 $this->js('
+	var styleClass = "ui-widget-content ui-corner-all";
+
 	//-- make this an accordion
-	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:false,collapsible:true});
+	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:"none",collapsible:true});
 
 	// make fieldname clickable to ease _toStr setting
 	$(".sMVC_dataField").click(function(){
 		var v = $("input[name=_toStr]").val();
-		$("input[name=_toStr]").val((v?v+" ":"")+this.innerHTML);
+		$("input[name=_toStr]").val((v?v+" ":"")+this.innerHTML).focus();
 	}).css({cursor:"pointer"});
 
 	//-- make list fields sortable
-	$("#fldList").sortable({
+	$("ul.sortable").sortable({
 		placeholder: "ui-state-highlight placeholder ui-corner-all",
 		forcePlaceholderSize:true
-	}).find("li").addClass("ui-widget-content ui-corner-all");
+	}).find("li").addClass(styleClass);
+
+	//-- manage ordering and grouping of forms inputs
+	function updateFieldSets(){
+		$("#fieldList .fieldSet").each(function(){
+			var val = new Array();
+			var labs = $(this).find(".formInput label:first-child");
+			labs.each(function(){val.push(this.innerHTML);});
+			$(this).find("input[type=hidden][name^=fieldsOrder]").val(val.join(","));
+		});
+	}
+	$.fn.connectInputSortList = function(){
+		$(this).addClass(styleClass).sortable({
+				placeholder: "ui-state-highlight placeholder ui-corner-all",
+				forcePlaceholderSize:true,
+				dropOnEmpty:true,
+				items:".formInput",
+				scrollSensitivity: 40,
+				update:updateFieldSets
+			}).find(".formInput").addClass(styleClass);
+			var header = $(".ui-widget-header",this);
+			$(\'<span class="ui-icon ui-icon-close"></span>\').prependTo(header).click(function(){
+				if( $(this).parents(".fieldSet").children(".formInput").length < 1)
+					$(this).parents(".fieldSet").remove();
+				else
+					alert("Can\'t remove a not empty group");
+			});
+		$("#fieldList .fieldSet").sortable("option", "connectWith", "#fieldList .fieldSet");
+	};
+	$("#fieldList").sortable({
+		placeholder: "ui-state-highlight placeholder ui-corner-all",
+		forcePlaceholderSize:true,
+		items:".fieldSet",
+		handle:".ui-widget-header"
+	}).find(".fieldSet").connectInputSortList();
+	$("#addFieldSet").click(function(){
+		$(\'<div class="fieldSet" id="fieldSet_\'+($("#forms .fieldSet").length+1)+\'">\
+			<label class="ui-widget-header">Group Name: <input type="text" name="fieldSet[]" value="" /></label>\
+			<input type="hidden" name="fieldsOrder[]" value="" />\
+		</div>\').appendTo("#fieldList").connectInputSortList();
+		$("#forms #fieldGroupMethod").show();
+	});
+	updateFieldSets();
 
 	//-- manage lang pannel
 	$("select#setLang").change(function(){
 		var l = this.options[this.selectedIndex].innerHTML;
-		$("fieldset div.langMessages").hide();
+		$("div.langMessages").hide();
 		$("div#langMessages_"+l).show();
 	}).change();
 	//-- add form option client side validation
@@ -164,6 +252,11 @@ $this->js('
 			$(this).addClass("ui-state-error");
 		}
 	});
-	
+
+	//-- styling buttons
+	$("button, input[type=submit]").addClass("ui-state-default ui-corner-all").hover(
+		function(){$(this).addClass("ui-state-hover");},
+		function(){$(this).removeClass("ui-state-hover");}
+	);
 ','jqueryui');
 ?>

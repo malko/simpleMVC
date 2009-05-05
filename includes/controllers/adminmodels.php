@@ -10,13 +10,16 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-05-05 - better admin forms generation (grouping/ordering inputs fields)
 *            - 2009-03-13 - made some change to list configuration to support ordering and formatStr
-*            - 2009-03-13 - put configFile as protected instead of private to permitt extended class to access it
+*                         - put configFile as protected instead of private to permitt extended class to access it
 *            - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
 *                         - better handling of editing langMessage from empty dictionnaries
 */
 class adminmodelsController extends modelsController{
 	protected $configFile = '';
+	/** set one or multiple databases connection constants names to generate model from */
+	protected $dbConnectionsDefined = array('DB_CONNECTION');
 	function init(){
 		parent::init();
 		self::appendAppMsg("Don't forget to edit the adminModelsController to check for user rights to access it or anyone could be editing your datas","error");
@@ -45,12 +48,14 @@ class adminmodelsController extends modelsController{
 	function formAction(){
 		parent::formAction();
 		if( file_exists($this->configFile) ){
-			$config = parse_conf_file($this->configFile,true);
-			if( !empty($config['FORM_'.$this->modelType]) ){
-				$inputOpts = json_decode($config['FORM_'.$this->modelType],true);
+			$this->config = parse_conf_file($this->configFile,true);
+			if( !empty($this->config['FORM_'.$this->modelType]) ){
+				$inputOpts = json_decode($this->config['FORM_'.$this->modelType],true);
 				if(! empty($inputOpts) )
 					$this->inputOpts = $inputOpts;
 			}
+			if( !empty($this->config['FORM_ORDER_'.$this->modelType]))
+				$this->fieldsOrder = json_decode($this->config['FORM_ORDER_'.$this->modelType]);
 		}
 	}
 	/**
@@ -89,6 +94,9 @@ class adminmodelsController extends modelsController{
 		}
 		$this->inputTypes = empty($inputTypes)?array():$inputTypes;
 		$this->inputOptions = empty($inputOptions)?array():$inputOptions;
+		if( !empty($this->config['FORM_ORDER_'.$this->modelType]))
+			$this->fieldOrder = json_decode($this->config['FORM_ORDER_'.$this->modelType]);
+
 		$this->view->listUrl = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
 		#--- locale settings
 		$this->langs = langManager::$acceptedLanguages;
@@ -143,6 +151,16 @@ class adminmodelsController extends modelsController{
 					continue;
 				$c[$k] = $options;
 			}
+			if(! isset($_POST['fieldSet']) ){ #- no grouping so just stock order of elements
+				$config['FORM_ORDER_'.$this->modelType] = json_encode(array_keys($_POST['inputTypes']));
+			}else{
+				$order = array('fieldGroupMethod'=>empty($_POST['fieldGroupMethod'])?'fieldset':$_POST['fieldGroupMethod']);
+				foreach($_POST['fieldsOrder'] as $k=>$v){
+					$name = ($k==='primary'?'':(empty($_POST['fieldSet'][$k])?"group$k":$_POST['fieldSet'][$k]));
+					$order[]=array('name'=>$name,'fields'=>$v?explode(',',$v):'');
+				}
+				$config['FORM_ORDER_'.$this->modelType] = json_encode($order);
+			}
 			$config['FORM_'.$this->modelType] = empty($c)?'--UNSET--':json_encode($c) ;
 			write_conf_file($this->configFile,$config,true);
 		}
@@ -177,9 +195,13 @@ class adminmodelsController extends modelsController{
 			self::appendAppMsg("Model directory must be writable.",'error');
 			return $this->redirect($_SERVER['HTTP_REFERER']);
 		}
-		$g = new modelgenerator(DB_CONNECTION,LIB_DIR.'/models',1);
-		$g->onExist = 'o';
-		$g->doGeneration('DB_CONNECTION','');
+		#- do generation for each setted databases
+		foreach($this->$dbConnectionsDefined as $dbConn){
+			eval('$g = new modelgenerator('.$dbConn.',LIB_DIR."/models",1);');
+			$g->onExist = 'o';
+			$g->doGeneration($dbConn,'');
+		}
+
 		#- then ensure correct rights for files
 		$modelFiles = glob(LIB_DIR.'/models/*.php');
 		foreach($modelFiles as $f){
