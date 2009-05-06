@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2009-05-05 - add support for text/password confirm fields
 *            - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin
 *            - 2009-01-05 - add support for time picker and datetime picker
 *            - 2008-11-27 - better multiple select support
@@ -26,8 +27,8 @@ class formInput_viewHelper extends abstractViewHelper{
 	* @param mixed  $value     string or list of values (for multiple selectors or checkboxes)
 	* @param string $type      type of input to use
 	*                          - select
-	*                          - t[e]xt
-	*                          - password
+	*                          - t[e]xt[Confirm]
+	*                          - password[Confirm]
 	*                          - [text]area|forcetextarea
 	*                          - rte
 	*                          - check[box]
@@ -48,6 +49,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - pickerOptStr is used for datepicker and timepicker fields
 	*                          - pickerOpts   is used for datetimepicker (something like that: array(0=>dateOptStr,1=>timeOptStr))
 	*                          - rteOpts      is used for rte options
+	*                          - confirmOpts  is used for t[e]xtConfirm and passwordConfirm to override default confirmation options.
 	*/
 	function formInput($name,$value=null,$type='text',array $options=array()){
 		$dfltOpts = array(
@@ -66,14 +68,44 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'txt':
 			case 'text':
 			case 'password':
+			case 'txtConfirm':
+			case 'textConfirm':
+			case 'passwordConfirm':
+				if(strpos($type,'Confirm')){ //-- manage confirmation if required
+					$type = str_replace('Confirm','',$type);
+					$confirmOpts = array_merge($options, array(
+						'label' => 'Confirmation',
+						'class' => $type.'Confirm ui-priority-secondary',
+						'id'    => 'formInputConfirm_'.$options['id'],
+					));
+					if( isset($options['confirmOpts']))
+						$confirmOpts = array_merge($confirmOpts,$options['confirmOpts']);
+
+					$confirm = $this->formInput("confirm[$name]",$value,$type,$confirmOpts);
+					$this->_js_scriptOnce("
+						function formInputCheckConfirm(id){
+							var o = $('input#'+id);
+							var c = $('input#formInputConfirm_'+id);
+							if( c.val()===o.val() ){
+								o.removeClass('ui-state-error');
+								c.removeClass('ui-state-error');
+							}else{
+								o.addClass('ui-state-error');
+								c.addClass('ui-state-error');
+							}
+						}
+					",'formInputCheckConfirm');
+					$this->js("$('input#$confirmOpts[id],input#$options[id]').keyup(function(){formInputCheckConfirm('$options[id]');});",'jqueryui');
+				}
 				if($type==='txt')
 					$type='text';
 				$value = preg_replace('/(?<!\\\\)"/','\"',$value);
+
 				return $this->formatInput(
 					$labelStr,
 					"<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
 					$options['formatStr']
-				);
+				).(isset($confirm)?$confirm:'');
 				break; //-- dummy break
 			case 'hidden':
 				$value = preg_replace('/(?<!\\\\)"/','\"',$value);

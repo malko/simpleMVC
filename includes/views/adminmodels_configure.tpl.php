@@ -82,7 +82,7 @@
 		<div id="fieldList">
 			<?php
 					if( $this->datasDefs ){
-						$types = array('--- default ---','skip','select','text','password','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
+						$types = array('--- default ---','skip','select','text','textConfirm','password','passwordConfirm','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
 						$types = array_combine($types,$types);
 						$fieldGroupMethod = '';
 						if( is_object($this->fieldOrder)){
