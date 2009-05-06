@@ -23,7 +23,7 @@ jQuery(function($){
 			fileDelete: 'Supprimer le fichier',
 			dirFullpath: 'Chemin du répertoire',
 			dirSize: 'Contenu du répertoire',
-			dirDelete: 'Suppirmer le répertoire',
+			dirDelete: 'Supprimer le répertoire',
 			mtime: 'Date de dernière modification',
 			owner:'Propriétaire',
 			group:'Groupe',
