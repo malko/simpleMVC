@@ -15,6 +15,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-05-05 - add new js method scriptOnce same as script method but with a check that script isn't already appended
 *            - 2009-03-27 - add jqueryUI plugin
 *            - 2009-02-08 - loadPlugin now check for registeredPlugins before trying to load it
 *                         - js and others methods now return $this for method chaining
@@ -110,8 +111,26 @@ class js_viewHelper extends abstractViewHelper{
 	* @return $this for method chaining
 	*/
 	function script($script){
-		self::$pendingScript .= "\n$script\n";
+		self::$pendingScript .= "\n$script";
 		return $this;
+	}
+	/**
+	* append script to be executed at window.onload time like script() method after checking script wasn't previously appended.
+	* this method is particulary usefull when you want to be sure a particular set of javascript is inserted but don't know if it was already done before.
+	* in fact this method will just have a check at
+	* @param string $script           script to append
+	* @param string $scriptIdentifier a unique identifier for this script or null for an automatic md5() script calculation as a scriptIdentifier (not recommended as it cost extra time.)
+	* @return $this for method chaining
+	*/
+	function scriptOnce($script,$scriptIdentifier=null){
+		static $ids;
+		if(!isset($ids)) $ids = array();
+		if( null===$scriptIdentifier )
+			$scriptIdentifier = md5($script);
+		if( isset($ids[$scriptIdentifier]) )
+			return $this;
+		$ids[$scriptIdentifier]=true;
+		return $this->script($script);
 	}
 
 	/**
