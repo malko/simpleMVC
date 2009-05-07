@@ -68,7 +68,7 @@ var cookies={
 
 	function addPanel(bt,pannel,content,addcount){
 		if( addcount ){
-			bt.append('<small> ('+ (typeof(addcount)=='number'?addcount:content.length)+')</small>');
+			bt.append('<small> ('+ ((typeof(addcount)=='number'||typeof(addcount)=='string')?addcount:content.length)+')</small>');
 		}
 		pannel = $(pannel);
 		pannel.append(content).css(pannelStyle);
@@ -131,15 +131,15 @@ var cookies={
 
 	//-- Manage DB::profiler reports display
 	var report = $('#dbProfilerReport').parent('table');
-	if( report.length==0){
+	var dbMsgs = $('b.dbMsg'); // append eventual class-db errors
+	if( (report.length+dbMsgs.length)==0){
 		btDb.hide().remove();
 		dbDiv.hide().remove();
 	}else{
 		report.children('caption').click(); // open profiler table
-		var dbMsgs = $('b.dbMsg'); // append eventual class-db errors
 		addPanel(btDb,dbDiv,report,(dbMsgs.length ? $('tbody tr',report).length+'/'+dbMsgs.length : $('tbody tr',report).length));
 		if( dbMsgs.length){
-			dbDiv.append('<h2>DB::messages</h2>').append(dbMsgs);
+			dbDiv.append('<h2>DB::messages</h2>').append(dbMsgs.css('display','block'));
 			$('h2',dbDiv).css(pannelTitleStyle).css('font-size','14px');
 
 		}

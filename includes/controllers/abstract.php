@@ -192,7 +192,7 @@ abstract class abstractController{
 	*/
 	static public function getFirstDispatch($explodeResult=false){
 		if(! count(self::$dispatchStack) ) return false;
-		return $explodeResult?explode(':',self::$dispatchStack[0]):self::$dispatchStack[0];
+		return $explodeResult?explode(':',self::$dispatchStack[0],2):self::$dispatchStack[0];
 	}
 	/**
 	* return the current controller name
