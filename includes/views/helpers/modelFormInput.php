@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2009-05-11 - empty date/datetime/time values with no default are set to current date.
 *            - 2009-01-05 - add timepicker and datetimepicker detection
 *            - 2008-11-07 - add possibility to skip automated date type setting
 *            - 2008-10-30 - add svninfos and put it uptodate with local version
@@ -83,12 +84,19 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 			}
 			if(empty($options['type']) ){
-				if( $datasDefs[$keyName]['Type'] === 'date' )
+				if( $datasDefs[$keyName]['Type'] === 'date' ){
+					if( empty($value) && empty($options['default']) )
+						$default = date('Y-m-d');
 					return $this->formInput($keyName,$value,'date',$options);
-				if( $datasDefs[$keyName]['Type'] === 'datetime' )
+				}elseif( $datasDefs[$keyName]['Type'] === 'datetime' ){
+					if( empty($value) && empty($options['default']) )
+						$default = date('Y-m-d H:i:s');
 					return $this->formInput($keyName,$value,'datetime',$options);
-				if( $datasDefs[$keyName]['Type'] === 'time' )
+				}elseif( $datasDefs[$keyName]['Type'] === 'time' ){
+					if( empty($value) && empty($options['default']) )
+						$default = date('H-i:s');
 					return $this->formInput($keyName,$value,'time',$options);
+				}
 			}
 			if( preg_match('!\w+\s*\(\s*(\d+)\s*\)$!',$datasDefs[$keyName]['Type'],$match) ){
 				if(! isset($options['maxlength']) )
