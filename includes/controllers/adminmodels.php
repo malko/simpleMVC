@@ -196,7 +196,7 @@ class adminmodelsController extends modelsController{
 			return $this->redirect($_SERVER['HTTP_REFERER']);
 		}
 		#- do generation for each setted databases
-		foreach($this->$dbConnectionsDefined as $dbConn){
+		foreach($this->dbConnectionsDefined as $dbConn){
 			eval('$g = new modelgenerator('.$dbConn.',LIB_DIR."/models",1);');
 			$g->onExist = 'o';
 			$g->doGeneration($dbConn,'');
