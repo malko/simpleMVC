@@ -5,6 +5,8 @@
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
+* @changelog
+*            - add forgotten input hidden on primaryKey when using fieldsOrder  
 */
 ?>
 <h1><?= $this->pageTitle ?></h1>
@@ -17,6 +19,10 @@
 		if( is_object($this->fieldsOrder)){
 			$fieldGroupMethod = $this->fieldsOrder->fieldGroupMethod;
 			$formStr = '';
+			if( isset($this->_model_)){
+				$PK = $this->_model_->primaryKey;
+				echo $this->modelFormInput($this->_model_,$PK,isset($this->inputOpts[$PK])?$this->inputOpts[$PK]:array());
+			}
 			foreach($this->fieldsOrder as $k=>$group){
 				if( 'fieldGroupMethod'===$k || empty($group->fields))
 					continue;
