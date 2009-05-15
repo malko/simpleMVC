@@ -16,13 +16,15 @@
 		$inputOpts = array(
 			'formatStr'=>'<tr class="formInput"><td>%label</td><td>%input</td></tr>'
 		);
+		$primaryKey = null;
+		if( isset($this->_model_)){
+			$primaryKey = $this->_model_->primaryKey;
+			echo $this->modelFormInput($this->_model_,$primaryKey,isset($this->inputOpts[$primaryKey])?$this->inputOpts[$primaryKey]:array());
+		}
+
 		if( is_object($this->fieldsOrder)){
 			$fieldGroupMethod = $this->fieldsOrder->fieldGroupMethod;
 			$formStr = '';
-			if( isset($this->_model_)){
-				$PK = $this->_model_->primaryKey;
-				echo $this->modelFormInput($this->_model_,$PK,isset($this->inputOpts[$PK])?$this->inputOpts[$PK]:array());
-			}
 			foreach($this->fieldsOrder as $k=>$group){
 				if( 'fieldGroupMethod'===$k || empty($group->fields))
 					continue;
@@ -58,6 +60,8 @@
 			$formFields = empty($this->fieldsOrder)?array_keys($this->datasDefs):$this->fieldsOrder;
 			echo '<table border="0" cellspacing="0" cellpadding="2">';
 			foreach($formFields as $k){
+				if( $k===$primaryKey)
+					continue;
 				$opts = $inputOpts;
 				if( isset($this->inputOpts[$k] ) )
 					$opts = array_merge($inputOpts,$this->inputOpts[$k]);
