@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-05-28 - ncancel: add allowed action property $allowedActions
 *            - 2009-04-06 - add support for activable models
 *            - 2009-03-31 - autodetection of field that need to be loaded when loadDatas is empty
 *            - 2009-03-19 - rewrite support for orderable models
@@ -38,6 +39,14 @@ abstract class modelsController extends abstractController{
 	*/
 	public $loadDatas = null;
 
+	/** config of (un)doable basic actions */
+	protected $_allowedActions=array(
+		'edit'=>true,
+		'list'=>true,
+		'del'=>true,
+		'add'=>true
+	);
+	
 	function init(){
 		parent::init();
 		if(! $this->modelType )
@@ -53,12 +62,22 @@ abstract class modelsController extends abstractController{
 			'footer.tpl.php'
 		));
 	}
-
+	
+	function _isAllowedAction_($actionName,$dispatchRedirect=DEFAULT_DISPATCH){
+		if( isset($this->_allowedActions[$action]) && empty($this->_allowedActions[$action]) ){
+			self::appendAppMsg('unauthorized action!','error');
+			return $this->redirectAction($dispatchRedirect,null,array('modelType'=>$this->modelType));			
+		}
+		return true;
+	}
 	function indexAction(){
 		return $this->forward('list');
 	}
 
 	function listAction(){
+		$this->_isAllowedAction_('list',DEFAULT_DISPATCH);
+
+		$this->view->assign('_smvcAllowedAction',$this->_allowedActions);
 		$this->setDictName();
 		$supportedAddons = abstractModel::_getModelStaticProp($this->modelType,'modelAddons');
 		$orderable = in_array('orderable',$supportedAddons);
@@ -144,7 +163,8 @@ abstract class modelsController extends abstractController{
 		return $this->forward('form');
 	}
 
-	function editAction(){
+	function editAction(){		
+		$this->_isAllowedAction_('edit',DEFAULT_DISPATCH);
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Identifiant d\'enregistrement à modifié manquant','error');
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
@@ -160,6 +180,7 @@ abstract class modelsController extends abstractController{
 	}
 
 	function formAction(){
+		$this->_isAllowedAction_(null===$this->view->_model_?'add':'edit',$this->getName().':list');
 		$this->setDictName();
 		$this->view->datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
@@ -187,8 +208,10 @@ abstract class modelsController extends abstractController{
 		#- get instance
 		$modelPKName = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 		if(! isset($_POST[$modelPKName]) ){
+			$this->_isAllowedAction_('add',DEFAULT_DISPATCH);
 			$model = abstractModel::getModelInstanceFromDatas($this->modelType,$_POST);
 		}else{
+			$this->_isAllowedAction_('edit',DEFAULT_DISPATCH);
 			$model = abstractModel::getModelInstance($this->modelType,$_POST[$modelPKName]);
 			if(! $model instanceof $this->modelType ){
 				self::appendAppMsg('Mise à jour d\'un élément inexistant en base de données.','error');
@@ -211,6 +234,7 @@ abstract class modelsController extends abstractController{
 	}
 
 	function delAction(){
+		$this->_isAllowedAction_('del',DEFAULT_DISPATCH);
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Manque d\'information sur l\'action à effectuer.','error');
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));

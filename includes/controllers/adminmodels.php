@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-05-28 - ncancel:loading of config file for ACTION allowed
 *            - 2009-05-05 - better admin forms generation (grouping/ordering inputs fields)
 *            - 2009-03-13 - made some change to list configuration to support ordering and formatStr
 *                         - put configFile as protected instead of private to permitt extended class to access it
@@ -28,6 +29,12 @@ class adminmodelsController extends modelsController{
 			touch($this->configFile);
 		if(! is_writable($this->configFile) ){
 			self::appendAppMsg("$this->configFile isn't writable.",'error');
+		}
+		if( file_exists($this->configFile) ){
+			$config = parse_conf_file($this->configFile,true);
+			if( isset($config['ACTION_'.$this->modelType]) ){
+				$this->allowedActions = json_decode($config['ACTION_'.$this->modelType],true);
+			}
 		}
 		$this->pageTitle = langManager::msg($this->modelType);
 	}
