@@ -46,7 +46,7 @@ abstract class modelsController extends abstractController{
 		'del'=>true,
 		'add'=>true
 	);
-	
+
 	function init(){
 		parent::init();
 		if(! $this->modelType )
@@ -62,11 +62,11 @@ abstract class modelsController extends abstractController{
 			'footer.tpl.php'
 		));
 	}
-	
-	function _isAllowedAction_($actionName,$dispatchRedirect=DEFAULT_DISPATCH){
+
+	function _isAllowedAction_($action,$dispatchRedirect=DEFAULT_DISPATCH){
 		if( isset($this->_allowedActions[$action]) && empty($this->_allowedActions[$action]) ){
 			self::appendAppMsg('unauthorized action!','error');
-			return $this->redirectAction($dispatchRedirect,null,array('modelType'=>$this->modelType));			
+			return $this->redirectAction($dispatchRedirect,null,array('modelType'=>$this->modelType));
 		}
 		return true;
 	}
@@ -163,7 +163,7 @@ abstract class modelsController extends abstractController{
 		return $this->forward('form');
 	}
 
-	function editAction(){		
+	function editAction(){
 		$this->_isAllowedAction_('edit',DEFAULT_DISPATCH);
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Identifiant d\'enregistrement à modifié manquant','error');

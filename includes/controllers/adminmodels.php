@@ -33,7 +33,7 @@ class adminmodelsController extends modelsController{
 		if( file_exists($this->configFile) ){
 			$config = parse_conf_file($this->configFile,true);
 			if( isset($config['ACTION_'.$this->modelType]) ){
-				$this->allowedActions = json_decode($config['ACTION_'.$this->modelType],true);
+				$this->_allowedActions = json_decode($config['ACTION_'.$this->modelType],true);
 			}
 		}
 		$this->pageTitle = langManager::msg($this->modelType);
