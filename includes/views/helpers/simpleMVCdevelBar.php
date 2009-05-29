@@ -27,9 +27,9 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 			foreach($dynCss as $css)
 				$this->js('$.DynCss("'.$css.'","simpleMVCDynCssAppend");');
 		}
-		return '<div id="sMVCtoolBar"><button id="sMVCtoolBarToggle">&gt;</button>'
-		.'<button id="sMVCmodels">Models</button><button id="sMVCshow">Show </button>'
-		.'<button id="sMVCphperr">PHP Errors </button><button id="sMVCdb">Db::profiler</button></div>'
+		return '<div id="sMVCtoolBar" class="ui-buttonset-normal"><button id="sMVCtoolBarToggle" class="ui-button-circle-triangle-w"></button>'
+		.'<button id="sMVCmodels" class="ui-button-gear">Models</button><button id="sMVCshow" class="ui-button-info">Show </button>'
+		.'<button id="sMVCphperr" class="ui-button-alert">PHP Errors </button><button id="sMVCdb" class="ui-button-clock">Db::profiler</button></div>'
 		.'<div id="sMVCpannels"><div id="sMVCshow_div" class="sMVCpannel">
 				<h1><span class="toggle" style="cursor:pointer;font-weight:normal;float:right;" title="Expand/collapse all">[+/-]</span>Show</h1>
 			</div>

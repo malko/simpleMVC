@@ -47,23 +47,22 @@ var cookies={
 	var btCss,cssDiv;
 
 	//-- styling toolbar
-	toolBar.css({position:'absolute',right:0,top:0,padding:0,zIndex:1000,background:'#F0F0F0'});
+	toolBar.css({position:'absolute',right:0,top:0,zIndex:1000});
 	var pannelStyle = {
-		background:'#F0F0F0', position:'absolute', left:0, top:0,
-		zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
-		border:'solid #333 1px',borderTop:'none',borderLeft:'none'
+		//- background:'#F0F0F0', position:'absolute', left:0, top:0,
+		//- zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
+		//- border:'solid #333 1px',borderTop:'none',borderLeft:'none'
+		position:'absolute', left:0, top:0,
+		zIndex:999,  overflow:'auto', display:'none'
 	};
 	var pannelTitleStyle = { color:'#555', fontSize:'18px', margin:'10px 0', borderBottom:'solid #555 1px' };
-	var toolBarButtonStyle = {border:'solid #555 1px','border-top':'none',color:'#333',cursor:'pointer',background:'#F0F0F0',margin:0};
-	$('button',toolBar).css(toolBarButtonStyle);
+	/*var toolBarButtonStyle = {border:'solid #555 1px','border-top':'none',color:'#333',cursor:'pointer',background:'#F0F0F0',margin:0};
+	$('button',toolBar).css(toolBarButtonStyle);*/
 
 
 	function _toInt(value){ var i = parseInt(value); return isNaN(i)?0:i; }
 	function getWidth(){
-		var delta = _toInt(toolBar.css('border-left-width')) + _toInt(toolBar.css('border-right-width'))
-			+ _toInt(toolBar.css('padding-left')) + _toInt(toolBar.css('padding-right'))
-			+ _toInt(pannelStyle.padding)*2;
-		return $('body').width()-toolBar.width()-delta;
+		return $('body').width()-toolBar.outerWidth(true)-2;
 	}
 
 	function addPanel(bt,pannel,content,addcount){
@@ -71,8 +70,9 @@ var cookies={
 			bt.append('<small> ('+ ((typeof(addcount)=='number'||typeof(addcount)=='string')?addcount:content.length)+')</small>');
 		}
 		pannel = $(pannel);
-		pannel.append(content).css(pannelStyle);
-		$('h1',pannel).css(pannelTitleStyle);
+		pannel.append(content).css(pannelStyle).addClass('ui-widget ui-widget-content ui-corner-bottom');
+		//- $('h1',pannel).css(pannelTitleStyle);
+		$('h1',pannel).addClass('ui-widget-header');
 		bt.bind('click',{p:pannel},function(e){
 			var p = e.data.p;
 			$('.sMVCpannel').not(p).hide();
@@ -140,7 +140,7 @@ var cookies={
 		addPanel(btDb,dbDiv,report,(dbMsgs.length ? $('tbody tr',report).length+'/'+dbMsgs.length : $('tbody tr',report).length));
 		if( dbMsgs.length){
 			dbDiv.append('<h2>DB::messages</h2>').append(dbMsgs.css('display','block'));
-			$('h2',dbDiv).css(pannelTitleStyle).css('font-size','14px');
+			$('h2',dbDiv).addClass('ui-widget-header').css('font-size','0.8em');
 
 		}
 	}
@@ -151,31 +151,28 @@ var cookies={
 	}else{
 		btDataMenu.after(dataMenu);
 		dataMenu.css({
-			border:"solid #555 1px",
 			borderTop:'none',
 			position:'absolute',
-			background:'#f0f0f0',
 			zIndex:1000,
-			top:btDataMenu.height()/2,
-			left:0,
+			left:'-1px',
 			textAlign:'left',
 			listStyleType:'none',
 			listStyleImage:'none',
-			margin:'10px 0',
+			margin:'0.4em 0',
 			padding:'0 10px'
-		}).hide();
+		}).addClass('ui-widget-content ui-corner-bottom').hide();
 		$('li',dataMenu).css({borderBottom:'dotted #333 1px',fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
 		$('a',dataMenu).css({color:'#333'});
 		btDataMenu.bind('click',{p:dataMenu},function(e){
 			var p = e.data.p;
-			dataMenu.toggle();
+			dataMenu.css('top',$(this).innerHeight()).toggle();
 		});
 	}
 
 	//-- Manage DynCss
 	simpleMVCDynCssAppend= function(e){
 		if( ! $('#sMVCcss').length){ //- create elements
-			btCss = $('<button id="sMVCcss">DynCss</button></div>').appendTo(toolBar).css(toolBarButtonStyle);
+			btCss = $('<button id="sMVCcss" class="ui-button">DynCss</button></div>').appendTo(toolBar);//.css(toolBarButtonStyle);
 			cssDiv= $('<div id="sMVCcss_div" class="sMVCpannel"><h1>jqueryDynCss generated</h1>').appendTo('#sMVCpannels');
 			addPanel(btCss,cssDiv);
 		}
@@ -191,7 +188,8 @@ var cookies={
 			btDataMenu.click();
 		$('button',toolBar).not(this).toggle();
 		var visible = $('button#sMVCmodels').is(':visible');
-		this.innerHTML = visible?'&gt;':'&lt;';
+		$(this).button('option','icon',visible?'circle-triangle-e':'circle-triangle-w')
+		//this.innerHTML = visible?'&gt;':'&lt;';
 		cookies.set('SMVCDevToggle',visible?1:0);
 		$('.sMVCpannel:visible').css('width',getWidth());
 	});

@@ -225,22 +225,19 @@ class jqueryui_viewHelper extends jsPlugin_viewHelper{
 		$this->_js_script('$.ui.dialog.defaults.bgiframe = true;');
 	}
 
-	function button($icon,$label=null,array $opts=null){
-		$o = array(
-			'type'=>'submit', //-- reset /submit /button
-			'tagName'=>'button',
-			'id'=>false
-		);
-		if(null === $label ){
-			$btStyle=$spanStyle="";
-		}else{
-			$btStyle=' style="position:relative;padding-left:20px;_padding-left:20px;"';
-			$spanStyle=' style="position:absolute;left:-20px;_left:0px;"';
-		}
-		if( null !== $opts) $o = array_merge($o,$opts);
-		if( empty($o['id']) ) $o['id']=$this->uniqueId();
-		return '<'.$o['tagName'].' id="'.$o['id'].'" type="'.$o['type'].'" class="ui-state-default ui-corner-all"'.$btStyle.'>'.
-			'<span class="ui-icon ui-icon-'.$icon.'"'.$spanStyle.'></span>'.$label.'</'.$o['tagName'].'>';
 
+	/**
+	* possible options:
+	* priority: (string) primary|secondary
+	* disabled: (bool)
+	*
+	*/
+	function button($selector,array $options=null){
+		static $initiated;
+		if( ! isset($initiated)){
+			$this->_js_includes('js/jquery-ui-button.js');
+			$this->_js_includes('js/jquery-ui-button.css');
+		}
+		$this->_js_script("$('$selector').button(".(is_array($options)?json_encode($options):'').");");
 	}
 }
