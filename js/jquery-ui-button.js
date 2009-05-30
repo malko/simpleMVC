@@ -19,7 +19,7 @@
 			if( undefined === inlineOptions || null === inlineOptions ){
 				return;
 			}
-			inlineOptions = inlineOptions.match(/(?:^|\s+)ui-button(?:-(tiny|normal|small|big|huge))?(?:-([ewsn](?=$|\s|-)))?(?:-([\w0-9_-]+))?(?:$|\s+)/);
+			inlineOptions = inlineOptions.match(/(?:^|\s+)ui-button(?:-(tiny|normal|small|big|huge))?(?:-([iewsn](?=$|\s|-)))?(?:-([\w0-9_-]+))?(?:$|\s+)/);
 			if( null === inlineOptions){
 				return;
 			}
@@ -65,9 +65,11 @@
 			}
 
 			if(! $.support.style){
-				this.element.css({display:'inline'});
+				this.element.addClass('ui-button-inlineBlockFix');
 				this.elmt_iconContainer.css({margin:0});
-				this.elmt_icon.css({margin:0});
+				if(null !== this.elmt_icon){
+					this.elmt_icon.css({margin:0});
+				}
 			}
 			// auto initialisation of button set on last buttonset element
 			var buttonset = self.element.parent('[class*=ui-buttonset]');
@@ -160,7 +162,10 @@
 					}
 					break;
 				case 'orientation':
-					self._orientationValue =  value=='auto'?'w':value;
+					self._orientationValue = (value=='auto'||value=='i')?'w':value;
+					if( value==='i'){
+						self._setData('label','');
+					}
 					self._rmExpClass(self.element,'ui-button-orientation-*','ui-button-orientation-'+self._orientationValue);
 					self.iconBeforeLabel=( self._orientationValue=='n' || self._orientationValue=='w')?true:false;
 					self._checkElmtPos();
@@ -198,7 +203,7 @@
 			}
 			if( self._getData('orientation')==='auto' && buttonSetOrientation !== 'auto'){
 				self._setData('orientation',buttonSetOrientation);
-				self.options.orientatione='auto';
+				self.options.orientation='auto';
 			}
 
 			if( 'auto' == self._getData('corners')){
@@ -210,7 +215,7 @@
 				}else{
 					self._setData('corners',isOnlyChild?'all':'none');
 				}
-				self.options;corners='auto';
+				self.options.corners='auto';
 			}
 
 		},
@@ -250,7 +255,7 @@
 		_init:function(){
 			var self=this;
 			// read inline options
-			var inlineOptions = self.element.attr('class').match(/(?:^|\s+)ui-buttonset(?:-(tiny|normal|small|big|huge))?(?:-([ewsn](?=$|\s|-)))?(?:$|\s+)/);
+			var inlineOptions = self.element.attr('class').match(/(?:^|\s+)ui-buttonset(?:-(tiny|normal|small|big|huge))?(?:-([ewsin](?=$|\s|-)))?(?:$|\s+)/);
 			if( null === inlineOptions){
 				return;
 			}
@@ -263,7 +268,7 @@
 			self.element.addClass('ui-buttonset ui-widget-content'+(self.element.is('[class*=ui-corner]')?'':' ui-corner-all'));
 
 			if( !$.support.style){
-				self.element.css({display:'inline'});
+				self.element.addClass('ui-button-inlineBlockFix');
 			}
 			self._setData('size',self.options.size);
 			self._setData('orientation',self.options.orientation);

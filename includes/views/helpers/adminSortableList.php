@@ -40,42 +40,28 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		#- $baseUrl = APP_URL.'/'.$controller->getName.'/';
 		$msgEdit = htmlentities(langManager::msg('Edit'));
 		$msgDel  = htmlentities(langManager::msg('Delete'));
-
-		if($editable)
-			$edit = "var btE = $('<img src=\"".GUI_IMG_URL."/icones/admin/document-properties.png\" title=\"$msgEdit\" alt=\"$msgEdit\" />');
-				btE.click(function(){
-					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr)."';
-				});";
-		else
-			$edit="";
-		if($deletable)
-			$delete = "var btD = $('<img src=\"".GUI_IMG_URL."/icones/admin/list-remove.png\" title=\"$msgDel\" alt=\"$msgDel\" />');
-				btD.click(function(){
-					if(! confirm('".str_replace("'","\'",langManager::msg("Are you sure you want to delete this item?"))."')){
-						return false;
-					}
-					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
-					return true;
-				});";
-		else
-			$delete="";
-		
-		if($editable && $deletable)
-			$bt  ="$(bcell).html('').append(btE,btD).find('img').css('cursor','pointer');";
-		else if(!$editable && $deletable)
-			$bt = "$(bcell).html('').append(btD).find('img').css('cursor','pointer');";
-		else if($editable && !$deletable)
-			$bt = "$(bcell).html('').append(btE).find('img').css('cursor','pointer');";
-		else 
-			$bt="$(bcell).html('');";
 		$this->js("
 			var options = { rowRendering: function(row,data){
 				$(row).addClass(data.rowid%2?'row':'altrow');
 				var bcell  = row.cells[row.cells.length-1];
 				var itemId = data.data[data.data.length-1];
-				$edit
-				$delete
-				$bt
+				$(bcell).html('<div class=\"ui-buttonset-tiny-i\">"
+				.($editable?"<button class=\"ui-button-pencil editButton\" title=\"$msgEdit\">$msgEdit</button>":'')
+				.($deletable?"<button class=\"ui-button-trash delButton\" title=\"$msgDel\">$msgDel</button>":'')
+				."</div>');
+				$('button',bcell).button();"
+				.($editable?"
+				$('.editButton',bcell).click(function(){
+					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr)."';
+				});":'')
+				.($deletable?"				
+				$('.delButton',bcell).click(function(){
+					if(! confirm('".str_replace("'","\'",langManager::msg("Are you sure you want to delete this item?"))."')){
+						return false;
+					}
+					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
+					return true;
+				});":'')."
 			}};
 			sortTable.init('$tableId',headers,options);
 		");

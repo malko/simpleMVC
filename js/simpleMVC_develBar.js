@@ -161,8 +161,7 @@ var cookies={
 			margin:'0.4em 0',
 			padding:'0 10px'
 		}).addClass('ui-widget-content ui-corner-bottom').hide();
-		$('li',dataMenu).css({borderBottom:'dotted #333 1px',fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
-		$('a',dataMenu).css({color:'#333'});
+		$('li',dataMenu).css({fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
 		btDataMenu.bind('click',{p:dataMenu},function(e){
 			var p = e.data.p;
 			dataMenu.css('top',$(this).innerHeight()).toggle();

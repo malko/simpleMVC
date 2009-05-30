@@ -7,6 +7,10 @@ textnode{ text-decoration:underline;}
 	white-space:nowrap;
 }
 
+.ui-button-inlineBlockFix{
+	display:inline !important;
+}
+
 .ui-button, button.ui-button{
 	position:relative;
 	zoom:1; /** ie hasLayout trigger */
@@ -69,11 +73,13 @@ button.ui-button-size-huge  {font-size:2em;}
 	display:block;
 	margin:0 auto;
 }
-
-.ui-button-orientation-n .ui-button-icon { display:block; margin:0 auto;width:100%;}
-.ui-button-orientation-s .ui-button-icon { display:block; margin:0 auto;width:100%;}
+.ui-button-orientation-n .ui-button-icon { display:block !important; margin:0 auto;width:100%;}
+.ui-button-orientation-s .ui-button-icon { display:block !important; margin:0 auto;width:100%;}
 .ui-button-orientation-n .ui-icon, .ui-button-orientation-s .ui-icon{ margin:0 auto;}
-
+.ui-button-orientation-s .ui-icon-, .ui-button-orientation-n .ui-icon- { background:none !important;}
+.ui-button-orientation-e .ui-icon-, .ui-button-orientation-w .ui-icon- { display:none;}
+.ui-button-inlineBlockFix.ui-button-orientation-n .ui-button-icon { width:1;}
+.ui-button-inlineBlockFix.ui-button-orientation-s .ui-button-icon { width:1;}
 /*
 .ui-button-size-tiny .ui-icon   {zoom:0.5;}
 .ui-button-size-small .ui-icon  {zoom:0.75;}
