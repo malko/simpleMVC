@@ -13,15 +13,26 @@
 		_sizeValue:'',
 		_init:function(){
 			var self = this;
-
+			var id = self.element.attr('id');
+			if( this.element.parent('.ui-button').length || this.element.hasClass('ui-button-none') )
+				return null
+			if( ! id){
+				self.element.attr('id','ui-button'+$('[class*=ui-button]').length);
+			}
 			// read inline options from class attribute (that can't be null!!!)
 			var inlineOptions = self.element.attr('class');
 			if( undefined === inlineOptions || null === inlineOptions ){
-				return;
-			}
-			inlineOptions = inlineOptions.match(/(?:^|\s+)ui-button(?:-(tiny|normal|small|big|huge))?(?:-([iewsn](?=$|\s|-)))?(?:-([\w0-9_-]+))?(?:$|\s+)/);
-			if( null === inlineOptions){
-				return;
+				inlineOptions = ['ui-button','','',''];
+			}else{
+				_inlineOptions = inlineOptions.match(/(?:^|\s+)ui-button(?:-(tiny|normal|small|big|huge))?(?:-([iewsn](?=$|\s|-)))?(?:-([\w0-9_-]+))?(?:$|\s+)/);
+				if( null !== _inlineOptions){
+					inlineOptions = _inlineOptions;
+				}else{
+					if( this.element.attr('class').match(/(?:^|\s+)ui-buttonset/) )
+						return null;
+					else
+						inlineOptions = ['ui-button','','',''];
+				}
 			}
 
 			self.element.addClass('ui-widget-content ui-state-default ui-button')
@@ -79,7 +90,6 @@
 						buttonset.buttonset();
 					}
 			}
-
 		},
 		_hover: function(){
 			$(this).addClass('ui-state-hover');
@@ -283,9 +293,7 @@
 				if( this.nodeType!=1 || ! this.tagName){
 					return $(this).remove();
 				}
-				if( $(this).is('.ui-button')){
-					$(this).button('importButtonSetSettings',self);
-				}
+				$(this).button().button('importButtonSetSettings',self);
 			})
 		},
 
@@ -334,10 +342,11 @@
 				var self=this;
 				// read inline options
 				var inlineOptions = self.element.attr('class').match(/(?:^|\s+)ui-buttonset(?:-(tiny|normal|small|big|huge))?(?:-([ewsn](?=$|\s|-)))?(?:$|\s+)/);
-				if(inlineOptions[1] && inlineOptions[1].length ){
+
+				if(inlineOptions && inlineOptions[1] && inlineOptions[1].length ){
 					self._setData('size',inlineOptions[1]);
 				}
-				if(inlineOptions[2] && inlineOptions[2].length){
+				if(inlineOptions && inlineOptions[2] && inlineOptions[2].length){
 					self._setData('orientation',inlineOptions[2]);
 				}
 				if( self.element.attr('multiple') ){
