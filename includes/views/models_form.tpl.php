@@ -6,7 +6,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
-*            - add forgotten input hidden on primaryKey when using fieldsOrder  
+*            - add forgotten input hidden on primaryKey when using fieldsOrder
 */
 ?>
 <h1><?= $this->pageTitle ?></h1>
@@ -74,6 +74,11 @@
 		}
 	}
 ?>
-<input type="reset" onclick="window.location = '<?= $this->listUrl ?>';"; value="<?= langManager::msg('back',null,$this->_langManagerDicName); ?>"  class="noSize"/>
-<input type="submit" value="<?= langManager::msg('save',null,$this->_langManagerDicName); ?>" class="noSize" />
+<div style="text-align:right;">
+	<div class="ui-buttonset" style="margin:0.2em 0;">
+		<button type="button" onclick="window.location='<?= $this->listUrl ?>';" class="ui-button-arrowreturnthick-1-w"><?= langManager::msg('back',null,$this->_langManagerDicName); ?></button>
+		<button type="submit" class="ui-button-disk"><?= langManager::msg('save',null,$this->_langManagerDicName); ?></button>
+	</div>
+</div>
+
 </form>

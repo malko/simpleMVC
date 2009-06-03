@@ -22,6 +22,6 @@ class adminModelsMenu_viewHelper extends abstractViewHelper{
 		if( $withRegenLink ){
 			$items[] = '<li><a href="'.$this->url('generation','adminmodels',array('modelType'=>'fake')).'" class="ui-button-small-gear">Model (re-)generation</a></li>';
 		}
-		return  '<ul id="'.$id.'">'.implode('',$items).'</ul>';
+		return  '<ul id="'.$id.'" class="ui-button-none">'.implode('',$items).'</ul>';
 	}
 }

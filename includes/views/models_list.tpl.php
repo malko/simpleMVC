@@ -9,7 +9,7 @@
 echo "<h1>$this->pageTitle</h1>";
 if($this->_smvcAllowedAction!==null)
 	extract($this->_smvcAllowedAction);
-else 
+else
 	$add=$edit=$del=true;
 
 if(!empty($add)){

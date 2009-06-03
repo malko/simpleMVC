@@ -49,7 +49,6 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 				.($editable?"<button class=\"ui-button-pencil editButton\" title=\"$msgEdit\">$msgEdit</button>":'')
 				.($deletable?"<button class=\"ui-button-trash delButton\" title=\"$msgDel\">$msgDel</button>":'')
 				."</div>');
-				$('button',bcell).button();"
 				.($editable?"
 				$('.editButton',bcell).click(function(){
 					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr)."';
@@ -62,6 +61,7 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
 					return true;
 				});":'')."
+				$('[class^=ui-buttonset]',row).buttonset();
 			}};
 			sortTable.init('$tableId',headers,options);
 		");
