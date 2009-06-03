@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-02 - add support for confirmation fields and sprintFatas to langMsg methods
 *            - 2009-05-28 - ncancel: add allowed action property $allowedActions
 *            - 2009-04-06 - add support for activable models
 *            - 2009-03-31 - autodetection of field that need to be loaded when loadDatas is empty
@@ -126,6 +127,7 @@ abstract class modelsController extends abstractController{
 				}
 				$this->view->listHeaders = array_map(array($this,'langMsg'),array_keys($datas[0]));
 			}else{
+				$nbZeroFill = ceil($models->count()/10);
 				foreach($models as $m){
 					$row = array();
 					$row['id'] = $m->PK.'/modelType/'.$this->modelType;
@@ -136,8 +138,8 @@ abstract class modelsController extends abstractController{
 						}
 						switch($k){
 							case $orderableField:
-								$row[$k] = $m->{$k}.($m->{$k}>0?'<a href="'.$this->url('moveup').'/id/'.$row['id'].'" title="move up"><img src="'.GUI_IMG_URL.'/icones/admin/go-up.png" alt="move up" /></a>':'<span style="padding:0 8px;"></span>')
-									.(in_array($m->PK,$orderableLastPos)?'':'<a href="'.$this->url('movedown').'/id/'.$row['id'].'"><img src="'.GUI_IMG_URL.'/icones/admin/go-down.png" alt="move up" /></a>');
+								$row[$k] = '<span style="display:none;">'.sprintf('%0'.$nbZeroFill.'d',$m->{$k}).'</span><div class="ui-buttonset-small"><a title="move up" href="'.($m->{$k}>0?$this->url('moveup').'/id/'.$row['id'].'" class="ui-button-i-arrow-1-n':'#" class="ui-button-i-arrow-1-n ui-state-disabled').'">move up</a>'
+									.'<a href="'.(in_array($m->PK,$orderableLastPos)?'#" class="ui-button-i-arrow-1-s ui-state-disabled':$this->url('movedown').'/id/'.$row['id'].'" class="ui-button-i-arrow-1-s').'" title="move down">move down</a></div>';
 								break;
 							default:
 								if(! ($activable && in_array($k,$m->_activableFields,'true')) ){
@@ -205,6 +207,20 @@ abstract class modelsController extends abstractController{
 			self::appendAppMsg('Aucune données à enregistrée.','error');
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 		}
+
+		if(isset($_POST['_smvc_confirm']) ){ # manage confirm fields
+			foreach($_POST['_smvc_confirm'] as $k=>$v){
+				if( ! (isset($_POST[$k]) && $_POST[$k] === $v) ){
+					self::appendAppMsg($this->langMsg("field %s mismatch it's confirmation",array($k,$v)),'error');
+					unset($_POST['_smvc_confirm']);
+					$this->view->assign($_POST);
+					return $this->forward('form');
+				}
+				unset($_POST['_smvc_confirm'][$k]);
+			}
+			unset($_POST['_smvc_confirm']);
+		}
+
 		#- get instance
 		$modelPKName = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 		if(! isset($_POST[$modelPKName]) ){
@@ -219,6 +235,7 @@ abstract class modelsController extends abstractController{
 			}
 			$model->_setDatas($_POST);
 		}
+
 		if( $model->hasFiltersMsgs() ){
 			self::appendAppMsg($model->getFiltersMsgs(),'error');
 			$this->view->assign($model->datas);
@@ -289,8 +306,8 @@ abstract class modelsController extends abstractController{
 			$this->_langManagerDicName = $c."_$m"."$a|$c"."_$m|$c"."_$a"."|$c|default";
 	}
 
-	public function langMsg($msg){
-		return langManager::msg($msg,null,$this->_langManagerDicName);
+	public function langMsg($msg,$datas=null){
+		return langManager::msg($msg,$datas,$this->_langManagerDicName);
 	}
 
 }
