@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-02 - add configuration for allowedActions
 *            - 2009-05-28 - ncancel:loading of config file for ACTION allowed
 *            - 2009-05-05 - better admin forms generation (grouping/ordering inputs fields)
 *            - 2009-03-13 - made some change to list configuration to support ordering and formatStr
@@ -96,7 +97,7 @@ class adminmodelsController extends modelsController{
 			if( !empty($setting['type']) ){
 				$inputTypes[$k] = $setting['type'];
 				unset($setting['type']);
-		}
+			}
 			$inputOptions[$k] = empty($setting)?'':htmlentities(json_encode($setting));
 		}
 		$this->inputTypes = empty($inputTypes)?array():$inputTypes;
@@ -123,7 +124,7 @@ class adminmodelsController extends modelsController{
 	function setToStringAction(){
 		if( isset($_POST['_toStr']) )
 			$this->replaceModel__ToStr($_GET['modelType'],$_POST['_toStr']);
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType));
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'string'));
 	}
 	/**
 	* set model fields to display in list
@@ -140,7 +141,7 @@ class adminmodelsController extends modelsController{
 		}
 		#- write config
 		write_conf_file($this->configFile,$config,true);
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType));
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'list'));
 	}
 	/**
 	* set how to render administrations forms for the given model
@@ -171,7 +172,7 @@ class adminmodelsController extends modelsController{
 			$config['FORM_'.$this->modelType] = empty($c)?'--UNSET--':json_encode($c) ;
 			write_conf_file($this->configFile,$config,true);
 		}
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType));
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'forms'));
 	}
 	/**
 	* configure langmanager messages for the given model administration
@@ -187,7 +188,14 @@ class adminmodelsController extends modelsController{
 				$dict[$id] = strlen($msg)?$msg:'--UNSET--'; // unset empty values
 			write_conf_file(APP_DIR."/locales/$l/adminmodels_$this->modelType",$dict,true);
 		}
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType));
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'messages'));
+	}
+
+	function setActionsAction(){
+		foreach($_POST['actions'] as $k=>$v)
+			$_POST['actions'][$k] =  (bool) $v;
+		write_conf_file($this->configFile,array("ACTION_$this->modelType"=>json_encode($_POST['actions'])),true);
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'actions'));
 	}
 	/**
 	* re-generate models from database

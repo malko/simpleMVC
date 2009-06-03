@@ -12,7 +12,7 @@
 <div id="settings">
 <form action="<?= $this->url('setToString',null,array('modelType'=>$this->modelType)) ?>" method="post" id="string">
 	<h3><a name="string"><?= $this->modelType ?>::$__toString</a></h3>
-	<div>
+	<div id="string-pannel">
 	<div class="selectors">
 	<?php
 		if( $this->datasFields )
@@ -26,13 +26,13 @@
 		<input type="text" name="_toStr" value="<?=htmlentities($this->_toStr,ENT_COMPAT,'UTF-8')?>" />
 	</label>
 	<br />
-	<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+	<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
 <form action="<?= $this->url('setList',null,array('modelType'=>$this->modelType)) ?>" method="post"  id="list">
 	<h3><a name="list">List</a></h3>
-	<div>
+	<div id="list-pannel">
 		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
 			Check fields you want to be displayed in adminModels list actions.
 			<br />
@@ -51,13 +51,13 @@
 		?>
 		</ul>
 		<br />
-		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+		<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
 <form action="<?= $this->url('setFormInputs',null,array('modelType'=>$this->modelType)) ?>" method="post" id="forms">
 	<h3><a name="forms">Forms</a></h3>
-	<div>
+	<div id="forms-pannel">
 		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
 			<strong>Notes: </strong>
 			options have to be passed as valid json as describe in json_decode function, it means that keys and values must be doublequoted.
@@ -137,14 +137,16 @@
 			<label><input type="radio" name="fieldGroupMethod" value="tabs" <?= 'tabs'===$fieldGroupMethod?' checked="checked"':''?>/> Tabs</label>
 			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
 		</div>
-		<button type="button" id="addFieldSet">Create an input group container (fieldset)</button>
-		<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+		<div class="ui-buttonset">
+			<button type="button" id="addFieldSet" class="ui-button">Create an input group container (fieldset)</button>
+			<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
+		</div>
 	</div>
 </form>
 
 <form action="<?= $this->url('setMessages',null,array('modelType'=>$this->modelType)) ?>" method="post" id="messages">
 	<h3><a name="messages">Field names</a></h3>
-	<div>
+	<div id="messages-pannel">
 	<?php
 		echo $this->formInput('setLang',langManager::getDefaultLang(),'select',array('values'=>$this->langs,'label'=>'Display Lang'));
 		if( $this->idMsgs ){
@@ -160,10 +162,30 @@
 		}
 	?>
 	<br />
-	<input type="submit" value="<?= langManager::msg('save'); ?>" class="noSize" />
+	<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
-<button type="button" onclick="window.location = '<?= $this->listUrl ?>';";  style="float:right;"><?= langManager::msg('back to list'); ?></button>
+
+<form action="<?= $this->url('setActions',null,array('modelType'=>$this->modelType)) ?>" method="post" id="actions">
+	<h3><a name="actions">Allowed Actions</a></h3>
+	<div id="actions-pannel">
+	Choose allowed actions to manage this model
+	<?php
+		if( isset($this->config['ACTION_'.$this->modelType])){
+			extract(json_decode($this->config['ACTION_'.$this->modelType],true));
+		}else{
+			$add = $edit = $list = $del = 1;
+		}
+		echo $this->formInput('actions[edit]',empty($edit)?0:1,'radio',array('label'=>'Can be edited','values'=>array('no','yes')));
+		echo $this->formInput('actions[add]',empty($add)?0:1,'radio',array('label'=>'Can be added','values'=>array('no','yes')));
+		echo $this->formInput('actions[del]',empty($del)?0:1,'radio',array('label'=>'Can be deleted','values'=>array('no','yes')));
+		echo $this->formInput('actions[list]',empty($list)?0:1,'radio',array('label'=>'Can be listed','values'=>array('no','yes')));
+	?>
+	<br />
+	<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
+	</div>
+</form>
+<a  href="<?= $this->listUrl ?>" class="ui-button-arrowreturnthick-1-w" style="float:right;"><?= langManager::msg('back to list'); ?></a>
 <div class="ui-helper-clearfix"></div>
 </div>
 
@@ -173,7 +195,10 @@ $this->js('
 	var styleClass = "ui-widget-content ui-corner-all";
 
 	//-- make this an accordion
-	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:"none",collapsible:true});
+	var formsIds = {"string":0,"list":1,"forms":2,"messages":3,"actions":4};
+	var activeForm =  window.location.href.match(/#\/?(\w+)/);
+	activeForm = (null!==activeForm && activeForm.length)?formsIds[activeForm[1]]:1;
+	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:activeForm,collapsible:true});
 
 	// make fieldname clickable to ease _toStr setting
 	$(".sMVC_dataField").click(function(){
@@ -252,11 +277,5 @@ $this->js('
 			$(this).addClass("ui-state-error");
 		}
 	});
-
-	//-- styling buttons
-	$("button, input[type=submit]").addClass("ui-state-default ui-corner-all").hover(
-		function(){$(this).addClass("ui-state-hover");},
-		function(){$(this).removeClass("ui-state-hover");}
-	);
 ','jqueryui');
 ?>
