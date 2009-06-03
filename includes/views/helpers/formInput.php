@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2009-06-02 - prefix confirm inputs with _smvc_
 *            - 2009-05-05 - add support for text/password confirm fields
 *            - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin
 *            - 2009-01-05 - add support for time picker and datetime picker
@@ -81,7 +82,7 @@ class formInput_viewHelper extends abstractViewHelper{
 					if( isset($options['confirmOpts']))
 						$confirmOpts = array_merge($confirmOpts,$options['confirmOpts']);
 
-					$confirm = $this->formInput("confirm[$name]",$value,$type,$confirmOpts);
+					$confirm = $this->formInput("_smvc_confirm[$name]",$value,$type,$confirmOpts);
 					$this->_js_scriptOnce("
 						function formInputCheckConfirm(id){
 							var o = $('input#'+id);
