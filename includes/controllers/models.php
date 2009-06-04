@@ -71,6 +71,7 @@ abstract class modelsController extends abstractController{
 		}
 		return true;
 	}
+
 	function indexAction(){
 		return $this->forward('list');
 	}

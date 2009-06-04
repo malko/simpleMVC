@@ -7,6 +7,7 @@
 	div.fieldSet .ui-widget-header{ display:block;}
 	div.fieldSet .ui-widget-header, div.fieldSet, div.formInput{ padding:5px;margin-bottom:5px;}
 	div.fieldSet .ui-widget-header .ui-icon{ float:right;}
+	.editarea{ width:98%;height:350px;}
 </style>
 <h1><?=$this->modelType?> settings </h1>
 <div id="settings">
@@ -185,6 +186,22 @@
 	<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
+
+<form action="<?= $this->url('saveEditConfig',null,array('modelType'=>$this->modelType)) ?>" method="post" id="config">
+	<h3><a name="config">Edit Configuration File</a></h3>
+	<div id="config-pannel">
+		<?= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
+		<button type="submit" class="ui-button-disk">save</save>
+	</div>
+</form>
+
+<form action="<?= $this->url('saveEditModel',null,array('modelType'=>$this->modelType)) ?>" method="post" id="model">
+	<h3><a name="model">Edit Model File</a></h3>
+	<div id="model-pannel">
+		<?= $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
+		<button type="submit" class="ui-button-disk">save</save>
+	</div>
+</form>
 <a  href="<?= $this->listUrl ?>" class="ui-button-arrowreturnthick-1-w" style="float:right;"><?= langManager::msg('back to list'); ?></a>
 <div class="ui-helper-clearfix"></div>
 </div>
@@ -195,7 +212,7 @@ $this->js('
 	var styleClass = "ui-widget-content ui-corner-all";
 
 	//-- make this an accordion
-	var formsIds = {"string":0,"list":1,"forms":2,"messages":3,"actions":4};
+	var formsIds = {"string":0,"list":1,"forms":2,"messages":3,"actions":4,"config":5,"model":6};
 	var activeForm =  window.location.href.match(/#\/?(\w+)/);
 	activeForm = (null!==activeForm && activeForm.length)?formsIds[activeForm[1]]:1;
 	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:activeForm,collapsible:true});

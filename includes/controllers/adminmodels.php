@@ -10,6 +10,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-04 - add model and config file edition
+*                         - all configuration methods are disabled when not in devel mode
 *            - 2009-06-02 - add configuration for allowedActions
 *            - 2009-05-28 - ncancel:loading of config file for ACTION allowed
 *            - 2009-05-05 - better admin forms generation (grouping/ordering inputs fields)
@@ -70,7 +72,11 @@ class adminmodelsController extends modelsController{
 	* display model administration configuration form
 	*/
 	function configureAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		$this->view->_js_loadPlugin('jquery');
+		$this->view->configFile = $this->configFile;
+		$this->view->modelFile = $this->getModelFilePath($this->modelType);
 		#--- to string configuration
 		$this->_toStr = $this->readModel__ToStr($this->modelType);
 		$datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
@@ -122,6 +128,8 @@ class adminmodelsController extends modelsController{
 	* set how to display the model as a string
 	*/
 	function setToStringAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		if( isset($_POST['_toStr']) )
 			$this->replaceModel__ToStr($_GET['modelType'],$_POST['_toStr']);
 		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'string'));
@@ -130,6 +138,8 @@ class adminmodelsController extends modelsController{
 	* set model fields to display in list
 	*/
 	function setListAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		if( empty($_POST['fields'])){
 			$config['LIST_'.$this->modelType] = '--UNSET--';
 		}else{
@@ -147,6 +157,8 @@ class adminmodelsController extends modelsController{
 	* set how to render administrations forms for the given model
 	*/
 	function setFormInputsAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		if(! empty($_POST) ){
 			$c = array();
 			foreach($_POST['inputTypes'] as $k=>$v){
@@ -178,6 +190,8 @@ class adminmodelsController extends modelsController{
 	* configure langmanager messages for the given model administration
 	*/
 	function setMessagesAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		#-- langs
 		$langs = array_keys($_POST['msgs']);
 		foreach($langs as $l){
@@ -192,6 +206,8 @@ class adminmodelsController extends modelsController{
 	}
 
 	function setActionsAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		foreach($_POST['actions'] as $k=>$v)
 			$_POST['actions'][$k] =  (bool) $v;
 		write_conf_file($this->configFile,array("ACTION_$this->modelType"=>json_encode($_POST['actions'])),true);
@@ -201,6 +217,8 @@ class adminmodelsController extends modelsController{
 	* re-generate models from database
 	*/
 	function generationAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		#- check for read/write rights
 		if(! is_dir(LIB_DIR.'/models')){
 			mkdir(LIB_DIR.'/models');
@@ -233,6 +251,8 @@ class adminmodelsController extends modelsController{
 		return $modelToStr;
 	}
 	private function replaceModel__ToStr($modelType,$newToStr){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
 		$modelStr = $this->getModelFile($modelType);
 		if( false===$modelStr )
 			return false;
@@ -269,5 +289,18 @@ class adminmodelsController extends modelsController{
 			return ! self::appendAppMsg($dictFile.' must be writable to set messages.','error');
 		}
 		return $returnDict?parse_conf_file($dictFile,true):true;
+	}
+
+	function saveEditModelAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
+		file_put_contents($this->getModelFilePath($this->modelType),preg_replace('/\r(?=\n)/','',$_POST['smvcModel']));
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'model'));
+}
+	function saveEditConfigAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
+		file_put_contents($this->configFile,preg_replace('/\r(?=\n)/','',$_POST['smvcConfig']));
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'config'));
 	}
 }
