@@ -2,7 +2,7 @@
 /**
 * helper for administration lists
 * @changelog
-*            - 2009-05-28 - ncancel: added $editable and $deletable parameters. 
+*            - 2009-05-28 - ncancel: added $editable and $deletable parameters.
 */
 class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 
@@ -48,12 +48,12 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 				$(bcell).html('<div class=\"ui-buttonset-tiny-i\">"
 				.($editable?"<button class=\"ui-button-pencil editButton\" title=\"$msgEdit\">$msgEdit</button>":'')
 				.($deletable?"<button class=\"ui-button-trash delButton\" title=\"$msgDel\">$msgDel</button>":'')
-				."</div>');
+				."</div>');"
 				.($editable?"
 				$('.editButton',bcell).click(function(){
 					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr)."';
 				});":'')
-				.($deletable?"				
+				.($deletable?"
 				$('.delButton',bcell).click(function(){
 					if(! confirm('".str_replace("'","\'",langManager::msg("Are you sure you want to delete this item?"))."')){
 						return false;
