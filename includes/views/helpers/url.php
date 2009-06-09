@@ -16,6 +16,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-04 - new static property $wordCleanerSkippedChars to allow chars to pass over wordCleaner
 *            - 2009-04-28 - now url() $action parameter can be a full dispatch string (like controllerName:actionName)
 *            - 2009-04-22 - new static property $keepEmptyVars (false as default)
 *                         - new special empty string key in $params url parmeter will be passed to wordCleaner and added at the end of generated url
@@ -33,7 +34,7 @@ class url_viewHelper extends abstractViewHelper{
 	static public $argSeparator = null;
 	/** if true then empty vars are removed from generated url */
 	static public $keepEmptyVars = false;
-
+	static public $wordCleanerSkippedChars = '-/';//'\\+';
 	public $view = null;
 
   public function __construct(viewInterface $view){
@@ -121,6 +122,7 @@ class url_viewHelper extends abstractViewHelper{
 		return $url;
 	}
 	function wordCleaner($word){
-		return preg_replace(array('![^a-z0-9]+!i','!(^_|_$)!'),array('_',''),removeMoreAccents($word));
+		$exp = '![^a-zA-Z0-9'.(empty(self::$wordCleanerSkippedChars)?'':self::$wordCleanerSkippedChars).']+!';
+		return preg_replace(array($exp,'!(^_+|_+$)!'),array('_',''),removeMoreAccents(html_entity_decode($word)));
 	}
 }
