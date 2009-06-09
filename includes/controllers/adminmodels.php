@@ -186,6 +186,14 @@ class adminmodelsController extends modelsController{
 		}
 		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'forms'));
 	}
+
+	function resetFieldsOrder(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
+		$config['FORM_ORDER_'.$this->modelType] = '--UNSET--';
+		write_conf_file($this->configFile,$config,true);
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'forms'));
+	}
 	/**
 	* configure langmanager messages for the given model administration
 	*/

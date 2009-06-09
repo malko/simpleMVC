@@ -128,7 +128,7 @@ abstract class modelsController extends abstractController{
 				}
 				$this->view->listHeaders = array_map(array($this,'langMsg'),array_keys($datas[0]));
 			}else{
-				$nbZeroFill = ceil($models->count()/10);
+				$nbZeroFill = strlen($models->count());
 				foreach($models as $m){
 					$row = array();
 					$row['id'] = $m->PK.'/modelType/'.$this->modelType;

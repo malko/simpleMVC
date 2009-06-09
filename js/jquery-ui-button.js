@@ -13,12 +13,11 @@
 		_sizeValue:'',
 		_init:function(){
 			var self = this;
-			var id = self.element.attr('id');
-			if( this.element.parent('.ui-button').length || this.element.hasClass('ui-button-none') )
-				return null
-			if( ! id){
-				self.element.attr('id','ui-button'+$('[class*=ui-button]').length);
+
+			if( this.element.parent('.ui-button').length || this.element.hasClass('ui-button-none') ){
+				return this.destroy();
 			}
+
 			// read inline options from class attribute (that can't be null!!!)
 			var inlineOptions = self.element.attr('class');
 			if( undefined === inlineOptions || null === inlineOptions ){
@@ -28,16 +27,16 @@
 				if( null !== _inlineOptions){
 					inlineOptions = _inlineOptions;
 				}else{
-					if( this.element.attr('class').match(/(?:^|\s+)ui-buttonset/) )
-						return null;
-					else
+					if( this.element.attr('class').match(/(?:^|\s+)ui-buttonset/) ){
+						return  this.destroy();
+					}else{
 						inlineOptions = ['ui-button','','',''];
+					}
 				}
 			}
 
 			self.element.addClass('ui-widget-content ui-state-default ui-button')
 				.hover(self._hover,self._blur);
-
 
 			// preapre wrapers elements
 			self._wrapLabel();
@@ -83,12 +82,14 @@
 				}
 			}
 			// auto initialisation of button set on last buttonset element
-			var buttonset = self.element.parent('[class*=ui-buttonset]');
-			if( buttonset.length > 0){
-					self._buttonset = buttonset;
-					if( this.element.is(':last-child')){
-						buttonset.buttonset();
-					}
+			if( self.options.checkButtonset){
+				var buttonset = self.element.parent('[class*=ui-buttonset]');
+				if( buttonset.length > 0){
+						self._buttonset = buttonset;
+						if( this.element.is(':last-child')){
+							buttonset.buttonset();
+						}
+				}
 			}
 		},
 		_hover: function(){
@@ -112,6 +113,9 @@
 				this.elmt_icon=$('<img src="'+escape(ico)+'"  />');
 			}else{
 				this.elmt_icon=$('<span class="ui-icon ui-icon-'+ico+'"></span>');
+			}
+			if(this.elmt_icon.length && ! $.support.style){
+				this.elmt_icon.css({margin:0});
 			}
 			this.elmt_iconContainer.append(this.elmt_icon);
 			this.elmt_iconContainer.show();
@@ -172,6 +176,8 @@
 					}
 					break;
 				case 'orientation':
+					if( value=='')
+						value = 'auto';
 					self._orientationValue = (value=='auto'||value=='i')?'w':value;
 					if( value==='i'){
 						self._setData('label','');
@@ -202,6 +208,9 @@
 					break;
 			}
 			return $.widget.prototype._setData.apply(this, arguments);
+		},
+		isActive:function(){
+			return this._getData('active');
 		},
 		importButtonSetSettings:function(buttonSet){
 			var self=this;
@@ -246,6 +255,7 @@
 	});
 	$.extend($.ui.button, {
 		version: "@VERSION",
+		getter:'isActive',
 		defaults:{
 			size:'auto',
 			orientation:'auto',
@@ -254,7 +264,8 @@
 			label:null,
 			isToggle:false,
 			toggle:false,
-			active:false
+			active:false,
+			checkButtonset:false
 		}
 	});//*/
 
@@ -341,7 +352,7 @@
 			_init:function(){
 				var self=this;
 				// read inline options
-				var inlineOptions = self.element.attr('class').match(/(?:^|\s+)ui-buttonset(?:-(tiny|normal|small|big|huge))?(?:-([ewsn](?=$|\s|-)))?(?:$|\s+)/);
+				var inlineOptions = self.element.attr('class').match(/(?:^|\s+)ui-buttonset(?:-(tiny|normal|small|big|huge))?(?:-([eiwsn](?=$|\s|-)))?(?:$|\s+)/);
 
 				if(inlineOptions && inlineOptions[1] && inlineOptions[1].length ){
 					self._setData('size',inlineOptions[1]);
@@ -353,6 +364,7 @@
 					self.multiple = true;
 				}
 				self.buttonset = $('<div class="ui-buttonset"></div>');
+				self.buttonset.buttonset();
 				self.element.hide();
 				self.element.after(self.buttonset);
 				self.refresh();
@@ -366,9 +378,9 @@
 					var option = $(this);
 					var label = option.html();
 					var optionIcon = option.attr('class').match(/(?:^|\s)ui-icon-([\w0-9_-]+)(?:$|\s)/);
-					if(optionIcon !== null)
+					if(null !== optionIcon)
 						optionIcon = optionIcon[1];
-					$('<div class="ui-button-'+size+'-'+orientation+(optionIcon?'-'+optionIcon:'')+' toggle'+(option.attr('selected')?' active':'')+'">'+label+'</div>')
+					$('<div class="ui-button-'+size+'-'+orientation+(optionIcon?'-'+optionIcon:'')+' toggle'+(option.is(':selected')?' active':'')+'">'+label+'</div>')
 						.appendTo(self.buttonset)
 						.button({
 							'corners':(i==0?'left':(i+1<self.element.attr('options').length?'none':'right')),
@@ -380,7 +392,7 @@
 			},
 			_toggle:function(event,button,option){
 				var self = this;
-				option.attr('selected',button.active?'selected':'');
+				option.attr('selected',button.isActive()?'selected':'');
 				if(! self.multiple){
 					self.buttonset.find('.ui-button').not(button.element).button('option','active',false);
 				}

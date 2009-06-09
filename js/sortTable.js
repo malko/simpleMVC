@@ -86,6 +86,7 @@ sortTable = {
 		// optionnal function to call to show activity on long operation to the user receive tid and int/false as parameter true when starting activity false when finishing
 		// int will be 1 for rendering operation 2 for sorting operations
 		showActivity: function(tid,isWorking){
+			document.body.style.cursor = isWorking?'wait':'default';
 			var loading = document.getElementById('_SORTWORKING');
 			if(! loading ){
 				loading = document.createElement('div');
@@ -93,7 +94,7 @@ sortTable = {
 				document.body.appendChild(loading);
 				loading.id 							 = '_SORTWORKING';
 				loading.style.display    = 'none';
-				loading.style.background = '#fff0f0';
+				loading.style.background = '#f0f0ff';
 				loading.style.color      = '#ff0000';
 				loading.style.position   = 'absolute';
 				loading.style.top        = '0px';
@@ -101,9 +102,9 @@ sortTable = {
 				loading.style.fontWeight = 'bold';
 				loading.innerHTML 			 = '<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;Working ...';
 				if( loading.style.opacity !== undefined)
-					loading.style.opacity = '0.5';
+					loading.style.opacity = '0.75';
 				else if(loading.style.filter !== undefined)
-					loading.style.filter = 'alpha(opacity=50);';
+					loading.style.filter = 'alpha(opacity=75);';
 			}
 			if(isWorking){
 				// get table size and position
@@ -116,7 +117,6 @@ sortTable = {
 				loading.style.left   = x+'px';
 				loading.style.top    = y+'px';
 			}
-			document.body.style.cursor = isWorking?'wait':'default';
 			loading.style.display = isWorking?'block':'none';
 		}
 	},
@@ -194,7 +194,7 @@ sortTable = {
 		// render the table
 		if(options.showActivity){
 			options.showActivity(tid,1);
-			setTimeout("sortTable._mk_headers('"+tid+"');"+(typeof(csCol)=='string'?"sortTable.sort('"+tid+"','"+csCol+"');":"sortTable._populate('"+tid+"');")+" sortTable._mk_footer('"+tid+"');",5);
+			setTimeout("sortTable._mk_headers('"+tid+"');"+(typeof(csCol)=='string'?"sortTable.sort('"+tid+"','"+csCol+"');":"sortTable._populate('"+tid+"');")+" sortTable._mk_footer('"+tid+"');",50);
 		}else{
 			this._mk_headers(tid);
 			if(typeof(csCol)=='string'){
@@ -246,7 +246,7 @@ sortTable = {
 		// refresh display
 		if(this.options[tid].showActivity){
 			this.options[tid].showActivity(tid,1);
-			setTimeout("sortTable._populate('"+tid+"'); sortTable._mk_footer('"+tid+"');",5);
+			setTimeout("sortTable._populate('"+tid+"'); sortTable._mk_footer('"+tid+"');",50);
 		}else{
 			this._populate(tid);
 			this._mk_footer(tid);
@@ -498,7 +498,7 @@ sortTable = {
 	*/
 	sort: function(tid,col){
 		if(this.options[tid].showActivity){
-			this.options[tid].showActivity(tid,5);
+			this.options[tid].showActivity(tid,50);
 			setTimeout('sortTable._sort("'+tid+'",'+col+');',5);
 		}else{
 			this._sort(tid,col);

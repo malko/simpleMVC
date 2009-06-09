@@ -139,6 +139,7 @@
 			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
 		</div>
 		<div class="ui-buttonset">
+			<button type="button" id="resetFieldsOrder" class="ui-button-trash">Reset fields orders settings</button>
 			<button type="button" id="addFieldSet" class="ui-button">Create an input group container (fieldset)</button>
 			<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
 		</div>
@@ -270,6 +271,12 @@ $this->js('
 		$("#forms #fieldGroupMethod").show();
 	});
 	updateFieldSets();
+	//- manage fields order reset button
+	$("#resetFieldsOrder").click(function(){
+		if( confirm("Are You sure you want to reset form fields order?") ){
+			window.location="'.$this->url('resetFieldsOrder',null,array('modelType'=>$this->modelType,'#'=>'forms')).'";
+		}
+	});
 
 	//-- manage lang pannel
 	$("select#setLang").change(function(){
