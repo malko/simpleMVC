@@ -4,11 +4,10 @@ class flowplayer_viewHelper extends jsPlugin_viewHelper{
 
 	//-- path are relative to ROOT_URL
 	public $requiredFiles   = array(
-		'js/flowplayer/flowplayer-3.0.3.min.js',
-		'js/flowplayer/flowplayer.playlist-3.0.1.min.js'
+		'js/flowplayer/jquery.tools.min.js',
 	);
 	public $requiredPlugins = array('jquery');
-	static public $swfPath  = 'js/flowplayer/flowplayer-3.0.3.swf';
+	static public $swfPath  = 'js/flowplayer/flowplayer-3.1.1.swf';
 
 	static private $_currentId = 0;
 
@@ -30,7 +29,7 @@ class flowplayer_viewHelper extends jsPlugin_viewHelper{
 		if( is_array($options) && isset($options['id']) )
 			$id = $options['id'];
 		else
-			$id = 'flowplayer'.(self::$_currentId++);
+			$id = self::uniqueId();
 
 		#- determining defaultContent
 		if(! isset($options['defaultContent']) ){
@@ -77,12 +76,40 @@ class flowplayer_viewHelper extends jsPlugin_viewHelper{
 			$options['playlist'] = $flvUrl;
 			$options['plugins']['controls']['playlist']=true;
 		}
-		$optStr = self::_optionString($options,1);
 
+		#- options display  (used for overlay)
+
+		$optStr = self::_optionString($options,1);
 		#- rendering player
-		$this->_js_script("var options_$id = $optStr;\n$('#$id').flowplayer('".ROOT_URL.'/'.self::$swfPath."',options_$id);\n".$htmlPlayList[1]);
+		$this->_js_script("var options$id = $optStr;\n$('#$id').flowplayer('".ROOT_URL.'/'.self::$swfPath."',options$id);\n".$htmlPlayList[1]);
 		return " <div id=\"$id\" class=\"flowPlayer\" style=\"display:block;".(empty($w)?'':"width:$w;").(empty($h)?'':"height:$h;")."\">$dfltContent</div>$htmlPlayList[0]";
 
+	}
+
+
+	function buttonOverlay($buttonSelector,$flvUrl,$w=null,$h=null,array $options=null){
+		#- determining Id
+		if( is_array($options) && isset($options['id']) )
+			$id = $options['id'];
+		else
+			$id = self::uniqueId();
+		$_options = array_merge((array) $options,array('display'=>'none','id'=>"flowerlayed_$id"));
+		$maskedPlayer = "<div id=\"overlay_$id\" class=\"overlay\" style=\"display:none;\">". $this->flowPlayer($flvUrl,$w,$h,$_options) .'</div>';
+		$this->_js_includes('js/flowplayer/overlay.css');
+		$this->_js_script("
+			var player_$id = $('#flowerlayed_$id').flowplayer(0);
+			$('$buttonSelector').attr('rel','#overlay_$id').overlay({
+				// when overlay is opened, load our player
+				onLoad: function() {
+					player_$id.load().play();
+				},
+				// when overlay is closed, unload our player
+				onClose: function() {
+					player_$id.unload();
+				}
+			});
+		");
+		return $maskedPlayer;
 	}
 
 	static function _optionString($opts,$indentSize=0){
