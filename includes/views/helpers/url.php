@@ -16,6 +16,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-12 - wordCleaner() add utf_decode after html_entity_decode and now keep traces of already cleaned words (more memory but better performance)
 *            - 2009-06-04 - new static property $wordCleanerSkippedChars to allow chars to pass over wordCleaner
 *            - 2009-04-28 - now url() $action parameter can be a full dispatch string (like controllerName:actionName)
 *            - 2009-04-22 - new static property $keepEmptyVars (false as default)
@@ -37,10 +38,10 @@ class url_viewHelper extends abstractViewHelper{
 	static public $wordCleanerSkippedChars = '-/';//'\\+';
 	public $view = null;
 
-  public function __construct(viewInterface $view){
+	public function __construct(viewInterface $view){
 		parent::__construct($view);
-    if( self::$useRewriteRules===null ){
-    	if( defined('USE_REWRITE_RULES') )
+		if( self::$useRewriteRules===null ){
+			if( defined('USE_REWRITE_RULES') )
 				self::$useRewriteRules = (bool) USE_REWRITE_RULES;
 			else
 				self::$useRewriteRules = true;
@@ -49,7 +50,7 @@ class url_viewHelper extends abstractViewHelper{
 			self::$argSeparator = ini_get('arg_separator.output');
   }
 
-  static public function setUseRewriteRules($useRewriteRules){
+	static public function setUseRewriteRules($useRewriteRules){
 		self::$useRewriteRules = (bool) $useRewriteRules;
 	}
 
@@ -122,7 +123,10 @@ class url_viewHelper extends abstractViewHelper{
 		return $url;
 	}
 	function wordCleaner($word){
+		static $words=array();
+		if( isset($words[$word]))
+			return $words[$word];
 		$exp = '![^a-zA-Z0-9'.(empty(self::$wordCleanerSkippedChars)?'':self::$wordCleanerSkippedChars).']+!';
-		return preg_replace(array($exp,'!(^_+|_+$)!'),array('_',''),removeMoreAccents(html_entity_decode($word)));
+		return $words[$word] = preg_replace(array($exp,'!(^_+|_+$)!'),array('_',''),removeMoreAccents(utf8_decode(html_entity_decode($word))));
 	}
 }
