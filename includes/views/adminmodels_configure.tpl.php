@@ -27,7 +27,7 @@
 		<input type="text" name="_toStr" value="<?=htmlentities($this->_toStr,ENT_COMPAT,'UTF-8')?>" />
 	</label>
 	<br />
-	<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
@@ -52,7 +52,7 @@
 		?>
 		</ul>
 		<br />
-		<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
+		<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
@@ -139,9 +139,9 @@
 			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
 		</div>
 		<div class="ui-buttonset">
-			<button type="button" id="resetFieldsOrder" class="ui-button-trash">Reset fields orders settings</button>
+			<button type="button" id="resetFieldsOrder" class="ui-button ui-button-trash">Reset fields orders settings</button>
 			<button type="button" id="addFieldSet" class="ui-button">Create an input group container (fieldset)</button>
-			<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
+			<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 		</div>
 	</div>
 </form>
@@ -164,7 +164,7 @@
 		}
 	?>
 	<br />
-	<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
@@ -184,7 +184,7 @@
 		echo $this->formInput('actions[list]',empty($list)?0:1,'radio',array('label'=>'Can be listed','values'=>array('no','yes')));
 	?>
 	<br />
-	<button type="submit" class="ui-button-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
@@ -192,7 +192,7 @@
 	<h3><a name="config">Edit Configuration File</a></h3>
 	<div id="config-pannel">
 		<?= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
-		<button type="submit" class="ui-button-disk">save</save>
+		<button type="submit" class="ui-button ui-button-disk">save</save>
 	</div>
 </form>
 
@@ -200,10 +200,10 @@
 	<h3><a name="model">Edit Model File</a></h3>
 	<div id="model-pannel">
 		<?= $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
-		<button type="submit" class="ui-button-disk">save</save>
+		<button type="submit" class="ui-button ui-button-disk">save</save>
 	</div>
 </form>
-<a  href="<?= $this->listUrl ?>" class="ui-button-arrowreturnthick-1-w" style="float:right;"><?= langManager::msg('back to list'); ?></a>
+<a  href="<?= $this->listUrl ?>" class="ui-button ui-button-arrowreturnthick-1-w" style="float:right;"><?= langManager::msg('back to list'); ?></a>
 <div class="ui-helper-clearfix"></div>
 </div>
 

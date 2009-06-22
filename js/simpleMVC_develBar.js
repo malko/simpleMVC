@@ -47,7 +47,7 @@ var cookies={
 	var btCss,cssDiv;
 
 	//-- styling toolbar
-	toolBar.css({position:'absolute',right:0,top:0,zIndex:1000});
+	toolBar.css({position:'absolute',right:0,top:0,zIndex:1000,margin:0});
 	var pannelStyle = {
 		//- background:'#F0F0F0', position:'absolute', left:0, top:0,
 		//- zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
@@ -158,7 +158,7 @@ var cookies={
 			textAlign:'left',
 			listStyleType:'none',
 			listStyleImage:'none',
-			margin:'0.4em 0',
+			margin:'2px 0',
 			padding:'0 10px'
 		}).addClass('ui-widget-content ui-corner-bottom').hide();
 		$('li',dataMenu).css({fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
@@ -185,8 +185,8 @@ var cookies={
 	btToggle.click(function(){
 		if(dataMenu.is(':visible'))
 			btDataMenu.click();
-		$('button',toolBar).not(this).toggle();
-		var visible = $('button#sMVCmodels').is(':visible');
+		$('BUTTON',toolBar).not(this).toggle();
+		var visible = $('#sMVCmodels',toolBar).is(':visible');
 		$(this).button('option','icon',visible?'circle-triangle-e':'circle-triangle-w')
 		//this.innerHTML = visible?'&gt;':'&lt;';
 		cookies.set('SMVCDevToggle',visible?1:0);

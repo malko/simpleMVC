@@ -45,9 +45,9 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 				$(row).addClass(data.rowid%2?'row':'altrow');
 				var bcell  = row.cells[row.cells.length-1];
 				var itemId = data.data[data.data.length-1];
-				$(bcell).html('<div class=\"ui-buttonset-tiny-i\">"
-				.($editable?"<button class=\"ui-button-pencil editButton\" title=\"$msgEdit\">$msgEdit</button>":'')
-				.($deletable?"<button class=\"ui-button-trash delButton\" title=\"$msgDel\">$msgDel</button>":'')
+				$(bcell).html('<div class=\"ui-buttonset ui-buttonset-tiny-i\">"
+				.($editable?"<button class=\"ui-button ui-button-pencil editButton\" title=\"$msgEdit\">$msgEdit</button>":'')
+				.($deletable?"<button class=\"ui-button ui-button-trash delButton\" title=\"$msgDel\">$msgDel</button>":'')
 				."</div>');"
 				.($editable?"
 				$('.editButton',bcell).click(function(){
@@ -61,7 +61,7 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
 					return true;
 				});":'')."
-				$('[class^=ui-buttonset]',row).buttonset();
+				$('.ui-buttonset',row).buttonset();
 			}};
 			sortTable.init('$tableId',headers,options);
 		");

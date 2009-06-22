@@ -1,5 +1,90 @@
+/**
+* jQuery UI Labs - buttons
+* - for experimental use only -
+* Copyleft (l) 2009 Jonathan gotti aka malko < jgotti at jgotti dot org >
+* Dual licensed under the MIT and GPL licenses.
+* http://docs.jquery.com/License
+* Depends:
+*		ui.core.js
+*/
 (function($){
-	$.widget("ui.button",{
+
+	// handle some common methods for all derivative plugins
+	var uiButtonCommon = {
+		/*
+		* read extra options settings in widget.element's class attribute and return them as object
+		* baseClass is the extended class (ui-button),
+		* optionsList an associtive list of optionNames with their possible values separated by a pipe '|'
+		* if an empty value is set at first position it'll be considered optional.
+		*/
+		_readClassNameOpts: function(baseClass,optionsList,elmt){
+			elmt=(!elmt)?this.element:$(elmt);
+			//prepare expression
+			var exp = '(?:^|\\s)'+baseClass+'(?=-)';
+			var opts={}, optName;
+			var classAttr = elmt.attr('class');
+			if(null===classAttr || classAttr.length <1)
+				return opts;
+			for(optName in optionsList ){
+				exp += ( optionsList[optName].substr(0,1)=='|' )?'(?:-('+optionsList[optName].substr(1)+'))?':'-('+optionsList[optName]+')';
+			}
+			exp = new RegExp(exp+'(?:$|\\s)');
+			var matches = classAttr.match(exp);
+			if( null==matches)
+				return opts;
+			//prepare options objects from matches
+			var id=1;
+			for(optName in optionsList){
+				if(matches[id]){
+					opts[optName] = matches[id];
+				}
+				id++;
+			}
+			return opts;
+		},
+		// add options settings only if current option setting is different from default option value else just ignore it.
+		_mergeOpts: function(opts){
+			var defaults = $[this.namespace][this.widgetName].defaults;
+			for( var optName in opts){
+				if( defaults[optName] === this.options[optName] ){
+					this.options[optName] = opts[optName];
+				}
+			}
+			return this;
+		},
+		// effectively apply settings by calling _setData on given options names.
+		// additional parameter ifNotDefault will only apply settings if different from default.
+		_applyOpts: function(names,ifNotDefault){
+			if(! ifNotDefault){
+				for(var i=0;i<names.length;i++){
+					this._setData(names[i],this.options[names[i]]);
+				}
+				return this;
+			}
+			var defaults = $[this.namespace][this.widgetName].defaults;
+			for(var i=0;i<names.length;i++){
+				if( defaults[names[i]] !== this.options[names[i]] ){
+					this._setData(names[i],this.options[names[i]]);
+				}
+			}
+			return this;
+		},
+		/**
+		* remove matching class names from element and eventually add new class on given element (default to widget.element)
+		*/
+		_rmExpClass:function(exp,add,elmt){
+			elmt=(!elmt)?this.element:$(elmt);
+			eval('exp = /(?:^|\\s)'+exp.replace(/\*/g,'[a-zA-Z_0-9-]*')+'(?=$|\\s)/g;');
+			elmt.attr('class',elmt.attr('class').replace(exp,''));
+			if( undefined!==add ){
+				elmt.addClass(add);
+			}
+			return this;
+		}
+	}
+
+	// base ui-button plugin
+	$.widget("ui.button",$.extend({},uiButtonCommon,{
 
 		elmt_icon:null,
 		elmt_iconContainer:null,
@@ -13,66 +98,35 @@
 		_sizeValue:'',
 		_init:function(){
 			var self = this;
-
-			if( this.element.parent('.ui-button').length || this.element.hasClass('ui-button-none') ){
-				return this.destroy();
+			//-- should think about aborting or not init when ui-button-none, ui-buttonset are used.
+			if( this.element.attr('class').match(/(?:^|\s+)ui-button(set|-none(\s|$))/) ){
+				return $.widget.prototype.destroy.apply(this, arguments);
 			}
 
 			// read inline options from class attribute (that can't be null!!!)
-			var inlineOptions = self.element.attr('class');
-			if( undefined === inlineOptions || null === inlineOptions ){
-				inlineOptions = ['ui-button','','',''];
-			}else{
-				_inlineOptions = inlineOptions.match(/(?:^|\s+)ui-button(?:-(tiny|normal|small|big|huge))?(?:-([iewsn](?=$|\s|-)))?(?:-([\w0-9_-]+))?(?:$|\s+)/);
-				if( null !== _inlineOptions){
-					inlineOptions = _inlineOptions;
-				}else{
-					if( this.element.attr('class').match(/(?:^|\s+)ui-buttonset/) ){
-						return  this.destroy();
-					}else{
-						inlineOptions = ['ui-button','','',''];
-					}
-				}
+			if( this.element.is('[class*=ui-button-]')){
+				var inlineOptions=self._readClassNameOpts('ui-button',{size:'|auto|tiny|small|normal|big|huge',orientation:'|auto|[trbli]',icon:'|[a-zA-Z0-9_-]+'})
+				self._mergeOpts(inlineOptions);
 			}
 
-			self.element.addClass('ui-widget-content ui-state-default ui-button')
+			self.element.addClass('ui-button ui-widget ui-state-default')
 				.hover(self._hover,self._blur);
 
 			// preapre wrapers elements
 			self._wrapLabel();
 			self._wrapIcon();
 
-			if( 'auto' == self.options.size && inlineOptions[1] && inlineOptions[1].length){
-				self.options.size = inlineOptions[1];
-			}
-			if( 'auto' == self.options.orientation && inlineOptions[2] && inlineOptions[2].length){
-				self.options.orientation = inlineOptions[2];
-			}
-
-			if( '' == self.options.icon ){
-				self.options.icon = (inlineOptions[3] && inlineOptions[3].length)?inlineOptions[3]:'';
-			}
-
+			// detect some toggle markup options
 			if( self.element.hasClass('toggle') ){
 				self.options.isToggle = true;
 			}
-			if( self.element.hasClass('active')){
+			if( self.element.hasClass('active') || self.element.hasClass('ui-state-active')){
 				self.options.active = true;
 			}
 
-			self._setData('size',self.options.size);
-			self._setData('orientation',self.options.orientation);
-			self._setData('icon',self.options.icon);
-			self._setData('corners',self._getData('corners'));
-			if( self.options.isToggle){
-				self._setData('isToggle',self.options.isToggle);
-			}
-			if( self.options.active){
-				self._setData('active',self.options.active);
-			}
-			if( null!==self.options.label){
-				self._setData('label',self.options.label);
-			}
+			// apply some settings
+			self._applyOpts(['size','orientation','icon','corners'])
+				._applyOpts(['toggle','active','label','isToggle'],true);
 
 			if(! $.support.style){
 				this.element.addClass('ui-button-inlineBlockFix');
@@ -91,6 +145,7 @@
 						}
 				}
 			}
+			return this;
 		},
 		_hover: function(){
 			$(this).addClass('ui-state-hover');
@@ -98,7 +153,6 @@
 		_blur: function(){
 			$(this).removeClass('ui-state-hover');
 		},
-
 		_setIcon:function(){
 			var ico = this._getData('icon');
 			this.iconIsImage =( ico.match(/\.(jpe?g|png|gif|ico)$/i) )?true:false;
@@ -108,6 +162,7 @@
 			if( '' === ico || null === ico){
 				this.elmt_icon = null;
 				this.elmt_iconContainer.hide();
+				ico='none';
 			}
 			if( this.iconIsImage){
 				this.elmt_icon=$('<img src="'+escape(ico)+'"  />');
@@ -152,7 +207,6 @@
 			}
 			return this;
 		},
-
 		_setData:function(key,value){
 			var self = this;
 			switch(key){
@@ -178,12 +232,12 @@
 				case 'orientation':
 					if( value=='')
 						value = 'auto';
-					self._orientationValue = (value=='auto'||value=='i')?'w':value;
+					self._orientationValue = (value=='auto'||value=='i')?'l':value;
 					if( value==='i'){
 						self._setData('label','');
 					}
 					self._rmExpClass(self.element,'ui-button-orientation-*','ui-button-orientation-'+self._orientationValue);
-					self.iconBeforeLabel=( self._orientationValue=='n' || self._orientationValue=='w')?true:false;
+					self.iconBeforeLabel=( self._orientationValue=='b' || self._orientationValue=='r')?false:true;
 					self._checkElmtPos();
 					break;
 				case 'size':
@@ -203,7 +257,7 @@
 				case 'active':
 					if(! self._getData('isToggle'))
 						return false;
-					self.element.toggleClass('ui-state-highlight active',value?true:false);
+					self.element.toggleClass('ui-state-active active',value?true:false);
 					self._trigger('setactive',0,self);
 					break;
 			}
@@ -252,7 +306,8 @@
 			return this;
 		}
 
-	});
+	}));
+
 	$.extend($.ui.button, {
 		version: "@VERSION",
 		getter:'isActive',
@@ -269,35 +324,27 @@
 		}
 	});//*/
 
-	$.widget('ui.buttonset',{
+	$.widget('ui.buttonset',$.extend({},uiButtonCommon,{
 		_orientationValue:'',
 		_sizeValue:'',
 		_initiated:false,
 		_init:function(){
 			var self=this;
 			// read inline options
-			var inlineOptions = self.element.attr('class').match(/(?:^|\s+)ui-buttonset(?:-(tiny|normal|small|big|huge))?(?:-([ewsin](?=$|\s|-)))?(?:$|\s+)/);
-			if( null === inlineOptions){
-				return;
-			}
-			if( 'auto' == self.options.size && inlineOptions[1] && inlineOptions[1].length){
-				self.options.size = inlineOptions[1];
-			}
-			if( 'auto' == self.options.orientation && inlineOptions[2] && inlineOptions[2].length){
-				self.options.orientation = inlineOptions[2];
-			}
-			self.element.addClass('ui-buttonset ui-widget-content'+(self.element.is('[class*=ui-corner]')?'':' ui-corner-all'));
+			var inlineOptions=self._readClassNameOpts('ui-buttonset',{size:'|auto|tiny|small|normal|big|huge',orientation:'|auto|[trbli]'})
+			self._mergeOpts(inlineOptions);
+
+			self.element.addClass('ui-buttonset ui-widget'+(self.element.is('[class*=ui-corner]')?'':' ui-corner-all'));
 
 			if( !$.support.style){
 				self.element.addClass('ui-button-inlineBlockFix');
 			}
-			self._setData('size',self.options.size);
-			self._setData('orientation',self.options.orientation);
+			self._applyOpts(['size','orientation'])
 			self._initiated = true;
 			self.propagateSettings();
 
 		},
-
+		// propagate settings to child nodes
 		propagateSettings:function(){
 			var self=this;
 			self.element.contents().each(function(){
@@ -307,7 +354,6 @@
 				$(this).button().button('importButtonSetSettings',self);
 			})
 		},
-
 		_setData:function(key,value){
 			var self = this;
 			switch(key){
@@ -327,7 +373,7 @@
 			return $.widget.prototype._setData.apply(this, arguments);
 		}
 
-	});
+	}));
 
 	$.extend($.ui.buttonset,{
 		version: "@VERSION",
@@ -346,25 +392,20 @@
 		});
 	}*/
 
-		$.widget("ui.selectbuttonset",{
+		$.widget("ui.selectbuttonset",$.extend({},uiButtonCommon,{
 			multiple:false,
 			buttonset:null,
 			_init:function(){
 				var self=this;
 				// read inline options
-				var inlineOptions = self.element.attr('class').match(/(?:^|\s+)ui-buttonset(?:-(tiny|normal|small|big|huge))?(?:-([eiwsn](?=$|\s|-)))?(?:$|\s+)/);
+				var inlineOptions=self._readClassNameOpts('ui-buttonset',{size:'|auto|tiny|small|normal|big|huge',orientation:'|auto|[trbli]'})
+				self._mergeOpts(inlineOptions);
 
-				if(inlineOptions && inlineOptions[1] && inlineOptions[1].length ){
-					self._setData('size',inlineOptions[1]);
-				}
-				if(inlineOptions && inlineOptions[2] && inlineOptions[2].length){
-					self._setData('orientation',inlineOptions[2]);
-				}
 				if( self.element.attr('multiple') ){
 					self.multiple = true;
 				}
 				self.buttonset = $('<div class="ui-buttonset"></div>');
-				self.buttonset.buttonset();
+				self.buttonset.buttonset(self.options);
 				self.element.hide();
 				self.element.after(self.buttonset);
 				self.refresh();
@@ -377,10 +418,10 @@
 				self.element.children('option').each(function(i){
 					var option = $(this);
 					var label = option.html();
-					var optionIcon = option.attr('class').match(/(?:^|\s)ui-icon-([\w0-9_-]+)(?:$|\s)/);
+					var optionIcon = option.attr('class').match(/(?:^|\s)ui-icon-(.+)(?:$|\s)/);
 					if(null !== optionIcon)
 						optionIcon = optionIcon[1];
-					$('<div class="ui-button-'+size+'-'+orientation+(optionIcon?'-'+optionIcon:'')+' toggle'+(option.is(':selected')?' active':'')+'">'+label+'</div>')
+					$('<button type="button" class="ui-button-'+size+('auto'===orientation?'':'-'+orientation)+(optionIcon?'-'+optionIcon:'')+' toggle'+(option.is(':selected')?' active':'')+'">'+label+'</button>')
 						.appendTo(self.buttonset)
 						.button({
 							'corners':(i==0?'left':(i+1<self.element.attr('options').length?'none':'right')),
@@ -399,13 +440,12 @@
 				self.element.change();
 				self._trigger('toggle',event,[self.element,button.element]);
 			}
-		});
+		}));
 		$.extend($.ui.selectbuttonset, {
 			version: "@VERSION",
 			defaults:{
 				size:'normal',
-				orientation:'w',
-				buttonsetAddClass:'ui-widget ui-widget-content ui-corner-all'
+				orientation:'auto'
 			}
 		});
 })(jQuery);
