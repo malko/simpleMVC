@@ -76,8 +76,8 @@
 ?>
 <div style="text-align:right;">
 	<div class="ui-buttonset" style="margin:0.2em 0;">
-		<button type="button" onclick="window.location='<?= $this->listUrl ?>';" class="ui-button-arrowreturnthick-1-w"><?= langManager::msg('back',null,$this->_langManagerDicName); ?></button>
-		<button type="submit" class="ui-button-disk"><?= langManager::msg('save',null,$this->_langManagerDicName); ?></button>
+		<button type="button" onclick="window.location='<?= $this->listUrl ?>';" class="ui-button ui-button-arrowreturnthick-1-w"><?= langManager::msg('back',null,$this->_langManagerDicName); ?></button>
+		<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save',null,$this->_langManagerDicName); ?></button>
 	</div>
 </div>
 

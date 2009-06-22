@@ -15,7 +15,7 @@ else
 if(!empty($add)){
 	echo '
 	<div style="text-align:right;">
-		<a href="'.$this->url('add',null,array('modelType'=>$this->modelType)).'" class="ui-button-circle-plus"> '.langManager::msg('Add new item',null,$this->_langManagerDicName).'.</a>
+		<a href="'.$this->url('add',null,array('modelType'=>$this->modelType)).'" class="ui-button ui-button-circle-plus"> '.langManager::msg('Add new item',null,$this->_langManagerDicName).'.</a>
 	</div>';
 }
 
