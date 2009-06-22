@@ -8,6 +8,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-22 - autoloading viewHelpers will now check in active view setted _viewDirs 
 *            - 2009-04-20 - now more show when not in DEVEL_MODE
 *            - 2009-03-16 - use spl_register_autoload for better autoload support when included in other application.
 *            - 2009-02-06 - move javascript and style from show to sMVCdevelBar
@@ -65,11 +66,17 @@ function smvcAutoload($className){
 			$dirs[] = ROOT_DIR.'/controllers';
 			$className = str_replace($m[0],'',$className);
 		}elseif( preg_match('!(?:_v|V)iew((?:_h|H)elper)?$!',$className,$m) ){ #- look for views and helpers
-			$dirs[] = LIB_DIR.'/views';
-			$dirs[] = ROOT_DIR.'/views';
-			if(!empty($m[1])){
-				$dirs[] = LIB_DIR.'/views/helpers';
-				$dirs[] = ROOT_DIR.'/views/helpers';
+			if(empty($m[1])){
+				$dirs[] = LIB_DIR.'/views';
+				$dirs[] = ROOT_DIR.'/views';
+			}else{
+				if( baseView::hasLivingInstance() ){
+					foreach( baseView::hasLivingInstance(true)->get_viewDirs() as $d)
+						$dirs[] = "$d/helpers";
+				}else{
+					$dirs[] = LIB_DIR.'/views/helpers';
+					$dirs[] = ROOT_DIR.'/views/helpers';
+				}
 			}
 			$className = str_replace($m[0],'',$className);
 		}elseif( preg_match('!(?:_m|M)odelAddon(?:Interface)?$!',$className,$m) ){#- look for modelAddons and their interface
@@ -265,9 +272,9 @@ function match($pattern,$str,$id=1,$all=FALSE){
 	}
 	if(is_array($id)){
 		foreach($id as $v)
-			$res[] = @$m[$v];
+			$res[] = isset($m[$v])?$m[$v]:false;
 		return $res;
-	}elseif(! in_array(@$m[$id],array(FALSE,null),1) ){
+	}elseif(isset($m[$id]) && ! in_array($m[$id],array(false,null),1) ){
 		return $m[$id];
 	}
 	return FALSE;

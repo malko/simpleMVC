@@ -18,6 +18,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-22 - new viewInterface method hasLivingInstance()
 *            - 2009-02-06 - now viewInterface implements singleton pattern
 *            - 2008-10-13 - add support for "complex" helper method call (ie: _helperName_methodName)
 *            - 2008-02-15 - now extendeded abstractViewHelper can directly call other viewHelper methods as if it were into views.
@@ -63,6 +64,7 @@ abstract class abstractViewHelper implements viewHelperInterface{
 interface viewInterface{
 	//function __construct(abstractController $controller=null,array $layout=null);
 	static public function getInstance(abstractController $controller=null,array $layout=null);
+	static public function hasLivingInstance($returnInstance=false);
 	function __set($k,$v);
 	function __get($k);
 	function __isset($k);
@@ -121,7 +123,17 @@ class baseView implements viewInterface{
 		return $view;
 
 	}
-
+	/**
+	* check if there's a living instance of the given view.
+	* @param bool $returnInstance if true will return viewInterface or null instead of bool
+	* @return bool or viewInterface/null depending of $returnInstance parameter
+	*/
+	static public function hasLivingInstance($returnInstance=false){
+		if( self::$_instance instanceof baseView ){
+			return $returnInstance?self::$_instance:true;
+		}
+		return $returnInstance?null:false;
+	}
 	protected function __construct(abstractController $controller=null,array $layout=null){
 		if(! is_null($controller) )
 			$this->setController($controller);
