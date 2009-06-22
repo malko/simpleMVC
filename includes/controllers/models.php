@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-22 - add support for given modelCollection in extended listAction must be set as $this->_models_
 *            - 2009-06-02 - add support for confirmation fields and sprintFatas to langMsg methods
 *            - 2009-05-28 - ncancel: add allowed action property $allowedActions
 *            - 2009-04-06 - add support for activable models
@@ -84,7 +85,7 @@ abstract class modelsController extends abstractController{
 		$supportedAddons = abstractModel::_getModelStaticProp($this->modelType,'modelAddons');
 		$orderable = in_array('orderable',$supportedAddons);
 		$activable = in_array('activable',$supportedAddons);
-		$models = abstractModel::getAllModelInstances($this->modelType);
+		$models = (isset($this->_models_) && $this->_models_ instanceof modelCollection )?$this->_models_:abstractModel::getAllModelInstances($this->modelType);
 
 		if(empty($this->loadDatas)){ //-- attempt to autodetect datas that may need to be loaded
 			$relDefs = abstractModel::modelHasRelDefs($this->modelType,null,true);
@@ -139,8 +140,8 @@ abstract class modelsController extends abstractController{
 						}
 						switch($k){
 							case $orderableField:
-								$row[$k] = '<span style="display:none;">'.sprintf('%0'.$nbZeroFill.'d',$m->{$k}).'</span><div class="ui-buttonset-small"><a title="move up" href="'.($m->{$k}>0?$this->url('moveup').'/id/'.$row['id'].'" class="ui-button-i-arrow-1-n':'#" class="ui-button-i-arrow-1-n ui-state-disabled').'">move up</a>'
-									.'<a href="'.(in_array($m->PK,$orderableLastPos)?'#" class="ui-button-i-arrow-1-s ui-state-disabled':$this->url('movedown').'/id/'.$row['id'].'" class="ui-button-i-arrow-1-s').'" title="move down">move down</a></div>';
+								$row[$k] = '<span style="display:none;">'.sprintf('%0'.$nbZeroFill.'d',$m->{$k}).'</span><div class="ui-buttonset ui-buttonset-small"><a title="move up" href="'.($m->{$k}>0?$this->url('moveup').'/id/'.$row['id'].'" class="ui-button ui-button-i-arrow-1-n':'#" class="ui-button ui-button-i-arrow-1-n ui-state-disabled').'">move up</a>'
+									.'<a href="'.(in_array($m->PK,$orderableLastPos)?'#" class="ui-button ui-button-i-arrow-1-s ui-state-disabled':$this->url('movedown').'/id/'.$row['id'].'" class="ui-button ui-button-i-arrow-1-s').'" title="move down">move down</a></div>';
 								break;
 							default:
 								if(! ($activable && in_array($k,$m->_activableFields,'true')) ){

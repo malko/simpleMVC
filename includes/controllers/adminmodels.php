@@ -304,7 +304,7 @@ class adminmodelsController extends modelsController{
 			return $this->forward(ERROR_DISPATCH);
 		file_put_contents($this->getModelFilePath($this->modelType),preg_replace('/\r(?=\n)/','',$_POST['smvcModel']));
 		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'model'));
-}
+	}
 	function saveEditConfigAction(){
 		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
 			return $this->forward(ERROR_DISPATCH);
