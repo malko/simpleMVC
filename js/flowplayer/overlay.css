@@ -1,0 +1,20 @@
+div.overlay {
+	padding:40px;
+	width:640px;
+	_width:720px;
+	display:none;
+	background:url(white.png) no-repeat;
+}
+div.overlay div.close {
+	background:url(close.png) no-repeat;
+	position:absolute;
+	top:8px;
+	right:10px;
+	width:35px;
+	height:35px;
+	cursor:pointer;
+}
+div.overlay a {
+	height:360px;
+	display:block;
+}
