@@ -50,7 +50,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			if( empty($options['values']) ){
 				eval ('$choices = '.$relsDefs['hasOne'][$keyName]['modelName'].'::getAllInstances();');
 				if( $relsDefs['hasOne'][$keyName]['relType'] !== 'dependOn' ){
-					$options['values'][0] = '--- '.$options['label'].' ---';
+					$options['values'][0] = '--- '.langManager::msg($options['label']).' ---';
 				}
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();

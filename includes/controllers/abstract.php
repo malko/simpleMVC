@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-04-28 - new static property $appMsgUseLangManager to allow appMsgs to be checked against loaded dictionaires in langManager.
 *            - 2009-04-28 - new method forward() call form with only one string dispatch parameter as returned by getCurrentDispatch() (ie: 'controller:action') (old way still working)
 *            - 2009-04-03 - add __isset method to also check for datas in view.
 *            - 2009-02-08 - $appMsgIgnoreRepeated is now a int value to permitt better repeated appMsgs management
@@ -95,13 +96,15 @@ abstract class abstractController{
 	static protected $dispatchStack= array();
 
 	/** set the way appMsg are prepared %T and %M will be respectively replaced byt msgType and msgStr*/
-	static public  $appMsgModel = "<div class='%T'>%M</div>";
+	static public  $appMsgModel = "<div class='ui-state-%T %T'>%M</div>";
 	/** set the way repeated appMsgs are treated
 	* - 0: won't perform any check and so will display all messages,
 	* - 1: avoid consecutive message repetition by checking that last message is different)
 	* - 2: will drop any messages that were previously appended to appMsgs nevermind the position.
 	*/
-	static public  $appMsgIgnoreRepeated = 2;
+	static public  $appMsgIgnoreRepeated = 1;
+	/** sets whether yes or not to use langManager for appMsgs */
+	static public  $appMsgUseLangManager = false;
 
 	/**
 	* crée une nouvelle instance de controller.
@@ -275,6 +278,8 @@ abstract class abstractController{
 		}
 		if(! isset($_SESSION))
 			throw new Exception(__class__.'::appendAppMsg() require a session to be started before any call.');
+		if( self::$appMsgUseLangManager )
+			$msg = langManager::msg($msg);
 		if(self::$appMsgIgnoreRepeated > 0){ //-- check for repeated msg if needed
 			if( self::checkAppMsgExist($msg,$msgType,self::$appMsgIgnoreRepeated>1?false:true) )
 				return true;
