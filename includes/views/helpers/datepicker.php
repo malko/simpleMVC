@@ -4,6 +4,7 @@
 * @package simpleMVC
 * http://marcgrabanski.com/code/ui-datepicker
 * @changelog
+*            - 2009-06-23 - empty values are set to current time
 *            - 2009-03-27 - update to work with last version of jqueryUI (1.7)
 *            - 2009-01-05 - add withTime method to combine datepicker and timepicker (use new timepicker helper)
 *            - 2008-11-07 - change _js_script call (not static anymore)
@@ -63,9 +64,10 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 			$alreadyUsed = true;
 		}
 		$this->_js_loadPlugin('timepicker');
-		if( empty($value) ){
+		if( empty($value) || preg_match('!^0000[-/]00[-/]00\D?(00:00(:00)?)?$!')){
 			$date = date('Y-m-d');
 			$time = date('H:i:s');
+			$value="$date $time";
 		}else{
 			preg_match('!^(\d\d\d\d[-/]\d\d[-/]\d\d)?\D?(\d\d:\d\d(:\d\d)?)?$!',$value,$m);
 			$date = empty($m[1])?date('Y-m-d'):$m[1];
