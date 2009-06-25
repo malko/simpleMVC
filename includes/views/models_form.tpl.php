@@ -54,7 +54,7 @@
 			$tabs = isset($tabs)?"<ul>$tabs</ul>":'';
 			echo "<div id=\"fieldsGroups\">\n$tabs$formStr\n</div>\n";
 			if( !empty($fieldGroupMethod) && 'fieldset' !== $fieldGroupMethod){
-				$this->js("$('form.adminForm #fieldsGroups').$fieldGroupMethod();",'jqueryui');
+				$this->js("$('form #fieldsGroups').$fieldGroupMethod();",'jqueryui');
 			}
 		}else{
 			$formFields = empty($this->fieldsOrder)?array_keys($this->datasDefs):$this->fieldsOrder;

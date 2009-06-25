@@ -61,7 +61,9 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
 					return true;
 				});":'')."
-				$('.ui-buttonset',row).buttonset();
+			},
+			bodyRendering:function(body,data){
+				$('.ui-button',body).button({checkButtonset:true});
 			}};
 			sortTable.init('$tableId',headers,options);
 		");

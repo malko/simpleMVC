@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2009-06-25 - add sort options for hasMany relations.
 *            - 2009-05-28 - now manage hasMany relations as well
 *            - 2009-05-11 - empty date/datetime/time values with no default are set to current date.
 *            - 2009-01-05 - add timepicker and datetimepicker detection
@@ -60,7 +61,6 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				$value = $options['value'];
 			return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 		}elseif(isset($relsDefs['hasMany'][$keyName]) ){
-			//-- @todo voir si on gere ou non les relations hasMany
 			#- prepare les valeurs
 			if( $modelName instanceof abstractModel && $modelName->{$keyName} instanceof modelCollection)
 				$value = $modelName->{$keyName}->PK;
@@ -71,6 +71,10 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 
 			if( empty($options['values']) ){
 				$choices = abstractModel::getAllModelInstances($relsDefs['hasMany'][$keyName]['modelName']);
+				if( !empty($options['sort'])){
+					$choices->{$options['sort']}();
+					unset($options['sort']);
+				}
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();
 			}

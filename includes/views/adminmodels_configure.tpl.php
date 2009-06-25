@@ -76,6 +76,7 @@
 				<li> pickerOpts   is used for datetimepicker (something like that: {"pickerOpts":["dateOptStr","timeOptStr"]}</li>
 				<li> rteOpts      is used for rte options</li>
 				<li> uneditable   setted to true will allow field to be filled only at item creation time, and will be disabled the rest of the time.</li>
+				<li> sort         is only used for hasMany relations and require a valid modelCollection sort method to be call ({"sort":"rsortByName"}).</li>
 			</ul>
 			<strong>Warning: </strong>Options are not checked for validation so be carrefull to pass a valid json string as define in php json_encode.
 		</div>

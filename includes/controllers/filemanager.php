@@ -6,7 +6,7 @@ class filemanagerController extends abstractController{
 		'docRoot' => USER_DATAS_DIR,
 		'urlRoot' => USER_DATAS_URL,
 		'accessCallBack' => array('filemanagerController','checkAccess'),
-		'allowedExt' => 'jpe?g|gif|png|mpe?g|doc|xls|csv|pdf|rtf|flv|txt', // allowed extensions
+		'allowedExt' => 'jpe?g|gif|png|mpe?g|doc|xls|csv|pdf|rtf|flv|txt|ppt|odt|swf', // allowed extensions
 	);
 
 	public $connector = null;
