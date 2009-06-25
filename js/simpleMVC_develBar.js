@@ -187,7 +187,7 @@ var cookies={
 			btDataMenu.click();
 		$('BUTTON',toolBar).not(this).toggle();
 		var visible = $('#sMVCmodels',toolBar).is(':visible');
-		$(this).button('option','icon',visible?'circle-triangle-e':'circle-triangle-w')
+		$(this).button('option','icon',visible?'ui-icon-circle-triangle-e':'ui-icon-circle-triangle-w')
 		//this.innerHTML = visible?'&gt;':'&lt;';
 		cookies.set('SMVCDevToggle',visible?1:0);
 		$('.sMVCpannel:visible').css('width',getWidth());
