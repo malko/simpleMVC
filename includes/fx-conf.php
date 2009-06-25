@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-06-25 - bug correction (notice on undefined $var) in write_conf_file() when first lines are empties or comments
 *            - 2009-02-05 - parse_conf_file will return empty array on error instead of false when $out is true
 *            - 2009-02-04 - now write_conf_file keep empty lines
 *                         - better support of true|false|null values
@@ -105,6 +106,7 @@ function write_conf_file($file,array $config,$force=false){
 		foreach($oldconf as $linenb => $line){
 			if( preg_match("!^\s*(#|$)!",$line)){# keep comment and empty lines
 				$newconf[$linenb]=$line;
+				continue;
 			}elseif( (!$follow) && preg_match("!^\s*([^#=]+)=([^#\\\\]*)(\\\\?)!",$line,$match)){ # first line of config var
 				$var = trim($match[1]); # get varname
 
