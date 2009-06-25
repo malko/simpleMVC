@@ -235,8 +235,8 @@ class jqueryui_viewHelper extends jsPlugin_viewHelper{
 	function button($selector,array $options=null){
 		static $initiated;
 		if( ! isset($initiated)){
-			$this->_js_includes('js/jquery-ui-button.js');
-			$this->_js_includes('js/jquery-ui-button.css');
+			$this->_js_includes('js/ui.button-min.js');
+			$this->_js_includes('js/ui-button.css');
 		}
 		$this->_js_script("$('$selector').button(".(is_array($options)?json_encode($options):'').");");
 	}
