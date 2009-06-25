@@ -10,6 +10,7 @@
 *
 * @since 2006-08-24
 * @changelog
+*            - 2009-06-24 - add bodyRendering callback option
 *            - 2009-04-01 - add saveUserPrefs options to save user preferences by cookies
 * @example
 * here's a very basic sample usage
@@ -56,13 +57,15 @@ sortTable = {
 		saveUserPrefs:true, // whether or not to use cookies to save user prefs
 		// list of possible page size users can set manually, put false if you don't want to allow them to change pageSize
 		userPageSize: [10,20,30,50,['all','all']],
-		/* rowRendering and cellRendering are some 'post processing' callback function to allow you to make particular job on the table datas.
-			the callback function will receive the row or cell element as first argument and a javascript object as second argument
-			with data,colid,rowid,tid,table as properties,
-			in case of cellRendering this object will also contain the row element as row properties
-			data property will contain the cell data in case of cellRendering and row datas in case of rowRendering */
+		/* bodyRendering, rowRendering and cellRendering are some 'post processing' callback function to allow you to make particular job on the table datas.
+			the callback function will receive the body, row or cell element as first argument and a javascript object as second argument containing:
+			,tid,table as properties,
+			for bodyRendering: table, tid and data (body datas)
+			for rowRendering: table, tid, rowid and data (row datas)
+			for cellRendering: table, tid, rowid, colid and data (cell datas) */
 		rowRendering: false,
 		cellRendering:false,
+		bodyRendering:false,
 		/* some template strings for footer rendering all thoose strings can contain
 		%pnav(pagenavigation) %psize(nb res by page) %pinput(input for manual page selection) %pnum(current page num)
 		%nbres(total of record in dataset) %tid (table id) %psizesel(manual page size selector) %nbpages(total page count)
@@ -473,6 +476,7 @@ sortTable = {
 		var last     = first + pageSize;
 		var heads    = this.headers[tid];
 		var datas = this.getDatas(tid);
+		var bodyDatas = {};
 
 		for(var i=first;i < last; i++){
 			if(! datas[i]){
@@ -488,8 +492,12 @@ sortTable = {
 				}
 			}
 			if( options.rowRendering ){
-				options.rowRendering(row,{colid:col,rowid:i,table:table,tid:tid,data:datas[i]});
+				options.rowRendering(row,{rowid:i,table:table,tid:tid,data:datas[i]});
 			}
+			bodyDatas[i]=datas[i];
+		}
+		if( options.bodyRendering ){
+			options.bodyRendering(tbody,{table:table,tid:tid,data:bodyDatas});
 		}
 	},
 
