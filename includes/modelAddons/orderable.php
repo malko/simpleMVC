@@ -13,6 +13,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-07-01 - make use of abstractModel::getLivingModelInstances() to also check orderableField value in already instanciated model for newly created model
+*                         - won't save anymore on temporary models so you must be cautious when working with temporary models to manually save them after moving them arround (or creating multiple models)
 *            - 2009-04-02 - now setOrderableGroupFieldValue() method automaticly set correct type for groupValue if not a related hasOne istance
 *            - 2009-03-19 - major rewrite to support grouping of orderable models
 * @todo add onBeforeSave check to make some space if required
@@ -52,16 +54,60 @@ class orderableModelAddon extends modelAddon{
 			return;
 		#- we set position for newly created elements
 		if(false===$gField) {
-			$this->modelInstance->{$oField} = abstractModel::getModelCount($this->modelName);
+			$this->modelInstance->{$oField} = max(abstractModel::getModelCount($this->modelName),abstractModel::getModelLivingInstances($this->modelName)->max($oField));
 		}else{
 			/*We don't know the group now so we set the position based on the default group value */
-			$this->modelInstance->{$oField} = abstractModel::getModelCount(
+			$this->modelInstance->{$oField} = max(
+				abstractModel::getModelCount(
 				$this->modelName,
-				array('WHERE '.$gField.'=?', $this->modelInstance->datas[$gField])
+					array('WHERE '.$gField.'=?', $this->modelInstance->datas[$gField])
+				),
+				abstractModel::getModelLivingInstances($this->modelName)->filterBy($gField,$this->modelInstance->datas[$gField])->max($oField)
 			);
 		}
 	}
-
+	/**
+	* this is a helper method which only purpose is to initially set orderable field values inside database.
+	* This is typically used on imported datas that haven't got proper values in that field and should normally be called only once in an application lifetime.
+	* @param string $modelName       name of the model we whant to reset orderableField values on
+	* @param string $initialOrderBy  this optionnal parameter is a simple 'ORDER BY' SQL clause to allow you to set initial ordering methods
+	*                                if null the primaryKey will be used for initial ordering.
+	*/
+	static public function resetModelOrderableField($modelName,$initialOrderBy=null){
+		$dummy=abstractModel::getModelDummyInstance($modelName);
+		$oField = empty($dummy->_orderableField)?'ordre':$dummy->_orderableField;
+		$gField = isset($dummy->_orderableGroupField)?$dummy->_orderableGroupField:false;
+		if(false===$gField){
+			$PKS = $dummy->dbAdapter->select_col(
+				$dummy->tableName,
+				$dummy->primaryKey,
+				null===$initialOrderBy?"ORDER BY $dummy->primaryKey ASC":$initialOrderBy
+			);
+			if( empty($PKS) )
+				return;
+			$datas = array("$oField"=>0);
+			foreach($PKS as $k=>$v){
+				$datas[$oField] = $k;
+				$dummy->dbAdapter->update($dummy->tableName,$datas,array("WHERE $dummy->primaryKey=?",$v));
+			}
+		}else{
+			$models = $dummy->dbAdapter->select_rows(
+				$dummy->tableName,
+				$dummy->primaryKey.','.$gField,
+				null===$initialOrderBy?"ORDER BY $dummy->primaryKey ASC":$initialOrderBy
+			);
+			$datas = array();
+			$rowData = array($oField=>0);
+			foreach($models as $m){
+				if(! isset($datas[$m[$gField]]))
+					$datas[$m[$gField]] = 0;
+				else
+					$datas[$m[$gField]]++;
+				$rowData[$oField]=$datas[$m[$gField]];
+				$dummy->dbAdapter->update($dummy->tableName,$rowData,array("WHERE $dummy->primaryKey=?",$v));
+			}
+		}
+	}
 	###--- INTERNAL METHODS ---###
 	/**
 	* dynamic overload of set[$_orderableGroupField]() method
@@ -131,11 +177,12 @@ class orderableModelAddon extends modelAddon{
 		abstractModel::getFilteredModelInstances(
 			$this->modelName,
 			array("WHERE $gField = ? AND $oField > ?",$currentGroupValue,$this->modelInstance->{$oField})
-		)->decrement($oField)->save();
+		)->decrement($oField)->removeTemporaries()->save();
 
 		$this->modelInstance->{$oField} = abstractModel::getModelCount($this->modelName,array("WHERE $gField=?",$groupValue));
 		$ret = $this->modelInstance->_setData($gField,$groupValue,true);
-		$this->modelInstance->save();
+		if( ! $this->modelInstance->isTemporary())
+			$this->modelInstance->save();
 		return $ret;
 	}
 	/**
@@ -257,7 +304,7 @@ class orderableModelAddon extends modelAddon{
 	###--- MOVING ELEMENTS ---###
 	/**
 	* swap two models of same modelName position
-	* @note: this cause a save() to be both current and $dest modelInstances
+	* @note: this cause a save() to be both current and $dest modelInstances (not on temporary models)
 	* @param abstractModel $dest the model to exchange position with
 	* @return this->modelInstance for method chaining
 	*/
@@ -280,12 +327,15 @@ class orderableModelAddon extends modelAddon{
 		}
 		$dest->{$oField} = $curPos;
 		$cur->{$oField}  = $newPos;
-		$dest->save();
-		return $cur->save();
+		if(! $dest->isTemporary())
+			$dest->save();
+		if(! $cur->isTemporary())
+			return $cur->save();
+		return $cur;
 	}
 	/**
 	* moveup the current model regarding orderableField
-	* @note: this cause a save() to be called on current and previous modelInstance
+	* @note: this cause a save() to be called on current and previous modelInstance (not on temporary models)
 	* @return $this->modelInstance for method chaining
 	*/
 	public function moveUp(){
@@ -297,7 +347,7 @@ class orderableModelAddon extends modelAddon{
 	}
 	/**
 	* moveup the current model regarding orderableField
-	* @note: this cause a save() to be called on current and next modelInstance
+	* @note: this cause a save() to be called on current and next modelInstance not on temporary models)
 	* @return $this->modelInstance for method chaining
 	*/
 	public function moveDown(){
@@ -323,7 +373,7 @@ class orderableModelAddon extends modelAddon{
 			$gValue = $this->modelInstance->datas[$gField];
 			$collection = abstractModel::getFilteredModelInstances($this->modelName,array('WHERE '.$oField.'>? AND '.$gField.'=?',$pos,$gValue));
 		}
-		$collection->decrement($oField)->save();
+		$collection->decrement($oField)->removeTemporaries()->save();
 		return;
 	}
 }
