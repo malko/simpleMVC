@@ -64,7 +64,7 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 			$alreadyUsed = true;
 		}
 		$this->_js_loadPlugin('timepicker');
-		if( empty($value) || preg_match('!^0000[-/]00[-/]00\D?(00:00(:00)?)?$!')){
+		if( empty($value) || preg_match('!^0000[-/]00[-/]00\D?(00:00(:00)?)?$!',$value)){
 			$date = date('Y-m-d');
 			$time = date('H:i:s');
 			$value="$date $time";
