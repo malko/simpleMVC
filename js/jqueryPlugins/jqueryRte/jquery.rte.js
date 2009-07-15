@@ -353,9 +353,6 @@
 			return returnNode?this:node;
 		},
 
-		//- insertImage:function(url){
-//-
-		//- }
 		/** really clean content from any tag (called as a callback) */
 		cleanContents: function(event){
 			var rte = event.data.rte

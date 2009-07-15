@@ -149,7 +149,7 @@ var cookies={
 	if(! dataMenu.length){
 		btDataMenu.hide().remove();
 	}else{
-		btDataMenu.after(dataMenu);
+		btDataMenu.before(dataMenu);
 		dataMenu.css({
 			borderTop:'none',
 			position:'absolute',
