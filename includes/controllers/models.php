@@ -160,10 +160,29 @@ abstract class modelsController extends abstractController{
 				$this->view->listHeaders = array_map(array($this,'langMsg'),array_values($this->listFields));
 			}
 		}
+		// Add filters to id (for edit&trash buttons)
+		if(!empty($this->fieldFilters)) {
+			$count = count($datas) ;
+			$filter = '' ;
+			$pre = '' ;
+			foreach($this->fieldFilters as $name=>$value) {
+				$filter .= "$pre$name,$value" ;
+				$pre = ',' ;
+			}
+			for($i = 0 ; $i < $count ; $i++){
+				$datas[$i]['id'] .= '/_filters/'.$filter ;
+			}
+		}
 		$this->view->listDatas = $datas;
 	}
 
 	function addAction(){
+		if(empty($this->fieldFilters) && !empty($_GET['_filters'])) {
+			$filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
+			$this->fieldFilters = array_combine($filters[0],$filters[1]);
+		}
+		if(!empty($this->fieldFilters)) 
+			$this->view->assign($this->fieldFilters) ;
 		return $this->forward('form');
 	}
 
@@ -188,8 +207,13 @@ abstract class modelsController extends abstractController{
 		$this->setDictName();
 		$this->view->datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
-		$this->view->actionUrl = $this->view->url('save',$this->getName(),array('modelType'=>$this->modelType));
-		$this->view->listUrl   = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
+		
+		$args = array('modelType'=>$this->modelType) ;
+		if (!empty($_GET['_filters']))
+			$args['_filters'] = $_GET['_filters'] ;
+			
+		$this->view->actionUrl = $this->view->url('save',$this->getName(),$args, true);
+		$this->view->listUrl   = $this->view->url('list',$this->getName(),$args, true);
 	}
 
 	function setActiveAction(){
@@ -249,7 +273,12 @@ abstract class modelsController extends abstractController{
 			$successMsg = "Enregistrement mis à jour.";
 		$model->save();
 		self::appendAppMsg($successMsg,'success');
-		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
+		
+		$args = array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')) ;
+		if (!empty($_GET['_filters']))
+			$args['_filters'] = $_GET['_filters'] ;
+		
+		return $this->redirectAction('list',$this->getName(), $args);
 	}
 
 	function delAction(){
@@ -265,7 +294,12 @@ abstract class modelsController extends abstractController{
 		}
 		$model->delete();
 		self::appendAppMsg('Enregistrement supprimée.','success');
-		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+		
+		$args = array('modelType'=>$this->modelType);
+		if (!empty($_GET['_filters']))
+			$args['_filters'] = $_GET['_filters'];
+		
+		return $this->redirectAction('list',$this->getName(),$args);
 	}
 
 	###--- methods for orderable models ---###

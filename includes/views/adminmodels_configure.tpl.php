@@ -41,10 +41,10 @@
 			<br />
 			Field list order may be arrange by simple drag&drop.
 		</div>
-		<ul id="fldList" class="sortable">
+		<ul id="listItems" class="sortable">
 		<?php
-			if( $this->datasDefs ){
-				foreach($this->datasDefs as $fld){
+			if( $this->listDatasDefs){
+				foreach($this->listDatasDefs as $fld){
 					$formatInput = $this->formInput("formatStr[$fld]",isset($this->listedFields[$fld])?htmlentities($this->listedFields[$fld]):null,'text',array('label'=>'format string','size'=>'50'));
 					echo $this->formInput("fields[$fld]",$fld,'checkbox',array('checked'=>isset($this->listedFields[$fld]),'label'=>$fld,'formatStr'=>'<li>%input %label'.$formatInput.'</li>'))."\n";
 				}
@@ -52,7 +52,10 @@
 		?>
 		</ul>
 		<br />
+		<div class="ui-buttonset-small">
+			<button type="button" class="ui-button ui-button-circle-plus" id="listAddField"><?= langManager::msg('add list field')?></button>
 		<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+		</div>
 	</div>
 </form>
 
@@ -174,11 +177,7 @@
 	<div id="actions-pannel">
 	Choose allowed actions to manage this model
 	<?php
-		if( isset($this->config['ACTION_'.$this->modelType])){
-			extract(json_decode($this->config['ACTION_'.$this->modelType],true));
-		}else{
-			$add = $edit = $list = $del = 1;
-		}
+		extract($this->_allowedActions);
 		echo $this->formInput('actions[edit]',empty($edit)?0:1,'radio',array('label'=>'Can be edited','values'=>array('no','yes')));
 		echo $this->formInput('actions[add]',empty($add)?0:1,'radio',array('label'=>'Can be added','values'=>array('no','yes')));
 		echo $this->formInput('actions[del]',empty($del)?0:1,'radio',array('label'=>'Can be deleted','values'=>array('no','yes')));
@@ -230,6 +229,20 @@ $this->js('
 		placeholder: "ui-state-highlight placeholder ui-corner-all",
 		forcePlaceholderSize:true
 	}).find("li").addClass(styleClass);
+	//-- add items to list of fields
+	function listAddItem(fieldName,format){
+		var item = $(\'<li><input id="fields[\'+fieldName+\']" name="fields[\'+fieldName+\']" class="checkbox" type="checkbox" checked="checked" value="\'+fieldName+\'"/>\\
+		<label for="fields[\'+fieldName+\']">\'+fieldName+\'</label> \\
+		<div class="formInput"><label for="formatStr[\'+fieldName+\']">format string</label><input id="formatStr[\'+fieldName+\']" class="text" type="text" size="50" value="" name="formatStr[\'+fieldName+\']"/> \\
+		</div>\').appendTo("#listItems").addClass(styleClass);
+		item.find(".ui-button").button().css({float:"right"}).click(function(){$(this).parent("li").remove();});
+	}
+	$("#listAddField").click(function(){
+		var fieldName = prompt("'.addslashes(langManager::msg('list field name')).'");
+		if(! fieldName)
+			return;
+		listAddItem(fieldName,"");
+	});
 
 	//-- manage ordering and grouping of forms inputs
 	function updateFieldSets(){

@@ -10,6 +10,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-07-06 - now load config for each action
+*            - 2009-07-02 - add LIST_FILTER configuration
 *            - 2009-06-04 - add model and config file edition
 *                         - all configuration methods are disabled when not in devel mode
 *            - 2009-06-02 - add configuration for allowedActions
@@ -24,6 +26,14 @@ class adminmodelsController extends modelsController{
 	protected $configFile = '';
 	/** set one or multiple databases connection constants names to generate model from */
 	protected $dbConnectionsDefined = array('DB_CONNECTION');
+
+
+	/**
+	* fieldsName on which the list can be filtered
+	*/
+	protected $_config = array();
+	protected $_modelConfig = array();
+
 	function init(){
 		parent::init();
 		self::appendAppMsg("Don't forget to edit the adminModelsController to check for user rights to access it or anyone could be editing your datas","error");
@@ -33,23 +43,64 @@ class adminmodelsController extends modelsController{
 		if(! is_writable($this->configFile) ){
 			self::appendAppMsg("$this->configFile isn't writable.",'error');
 		}
-		if( file_exists($this->configFile) ){
-			$config = parse_conf_file($this->configFile,true);
-			if( isset($config['ACTION_'.$this->modelType]) ){
-				$this->_allowedActions = json_decode($config['ACTION_'.$this->modelType],true);
-			}
-		}
+		$this->loadModelConfig();
 		$this->pageTitle = langManager::msg($this->modelType);
 	}
 
+	function loadModelConfig(){
+		if(! file_exists($this->configFile) )
+			return false;
+		$this->_config = parse_conf_file($this->configFile,true);
+		foreach($this->_config as $k => $v){
+			if( preg_match('!^(LIST(?:_FILTERS)?|ACTIONS|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
+				if( $m[1] === 'ACTION' )
+					$this->_allowedActions = 	json_decode($v,true);
+				else
+					$this->_modelConfig[$m[1]] = json_decode($v,true);
+			}
+		}
+		$this->view->_config = $this->_config;
+		$this->view->_modelConfig = $this->_modelConfig;
+	}
+
 	function listAction(){
-		if( file_exists($this->configFile) ){
-			$config = parse_conf_file($this->configFile,true);
-			if( isset($config['LIST_'.$this->modelType]) ){
-				$listFields = json_decode($config['LIST_'.$this->modelType],true);
+		if( ! empty($this->_config) ){
+			if( !empty($this->_modelConfig['LIST']) ){
+				$listFields = $this->_modelConfig['LIST'];
 				$listKeys = array_keys($listFields);
 				$this->listFields = array_combine($listKeys,$listKeys);
 				$this->listFormats=$listFields;
+			}
+			if( ( !empty($this->_modelConfig['LIST_FILTERS']) ) && ! empty($_GET['_filters']) ){
+				$filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
+				if( ! empty($filters[0])){
+					$datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
+					$_dynamicFilters = array();
+					foreach($filters[0] as $k=>$fields ){
+						if(! in_array($fields,$this->_modelConfig['LIST_FILTERS'],true) ){
+							unset($filters[0][$k],$filters[1][$k]);
+							continue;
+						}
+						if( !isset($datasDefs[$fields])){
+							$_dynamicFilters[$fields] = $filters[1][$k];
+							unset($filters[0][$k],$filters[1][$k]);
+						}
+					}
+					if( count($filters[0])){
+						$conds[0] = 'WHERE '.implode('=? AND ',$filters[0]).'=?';
+						array_splice($conds,1,0,$filters[1]);
+						$this->_models_ = abstractModel::getFilteredModelInstances($this->modelType,$conds);
+						$this->fieldFilters = array_merge($_dynamicFilters,array_combine($filters[0],$filters[1]));
+					}
+					if( count($_dynamicFilters) ){
+						$this->_models_ = abstractModel::getAllModelInstances($this->modelType);
+						foreach($_dynamicFilters as $k=>$v)
+							$this->_models_ = $this->_models_->filterBy($k,$v,'==');
+						if( empty($this->fieldFilters))
+							$this->fieldFilters = $_dynamicFilters;
+					}
+
+				}
 			}
 		}
 		parent::listAction();
@@ -57,15 +108,11 @@ class adminmodelsController extends modelsController{
 
 	function formAction(){
 		parent::formAction();
-		if( file_exists($this->configFile) ){
-			$this->config = parse_conf_file($this->configFile,true);
-			if( !empty($this->config['FORM_'.$this->modelType]) ){
-				$inputOpts = json_decode($this->config['FORM_'.$this->modelType],true);
-				if(! empty($inputOpts) )
-					$this->inputOpts = $inputOpts;
-			}
-			if( !empty($this->config['FORM_ORDER_'.$this->modelType]))
-				$this->fieldsOrder = json_decode($this->config['FORM_ORDER_'.$this->modelType]);
+		if( !empty($this->_config) ){
+			if( !empty($this->_modelConfig['FORM']) )
+				$this->inputOpts = $this->_modelConfig['FORM'];
+			if( !empty($this->_modelConfig['FORM_ORDER']))
+				$this->fieldsOrder = $this->_modelConfig['FORM_ORDER'];
 		}
 	}
 	/**
@@ -79,26 +126,26 @@ class adminmodelsController extends modelsController{
 		$this->view->modelFile = $this->getModelFilePath($this->modelType);
 		#--- to string configuration
 		$this->_toStr = $this->readModel__ToStr($this->modelType);
-		$datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
+		$this->datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
 		$hasOnes     = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne'));
-		foreach($datasDefs as $v)
+		foreach($this->datasDefs as $v)
 			$this->datasFields .= "<span class=\"sMVC_dataField\">%$v</span> &nbsp; ";
 		foreach($hasOnes as $v)
 			$this->hasOnes .= "<span class=\"sMVC_dataField\">%$v</span> &nbsp; ";
 		#--- list fields configuration
 		#- check for config file
-		$this->config        = parse_conf_file($this->configFile,true);
 		$this->primaryKey    = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
-		$this->listedFields  = (isset($this->config['LIST_'.$this->modelType]))?json_decode($this->config['LIST_'.$this->modelType],true):array();
+		$this->listedFields  = (isset($this->_modelConfig['LIST']))?$this->_modelConfig['LIST']:array();
+		$datasDefs = $this->datasDefs;
 		if( count($this->listedFields) ){ //-- restore selected order
 			foreach(array_reverse($this->listedFields) as $k=>$v){
 				unset($datasDefs[array_search($k,$datasDefs)]);
 				array_unshift($datasDefs,$k);
 			}
 		}
-		$this->datasDefs = $datasDefs;
+		$this->listDatasDefs = $datasDefs;
 		#--- forms config
-		$formSettings  = (!empty($this->config['FORM_'.$this->modelType]))?json_decode($this->config['FORM_'.$this->modelType],true):array();
+		$formSettings  = (!empty($this->_modelConfig['FORM']))?$this->_modelConfig['FORM']:array();
 		foreach($formSettings as $k=>$setting){
 			if( !empty($setting['type']) ){
 				$inputTypes[$k] = $setting['type'];
@@ -108,8 +155,8 @@ class adminmodelsController extends modelsController{
 		}
 		$this->inputTypes = empty($inputTypes)?array():$inputTypes;
 		$this->inputOptions = empty($inputOptions)?array():$inputOptions;
-		if( !empty($this->config['FORM_ORDER_'.$this->modelType]))
-			$this->fieldOrder = json_decode($this->config['FORM_ORDER_'.$this->modelType]);
+		if( !empty($this->_modelConfig['FORM_ORDER']))
+			$this->fieldOrder = $this->_modelConfig['FORM_ORDER'];
 
 		$this->view->listUrl = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
 		#--- locale settings
@@ -122,6 +169,7 @@ class adminmodelsController extends modelsController{
 
 		$this->messages = $messages;
 		$this->idMsgs = $idMsgs;
+		$this->view->_allowedActions = $this->_allowedActions;
 	}
 
 	/**
@@ -131,7 +179,7 @@ class adminmodelsController extends modelsController{
 		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
 			return $this->forward(ERROR_DISPATCH);
 		if( isset($_POST['_toStr']) )
-			$this->replaceModel__ToStr($_GET['modelType'],$_POST['_toStr']);
+			$this->replaceModel__ToStr($this->modelType,$_POST['_toStr']);
 		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'string'));
 	}
 	/**
