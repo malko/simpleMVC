@@ -215,7 +215,7 @@ class jqueryui_viewHelper extends jsPlugin_viewHelper{
 	public $requiredFiles = array(
 		'js/jqueryPlugins/bgiframe/jquery.bgiframe.min.js',
 		'js/jquery-ui.js',
-		'js/css/redmond/jquery-ui-1.7.1.custom.css'
+		'js/css/redmond/jquery-ui-1.7.2.custom.css'
 	);
 	public $requiredPlugins = array(
 		'jquery'
