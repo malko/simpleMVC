@@ -67,7 +67,7 @@
 			// create selectors
 			var selectorsString='<span id="#timepicker_'+this.id+'" >\
 			<input type="text" maxlength="2" size="2" id="timepickerH_'+this.id+'" value="00" /> : \
-			<input type="text" maxlength="2" size="2" id="timepickerM_'+this.id+'" value="00" /> : \
+			<input type="text" maxlength="2" size="2" id="timepickerM_'+this.id+'" value="00" /> <span>:</span> \
 			<input type="text" maxlength="2" size="2" id="timepickerS_'+this.id+'" value="00" /> \
 			<small id="timepickerAMPM_'+this.id+'">AM</small> \
 			</span>';
@@ -75,8 +75,9 @@
 			if( this.opts.format == 24  || ! this.opts.showAMPM)
 				$('#timepickerAMPM_'+this.id).hide();
 			$('#timepickerAMPM_'+this.id).bind('click',{tp:this},function(e){var t = $(this);t.text(t.text()=='AM'?'PM':'AM');e.data.tp.update()});
-			if( ! this.opts.showSeconds)
-				$('#timepickerS_'+this.id).hide();
+			if( ! this.opts.showSeconds){
+				$('#timepickerS_'+this.id).hide().prev('span').hide();
+			}
 			$('#timepickerH_'+this.id).bind('change',{tp:this},function(e){
 				var tp = e.data.tp;
 				var v = this.value;

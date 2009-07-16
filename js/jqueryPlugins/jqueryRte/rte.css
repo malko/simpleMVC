@@ -4,12 +4,12 @@
 	margin-bottom:10px;
 }
 .rte iframe{
-	margin:0;
+	margin:0.2em;
 }
 .rte .toolbar{
 	vertical-align:top;
 	background:#F5f5F5;
-	padding:2px;
+	padding:0.2em;
 	text-align:left;
 	border-bottom:solid silver 1px;
 }
@@ -17,6 +17,7 @@
 	vertical-align:middle;
 	border:none;
 	text-decoration:none;
+	font-family:Arial, Courier;
 	font-size:10px;
 }
 .rte .toolbar img:hover{
@@ -28,4 +29,3 @@
 	border-style:none;
 	margin:auto;
 }
-

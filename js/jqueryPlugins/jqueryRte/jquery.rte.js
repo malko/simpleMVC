@@ -7,12 +7,16 @@
 * this work is inspired from:
 * - jQuery RTE plugin by 2007 Batiste Bieler (http://batiste.dosimple.ch/blog/2007-09-11-1/)
 * - jquery.wisiwyg by Juan M Martinez (http://private.tietokone.com.ar/jquery.wysiwyg/)
+* orignal toolbar icons are from famfamfam -> http://www.famfamfam.com/lab/icons/silk/ and distributed under creative commons attribution 2.5 licence
 * @svnInfos:
 *            - $LastChangedDate$
 *            - $LastChangedRevision$
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-07-16 - prefixing internal methods with underscore
+*                         - major rewriting of buttons (better for future evolution) and changes in options buttonSet where you can now set order of elements
+*            - 2009-07-15 - add insetTable support
 *            - 2009-03-27 - add rangeObject parameter to insertNode() method
 *                         - getSelection will now trigger focus on editable document (prevent image insertion outside editable document when not focused under ie)
 *            - 2009-03-26 - now edited documents will use standard mode in ie6 instead of quirks mode
@@ -26,32 +30,81 @@
 */
 
 (function($){
-
 	$.fn.rte = function(options) {
 		// if doable we transform textarea to rich text editors
-		if(document.designMode || document.contentEditable){
-			// iterate and reformat each matched element
-			return this.each(function() {
-				RTE($(this),options);
-			});
-		}else{
+		if(document.designMode || document.contentEditable) // iterate and reformat each matched element
+			return this.each(function(){ RTE($(this),options); });
+		else
 			return this;
-		}
 	}
-
-  function RTE(elmt, options ){
+	function RTE(elmt, options ){
 		return this instanceof RTE ? this.init(elmt,options): new RTE(elmt, options);
 	}
 
 	$.extend(RTE.prototype,{
+		opts:     $.fn.rte.defaults,
 		container: null,
 		textarea: null,
-		opts:     $.fn.rte.defaults,
+		toolbar:  null,
 		iframe:   null,
 		editable: null,
 		content:  '',
-		toolbar:  '',
 		id:       '',
+		_buttonsDef:{
+			format:{
+				onchange:function(e){
+					var selected = this.options[this.selectedIndex].value;
+					e.data.rte.formatText("formatblock", '<'+selected+'>');
+				},
+				empty:'Apply format',
+				className:'formatSel'
+			},
+			'class':{
+				onchange:function(e){
+					var selected = this.options[this.selectedIndex].value;
+					if(selected != 0){ // add class
+						var editable = e.data.rte.editable;
+						var _tag = selected.split(':');
+						if( _tag[0] === 'func'){
+							 eval(_tag[1]+'(e.data.rte);');
+						}else{
+							var tag  = editable.createElement(_tag[0]);
+							if(_tag[1])
+								tag.className = _tag[1];
+							e.data.rte.surroundContents(tag);
+						}
+					}
+					e.data.rte.syncFromEditor();
+				},
+				empty:'Apply style',
+				className:'classSel'
+			},
+			bold:{cmd:'bold',label:'bold',img:'format-text-bold.png'},
+			underline:{cmd:'underline',label:'underline',img:'format-text-underline.png'},
+			italic:{cmd:'italic',label:'italic',img:'format-text-italic.png'},
+			orderedList:{cmd:'insertorderedlist',label:'ordered list',img:'text_list_numbers.png'},
+			unorderedList:{cmd:'insertunorderedlist',label:'unordered list',img:'text_list_bullets.png'},
+			indent:[
+				{cmd:'indent',label:'indent',img:'text_indent.png'},
+				{cmd:'outdent',label:'outdent',img:'text_indent_remove.png'}
+			],
+			justify:[
+				{cmd:'justifyleft',label:'left alignment',img:'format-justify-left.png'},
+				{cmd:'justifycenter',label:'centered alignment',img:'format-justify-center.png'},
+				{cmd:'justifyright',label:'right alignment',img:'format-justify-right.png'},
+				{cmd:'justifyfull',label:'justify alignment',img:'format-justify-fill.png'}
+			],
+			link:[
+				{cmd:{from:'options',name:'createLink'},label:'create link',img:'link_add.png'},
+				{cmd:{from:'rte',name:'removeLinkCB'},label:'remove link',img:'link_break.png'}
+			],
+			image:{cmd:{from:'options',name:'insertImage'},label:'insert image',img:'image_add.png'},
+			table:{cmd:{from:'options',name:'insertTable'},label:'insert table',img:'table_add.png'},
+			remove:{cmd:{from:'rte',name:'cleanContents'},label:'remove format',img:'html_delete.png'},
+			toggle:{cmd:{from:'rte',name:'toggleEditModeCB'},label:'toggle edit mode',img:'tag.png',className:'toggle'},
+			spacer:{cmd:'spacer',label:null,img:null}
+		},
+
 		init: function(elmt,options){
 			// prepare options without overriding default ones
 			this.opts     = $.extend({}, $.fn.rte.defaults, options);
@@ -59,11 +112,10 @@
 			this.id       = elmt.attr('id')?elmt.attr('id'):(elmt.attr('name')?elmt.attr('name'):'');
 			this.textarea = elmt;
 			// create iframe elments
-			this.initIframe()
-				.initToolBar()     // create toolbar elements
-				.arrangeElements() //put all together
-				.initIframe();     // set iframe content and make it editable.
-			this.initEventHandlers();
+			this._initIframe()
+				._initToolBar()     // create toolbar elements
+				._arrangeElements() // put all together
+				._initIframe();     // set iframe content and make it editable.
 
 			if(this.textarea.is(':disabled')){
 				$(this.iframe).hide();
@@ -71,20 +123,20 @@
 				this.textarea.hide();
 			}
 
-			//- this.toggleEditMode();
-
+			// data synchronisation between textarea/iframe */
+			$(this.editable).bind('mouseup',{rte:this},function(e){e.data.rte.syncFromEditor();});
+			$(this.editable).bind('keyup',{rte:this},function(e){e.data.rte.syncFromEditor();});
+			this.textarea.bind('keyup',{rte:this},function(e){e.data.rte.syncFromTextarea();});
+			/*/ set to use paragraph on return to behave same on firefox as on ie. (doesn't work)
+			this.formatText("insertbronreturn",false);
+			this.formatText("enableinlinetableediting",false);*/
 		},
-
-		initIframe: function(){
+		_initIframe: function(){
 			if(! this.iframe){
 				this.iframe = document.createElement("iframe");
-        this.iframe.frameBorder=0;
-        this.iframe.frameMargin=0;
-        this.iframe.framePadding=0;
+				this.iframe.frameBorder = this.iframe.frameMargin = this.iframe.framePadding=0;
 				this.iframe.id = 'RTE_FRAME_'+this.id;
-				$(this.iframe)
-					.width(this.textarea.width())
-					.height(this.textarea.height());
+				$(this.iframe).width(this.textarea.width()).height(this.textarea.height());
 			}else{
 				var css = this.opts.css_url?"<link type='text/css' rel='stylesheet' href='"+this.opts.css_url+"' />":'';
 				this.content = this.textarea.val();
@@ -97,13 +149,12 @@
 						return true;
 					});
 				}
-				if(contentDoc){
+				if(contentDoc)
 					this.editable = contentDoc;
-				}else{// IE
+				else// IE
 					this.editable = this.iframe.contentWindow.document;
-				}
 				this.editable.open();
-				this.editable.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"</head><body class='frameBody' style='height:100%;margin:0;'>"+this.content+"</body></html>");
+				this.editable.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"<style>td{border:solid black 1px !important;}</style></head><body class='frameBody' style='height:100%;margin:0;'>"+this.content+"</body></html>");
 				this.editable.close();
 				this.editable.contentEditable = 'true';
 				this.editable.designMode = 'on';
@@ -112,34 +163,48 @@
 			}
 			return this;
 		},
-
-		arrangeElements: function(){
-			this.container = $('<div class="rte" id="RTE_'+this.id+'"></div>');
-			this.container.width(this.opts.width!=0 ? this.opts.width : this.textarea.width())
-				.css('text-align','center');
-			this.textarea.wrap(this.container).before(this.iframe);
+		_arrangeElements: function(){
+			this.textarea.wrap('<div class="rte" id="RTE_'+this.id+'"></div>').before(this.iframe);
 			$(this.iframe).before(this.toolbar);
-			this.container.height(this.opts.height!=0 ? this.opts.height : (parseInt(this.textarea.height())+parseInt(this.toolbar.height())+'px'))
+			this.container = $('#RTE_'+this.id);
+			this.container.width(this.opts.width!=0 ? this.opts.width : this.textarea.width())
+				.height(this.opts.height!=0 ? this.opts.height : (parseInt(this.textarea.height())+parseInt(this.toolbar.outerHeight())+'px'))
+				.css('text-align','center');
 			return this;
 		},
-
-		initToolBar: function(){
-			var formatSel = this.makeSelector('formatSel','Format elements',this.opts.formatOptions);
-			var classSel  = this.makeSelector('classSel', 'Style Elements', this.opts.classOptions);
-      this.toolbar = $("<div class='toolbar'>"+formatSel+" "+classSel+"&nbsp;&nbsp;</div>");
-      return this;
-    },
-
-    /** internal helpers to create selectors */
-    makeSelector: function(name,empty,opts){
-    	if(! this.opts.buttonSet.match(name.replace('Sel','')) )
-    		return '';
-    	var options = '';
-			for(var i in opts){
-				options += '<option value="'+opts[i][0]+'">'+opts[i][1]+'</option>';
+		_initToolBar: function(){
+			this.toolbar = $("<div class='toolbar'></div>");
+			// prepare all buttons
+			for(var i=0,bset=this.opts.buttonSet.split('|');i<bset.length;i++){
+				var bName = bset[i];
+				var bDef  = this._buttonsDef[bName];
+				if( ! bDef)
+					continue;
+				if( bDef.onchange){ // case of select buttons
+					var select = '<select class="'+bDef.className+'"><option value="" >'+bDef.empty+'</option>';
+					var opts = this.opts[bName+'Options'];
+					for(var z in opts)
+						select += '<option value="'+opts[z][0]+'">'+opts[z][1]+'</option>';
+					select += '</select>';
+					$(select).bind('change',{rte:this},bDef.onchange).appendTo(this.toolbar).css({margin:'0 0.4em'})
+				}else if( bDef instanceof Array){
+					for( var z=0,l=bDef.length; z<l;z++)
+						this._appendFormatButtonFromDef(bDef[z]);
+				}else{
+					this._appendFormatButtonFromDef(bDef);
+				}
 			}
-			if( opts !== '')
-				return '<select class="'+name+'">'+(empty!==''?'<option value="" >'+empty+'</option>':'')+options+'</select>';
+			return this;
+		},
+		_appendFormatButtonFromDef: function(def){
+			var cmd = def.cmd;
+			if( cmd instanceof Object){
+				if( cmd.from === 'rte')
+					cmd = this[cmd.name];
+				else if( cmd.from === 'options')
+					cmd = this.opts[cmd.name];
+			}
+			return this.appendFormatButton(cmd,def.label,def.img,def.className);
 		},
 
 		appendFormatButton: function(cmd,label,image,className){
@@ -151,90 +216,12 @@
 			var img = image?'<img src="'+this.opts.imgPath+image+'" alt="'+label+'" border="0" />':label;
 			var b = $('<a href="#" title="'+label+(className?'" class="'+className:'')+'">'+img+' </a>');
 			this.toolbar.append(b);
-			if( cmd.toString().match(/^(bold|italic|undo|redo|underline|formatblock|removeformat|justify|insert(un)?orderedlist|indent|outdent)/i) ){
-				if(! cmd.match(this.opts._buttonExp)){
-					if( (! cmd.match(/^(in|out)dent/)) || !this.opts._buttonExp.toString().match(/list/)){
-						b.remove();
-						return this;
-					}
-				}
+			if( cmd.toString().match(/^(bold|italic|undo|redo|underline|formatblock|removeformat|justify|insert(un)?orderedlist|(in|out)dent)/i) ){
 				b.bind('click',{rte:this},function(e){ e.data.rte.formatText(cmd); return false;});
 			}else{
 				b.bind('click',{rte:this},cmd);
 			}
 			return this;
-		},
-
-		initEventHandlers: function(){
-			var tb = this.toolbar;
-			// format selector
-			$('select.formatSel', tb).bind('change',{rte:this},function(e){
-				var selected = this.options[this.selectedIndex].value;
-				e.data.rte.formatText("formatblock", '<'+selected+'>');
-			});
-      //class selector
-			$('select.classSel', tb).bind('change',{rte:this},function(e){
-				var selected = this.options[this.selectedIndex].value;
-				if(selected != 0){ // add class
-					var editable = e.data.rte.editable;
-					var _tag = selected.split(':');
-					if( _tag[0] === 'func'){
-						 eval(_tag[1]+'(e.data.rte);');
-					}else{
-						var tag  = editable.createElement(_tag[0]);
-						if(_tag[1])
-							tag.className = _tag[1];
-						e.data.rte.surroundContents(tag);
-					}
-				}
-				e.data.rte.syncFromEditor();
-			});
-
-			this.appendFormatButton('bold','bold','format-text-bold.png');
-				this.appendFormatButton('underline','underline','format-text-underline.png')
-				.appendFormatButton('italic','italic','format-text-italic.png')
-				.appendFormatButton('spacer')
-				.appendFormatButton('insertorderedlist','ordered list','text_list_numbers.png')
-				.appendFormatButton('insertunorderedlist','unordered list','text_list_bullets.png')
-				.appendFormatButton('indent','indent','text_indent.png')
-				.appendFormatButton('outdent','outdent','text_indent_remove.png')
-				.appendFormatButton('spacer');
-			/* no undo redo for now seems buggy
-			if(! $.browser.msie ){ //--  not implemented under ie sorry for thoose who use it
-				this.appendFormatButton('undo','undo','arrow_undo.png')
-				.appendFormatButton('redo','redo','arrow_redo.png')
-				.appendFormatButton('spacer');
-			}*/
-			if( this.opts.buttonSet.match(/justify/) ){
-				this.appendFormatButton('justifyleft','left alignment','format-justify-left.png')
-					.appendFormatButton('justifycenter','centered alignment','format-justify-center.png')
-					.appendFormatButton('justifyright','right alignment','format-justify-right.png')
-					.appendFormatButton('justifyfull','justify alignment','format-justify-fill.png')
-					.appendFormatButton('spacer');
-			}
-			if( this.opts.buttonSet.match(/link/) ){
-				this.appendFormatButton(this.opts.createLink,'create link','link_add.png')
-					.appendFormatButton(this.removeLinkCB,'remove link','link_break.png');
-			}
-			if( this.opts.buttonSet.match(/image/) ){
-				this.appendFormatButton(this.opts.insertImage,'insert image','image_add.png');
-			}
-			if(  this.opts.buttonSet.match(/link|image/) ){
-				this.appendFormatButton('spacer');
-			}
-			if( this.opts.buttonSet.match(/remove/) )
-				this.appendFormatButton(this.cleanContents,'remove format','html_delete.png');
-			if( this.opts.buttonSet.match(/toggle/) )
-				this.appendFormatButton(this.toggleEditModeCB,'toggle edit mode','tag.png','toggle')
-
-			// data synchronisation between textarea/iframe */
-      $(this.editable).bind('mouseup',{rte:this},function(e){e.data.rte.syncFromEditor();});
-      $(this.editable).bind('keyup',{rte:this},function(e){e.data.rte.syncFromEditor();});
-      this.textarea.bind('keyup',{rte:this},function(e){e.data.rte.syncFromTextarea();});
-
-
-			// set to use paragraph on return to behave same on firefox as on ie.
-			this.formatText("insertbronreturn",false);
 		},
 
 		/** return a node created in the context of the editable document. */
@@ -251,17 +238,17 @@
 			this.textarea.val($(this.editable).find('body').html());
 		},
 
-    setSelectors: function(){
-    	if(! this.opts.buttonSet.match(/format|class/) )
-    		return;
-    	var node = this.getSelectedElement();
-    	var classIndex = formatIndex = 0;
-    	var classSel = $('select.classSel', this.toolbar).get(0);
-    	var formatSel=$('select.formatSel', this.toolbar).get(0);
+		setSelectors: function(){
+			if(! this.opts.buttonSet.match(/format|class/) )
+				return;
+			var node = this.getSelectedElement();
+			var classIndex = formatIndex = 0;
+			var classSel = $('select.classSel', this.toolbar).get(0);
+			var formatSel=$('select.formatSel', this.toolbar).get(0);
 
-    	while(node.parentNode && classIndex===0 && formatIndex===0 ){
+			while(node.parentNode && classIndex===0 && formatIndex===0 ){
 				var nName = node.nodeName.toLowerCase();
-    		if( formatSel && formatIndex === 0 ){
+				if( formatSel && formatIndex === 0 ){
 					for(var i=0;i<formatSel.options.length;i++){
 						if(nName==formatSel.options[i].value.toLowerCase()){
 							formatIndex=i;
@@ -269,7 +256,7 @@
 						}
 					}
 				}
-    		if( classSel &&classIndex === 0 ){
+				if( classSel &&classIndex === 0 ){
 					var cName = $(node).attr('class');
 					if( cName ){
 						for(var i=0;i<classSel.options.length;i++){
@@ -287,7 +274,7 @@
 			if(classSel)
 				classSel.selectedIndex=classIndex;
 			return true;
-    },
+		},
 
 		toggleEditModeCB: function(e){ e.data.rte.toggleEditMode(); return false},
 		toggleEditMode: function(){
@@ -394,7 +381,7 @@
 		},
 
 		/** return the parent node of the selection or range if returnRange is true */
-    getSelectedElement: function(returnRange) {
+		getSelectedElement: function(returnRange) {
 			if(this.textarea.is(':visible'))
 				return false;
 			this.editable.body.focus(); // ensure editable to be focused
@@ -416,7 +403,7 @@
 				node = range.commonAncestorContainer;
 			}
 			return returnRange?range:node;
-    },
+		},
 
 		formatText: function(command, option) {
 			if(this.textarea.is(':visible'))
@@ -469,31 +456,45 @@
 		*/
 		classOptions: [
 			['span:title','title'],
-      ['div:test','test']
+			['div:test','test']
 		],
 		/**
-		* set what are viewable or not in toolbar (you can't reorder them just make them available or not
+		* set what is viewable or not in toolbar and in which order
 		* list of available buttons/selector separated by pipes possible values are:
 		* format | class | bold | underline | italic | orderList | unorderList
 		* justify (enable all justify buttons)
-		* link | image | remove | toggle
+		* link | image | table | remove | toggle | spacer
 		*/
-		buttonSet: 'format|class|bold|underline|italic|orderedList|unorderedList|justify|link|image|remove|toggle',
+		buttonSet: 'format|class|bold|underline|italic|spacer|orderedList|unorderedList|indent|oudent|spacer|justify|spacer|link|image|spacer|remove|toggle',
 		/** overwritable callback function */
 		createLink: function(e){
-			var rte = e.data.rte;
 			var url = prompt('Insert link URL');
-			if(url.length)
-				rte.formatText('createlink',url);
+			if(url)
+				e.data.rte.formatText('createlink',url);
 			return false;
 		},
 		insertImage: function(e){
-			var rte = e.data.rte;
 			var url = prompt('Insert image URL');
-			if( url.length){
-				var i = rte.createElement('img');
+			if(url){
+				var i = e.data.rte.createElement('img');
 				i.src = url;
-				rte.insertNode(i);
+				e.data.rte.insertNode(i);
+			}
+			return false;
+		},
+		insertTable:function(e){
+			var size = prompt('Insert new table:\ngive size in terms of columns by rows.\nTable size: ','2x1');
+			if(size &&  size.length){
+				var t = e.data.rte.createElement('TABLE');
+				t.cellSpacing=0;
+				size = size.split(/\D/,2);
+				var maxx = parseInt(size[0]);
+				for(var y=0,maxy=parseInt(size[1]);y<maxy;y++){
+					var tr = t.insertRow(y);
+					for(var x=0; x<maxx;x++)
+						tr.insertCell(x).innerHTML='&nbsp;';
+				}
+				e.data.rte.insertNode(t);
 			}
 			return false;
 		}
