@@ -75,6 +75,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 					$choices->{$options['sort']}();
 					unset($options['sort']);
 				}
+				$options['values'][0] = langManager::msg('empty %s value',array($keyName));
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();
 			}

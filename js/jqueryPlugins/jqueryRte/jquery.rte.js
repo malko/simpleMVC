@@ -14,6 +14,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-07-22 - better hasSelection detection
 *            - 2009-07-16 - prefixing internal methods with underscore
 *                         - major rewriting of buttons (better for future evolution) and changes in options buttonSet where you can now set order of elements
 *            - 2009-07-15 - add insetTable support
@@ -365,7 +366,7 @@
 			var r = this.getSelectedElement(true);
 			if(r.htmlText !== undefined)
 				return r.htmlText===''?false:true;
-			return ( r.toString() == '')?false:true;
+			return ( r.startOffset-r.endOffset != 0)?true:false;
 
 		},
 		removeLinkCB: function(e){ e.data.rte.removeLink(); return false; },
