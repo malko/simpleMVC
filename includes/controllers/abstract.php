@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-07-20 - new static method getCurrentViewInstance()
 *            - 2009-04-28 - new static property $appMsgUseLangManager to allow appMsgs to be checked against loaded dictionaires in langManager.
 *            - 2009-04-28 - new method forward() call form with only one string dispatch parameter as returned by getCurrentDispatch() (ie: 'controller:action') (old way still working)
 *            - 2009-04-03 - add __isset method to also check for datas in view.
@@ -136,11 +137,30 @@ abstract class abstractController{
 			$this->view->setController($this);
 		}
 	}
+
 	/**
 	* retourne le nom du controller
 	*/
 	public function getName(){
 		return $this->name;
+	}
+
+	/**
+	* return the current view instance
+	* @param bool $failSafe if true then in case there's no living view instance will get a view from a default controller
+	*                       so ensure you to get a view of $defaultViewClass and with defaults view dirs sets
+	* @param viewInterface or null
+	*/
+	static public function getCurrentViewInstance($failSafe=false){
+		$livingView = call_user_func(array(self::$defaultViewClass,'hasLivingInstance'),true);
+		if( $livingView instanceof viewInterface)
+			return $livingView;
+		if(! $failSafe)
+			return null;
+		#- failsafe and get a view from default controller
+		$controller = (defined('DEFAULT_DISPATCH')?preg_replace('!:.*$!','',DEFAULT_DISPATCH):'default').'Controller';
+		$controller = new $controller;
+		return $controller->view;
 	}
 
 	###--- DISPATCH STACK MANAGEMENT ---###
