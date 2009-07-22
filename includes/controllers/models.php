@@ -65,10 +65,13 @@ abstract class modelsController extends abstractController{
 		));
 	}
 
-	function _isAllowedAction_($action,$dispatchRedirect=DEFAULT_DISPATCH){
-		if( isset($this->_allowedActions[$action]) && empty($this->_allowedActions[$action]) ){
-			self::appendAppMsg('unauthorized action!','error');
-			return $this->redirectAction($dispatchRedirect,null,array('modelType'=>$this->modelType));
+	function _isAllowedAction_($action,$msg=null,$dispatchRedirect=DEFAULT_DISPATCH){
+		if( empty($this->_allowedActions[$action]) ){
+			if( null === $msg)
+				$msg = 'unauthorized action!';
+			if($msg)
+				self::appendAppMsg($msg,'error');
+			return $this->redirectAction($dispatchRedirect,null,array('modelType'=>$this->modelType,'embed'=>empty($_GET['embed'])?'':'on'));
 		}
 		return true;
 	}
@@ -78,7 +81,7 @@ abstract class modelsController extends abstractController{
 	}
 
 	function listAction(){
-		$this->_isAllowedAction_('list',DEFAULT_DISPATCH);
+		$this->_isAllowedAction_('list');
 
 		$this->view->assign('_smvcAllowedAction',$this->_allowedActions);
 		$this->setDictName();
@@ -164,14 +167,11 @@ abstract class modelsController extends abstractController{
 		if(!empty($this->fieldFilters)) {
 			$count = count($datas) ;
 			$filter = '' ;
-			$pre = '' ;
-			foreach($this->fieldFilters as $name=>$value) {
+			foreach($this->fieldFilters as $name=>$value)
 				$filter .= "$pre$name,$value" ;
-				$pre = ',' ;
-			}
-			for($i = 0 ; $i < $count ; $i++){
+			$filter = implode(',',$filter);
+			for($i = 0 ; $i < $count ; $i++)
 				$datas[$i]['id'] .= '/_filters/'.$filter ;
-			}
 		}
 		$this->view->listDatas = $datas;
 	}
@@ -187,7 +187,7 @@ abstract class modelsController extends abstractController{
 	}
 
 	function editAction(){
-		$this->_isAllowedAction_('edit',DEFAULT_DISPATCH);
+		$this->_isAllowedAction_('edit');
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Identifiant d\'enregistrement à modifié manquant','error');
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
@@ -203,7 +203,7 @@ abstract class modelsController extends abstractController{
 	}
 
 	function formAction(){
-		$this->_isAllowedAction_(null===$this->view->_model_?'add':'edit',$this->getName().':list');
+		$this->_isAllowedAction_(null===$this->view->_model_?'add':'edit',null,$this->getName().':list');
 		$this->setDictName();
 		$this->view->datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
@@ -219,18 +219,25 @@ abstract class modelsController extends abstractController{
 	function setActiveAction(){
 		if( ! isset($_GET['id'])){
 			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
+			$this->_isAllowedAction_('list',false);
+			return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
 		}
 		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
-		if( ! $m instanceof abstractModel)
+		if( ! $m instanceof abstractModel){
 			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
+			$this->_isAllowedAction_('list',false);
+			return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
+		}
 		$m->{$_GET['prop']} = $_GET['state'];
 		$m->save();
+		$this->_isAllowedAction_('list',false);
 		return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
 	}
 
 	function saveAction(){
 		if( empty($_POST) ){
 			self::appendAppMsg('Aucune données à enregistrée.','error');
+			$this->_isAllowedAction_('list',false);
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 		}
 
@@ -250,13 +257,14 @@ abstract class modelsController extends abstractController{
 		#- get instance
 		$modelPKName = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 		if(! isset($_POST[$modelPKName]) ){
-			$this->_isAllowedAction_('add',DEFAULT_DISPATCH);
+			$this->_isAllowedAction_('add');
 			$model = abstractModel::getModelInstanceFromDatas($this->modelType,$_POST);
 		}else{
-			$this->_isAllowedAction_('edit',DEFAULT_DISPATCH);
+			$this->_isAllowedAction_('edit');
 			$model = abstractModel::getModelInstance($this->modelType,$_POST[$modelPKName]);
 			if(! $model instanceof $this->modelType ){
 				self::appendAppMsg('Mise à jour d\'un élément inexistant en base de données.','error');
+				$this->_isAllowedAction_('list',false);
 				return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 			}
 			$model->_setDatas($_POST);
@@ -273,33 +281,29 @@ abstract class modelsController extends abstractController{
 			$successMsg = "Enregistrement mis à jour.";
 		$model->save();
 		self::appendAppMsg($successMsg,'success');
-		
-		$args = array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')) ;
-		if (!empty($_GET['_filters']))
-			$args['_filters'] = $_GET['_filters'] ;
-		
-		return $this->redirectAction('list',$this->getName(), $args);
+		if( empty($this->_allowedActions['list'])){
+			$this->_isAllowedAction_('edit',false);
+			return $this->redirectAction('edit',$this->getName(),array('modelType'=>$this->modelType,'id'=>$model->PK,'embed'=>(empty($_GET['embed'])?'':'on'),'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
+		}
+		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on'),'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
 	}
 
 	function delAction(){
-		$this->_isAllowedAction_('del',DEFAULT_DISPATCH);
+		$this->_isAllowedAction_('del');
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Manque d\'information sur l\'action à effectuer.','error');
+			$this->_isAllowedAction_('list',false);
 			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
 		}
 		$model =  abstractModel::getModelInstance($this->modelType,$_GET['id']);
 		if(! $model instanceof $this->modelType ){
 			self::appendAppMsg('Enregistrement introuvable en base de données.','error');
-			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+		}else{
+			$model->delete();
+			self::appendAppMsg('Enregistrement supprimée.','success');
 		}
-		$model->delete();
-		self::appendAppMsg('Enregistrement supprimée.','success');
-		
-		$args = array('modelType'=>$this->modelType);
-		if (!empty($_GET['_filters']))
-			$args['_filters'] = $_GET['_filters'];
-		
-		return $this->redirectAction('list',$this->getName(),$args);
+		$this->_isAllowedAction_('list',false);
+		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
 	}
 
 	###--- methods for orderable models ---###
