@@ -165,13 +165,14 @@ abstract class modelsController extends abstractController{
 		}
 		// Add filters to id (for edit&trash buttons)
 		if(!empty($this->fieldFilters)) {
-			$count = count($datas) ;
-			$filter = '' ;
-			foreach($this->fieldFilters as $name=>$value)
-				$filter .= "$pre$name,$value" ;
-			$filter = implode(',',$filter);
-			for($i = 0 ; $i < $count ; $i++)
-				$datas[$i]['id'] .= '/_filters/'.$filter ;
+			if( $count = count($datas) {
+				$filter = array();
+				foreach($this->fieldFilters as $name=>$value)
+					$filter[] = "$name,$value" ;
+				$filter = implode(',',$filter);
+				for($i = 0 ; $i < $count ; $i++)
+					$datas[$i]['id'] .= '/_filters/'.$filter ;
+			}
 		}
 		$this->view->listDatas = $datas;
 	}
@@ -181,7 +182,7 @@ abstract class modelsController extends abstractController{
 			$filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
 			$this->fieldFilters = array_combine($filters[0],$filters[1]);
 		}
-		if(!empty($this->fieldFilters)) 
+		if(!empty($this->fieldFilters))
 			$this->view->assign($this->fieldFilters) ;
 		return $this->forward('form');
 	}
@@ -207,11 +208,11 @@ abstract class modelsController extends abstractController{
 		$this->setDictName();
 		$this->view->datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
-		
+
 		$args = array('modelType'=>$this->modelType) ;
 		if (!empty($_GET['_filters']))
 			$args['_filters'] = $_GET['_filters'] ;
-			
+
 		$this->view->actionUrl = $this->view->url('save',$this->getName(),$args, true);
 		$this->view->listUrl   = $this->view->url('list',$this->getName(),$args, true);
 	}
