@@ -9,7 +9,7 @@
 // Get model filters and add it to the new item url
 
 if( empty($this->fieldFilters) ){
-	$fitlers = null;
+	$filters = null;
 }else{
 	$filters = array() ;
 	foreach($this->fieldFilters as $name=>$value)
