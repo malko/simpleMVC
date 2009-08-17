@@ -165,7 +165,7 @@ abstract class modelsController extends abstractController{
 		}
 		// Add filters to id (for edit&trash buttons)
 		if(!empty($this->fieldFilters)) {
-			if( $count = count($datas) {
+			if( $count = count($datas) ){
 				$filter = array();
 				foreach($this->fieldFilters as $name=>$value)
 					$filter[] = "$name,$value" ;
