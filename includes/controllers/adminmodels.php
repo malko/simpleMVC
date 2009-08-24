@@ -52,7 +52,7 @@ class adminmodelsController extends modelsController{
 			return false;
 		$this->_config = parse_conf_file($this->configFile,true);
 		foreach($this->_config as $k => $v){
-			if( preg_match('!^(LIST(?:_FILTERS)?|ACTIONS|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
+			if( preg_match('!^(LIST(?:_FILTERS)?|ACTION|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
 				if( $m[1] === 'ACTION' )
 					$this->_allowedActions = 	json_decode($v,true);
 				else
