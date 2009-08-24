@@ -104,13 +104,12 @@ abstract class modelsController extends abstractController{
 
 		
 		// List Filters for URLs
+		$filter = array();
 		if(!empty($this->fieldFilters)) {
-			$filter = array();
 			foreach($this->fieldFilters as $name=>$value)
 				$filter[] = "$name,$value" ;
-			$filter = implode(',',$filter);
 		}
-		
+		$filter = '/_filters/'.implode(',',$filter);
 		
 		
 		if( count($models) ){
@@ -178,7 +177,7 @@ abstract class modelsController extends abstractController{
 		// Add filters to id (for edit&trash buttons)
 		if(!empty($this->fieldFilters)&& $count = count($datas)){
 			for($i = 0 ; $i < $count ; $i++)
-				$datas[$i]['id'] .= '/_filters/'.$filter ;
+				$datas[$i]['id'] .= $filter ;
 		}
 		$this->view->listDatas = $datas;
 	}
@@ -224,21 +223,22 @@ abstract class modelsController extends abstractController{
 	}
 
 	function setActiveAction(){
+		$filters=empty($_GET['_filters'])?'':urldecode($_GET['_filters']);
 		if( ! isset($_GET['id'])){
 			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
 			$this->_isAllowedAction_('list',false);
-			return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
+			return $this->redirectAction('list',null,array('modelType'=>$this->modelType,"_filters"=>$filters),true);
 		}
 		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
 		if( ! $m instanceof abstractModel){
 			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
 			$this->_isAllowedAction_('list',false);
-			return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
+			return $this->redirectAction('list',null,array('modelType'=>$this->modelType,"_filters"=>$filters),true);
 		}
 		$m->{$_GET['prop']} = $_GET['state'];
 		$m->save();
 		$this->_isAllowedAction_('list',false);
-		return $this->redirectAction('list',null,array('modelType'=>$this->modelType));
+		return $this->redirectAction('list',null,array('modelType'=>$this->modelType,"_filters"=>$filters),true);
 	}
 
 	function saveAction(){
