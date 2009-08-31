@@ -166,7 +166,7 @@ class js_viewHelper extends abstractViewHelper{
 		if( is_array($file) ){
 			$success = true;
 			foreach($file as $f)
-				$success &= $this->includes($f);
+				$success &= $this->includes($f,$absolutePath);
 			return $success;
 		}
 		#- check paths
@@ -232,7 +232,7 @@ class jqueryui_viewHelper extends jsPlugin_viewHelper{
 	* disabled: (bool)
 	*
 	*/
-	function button($selector,array $options=null){
+	function button($selector=".ui-button",array $options=null){
 		static $initiated;
 		if( ! isset($initiated)){
 			$this->_js_includes('js/ui.button.min.js');
