@@ -39,10 +39,10 @@
 
 	// plugin defaults settings
 	$.fn.DDmenu.defaults = {
-		show:'fadeIn', // one of false (equiv to show), show, slideDown or fadeIn
+		show:'show', // one of false (equiv to show), show, slideDown or fadeIn
 		hide:'hide',    // one of false (equiv to hide), hide, slideUp or fadeOut
-		speed:[250,0], // time for in/out animation can be a single value or a pair [(int) showSpeed, (int) hideSpeed]
-		fixedWidth:true, // does first level childs as same width as their top level parent
+		speed:[0,0], // time for in/out animation can be a single value or a pair [(int) showSpeed, (int) hideSpeed]
+		fixedWidth:false, // does first level childs as same width as their top level parent
 		vertical:false,
 		rtl:false
 	}

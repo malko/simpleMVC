@@ -58,7 +58,5 @@
 			}
 		}
 	};
-	$.extend({ DynCss: DynCss.load});
+	$.extend({DynCss: DynCss.load});
 })(jQuery);
-
-
