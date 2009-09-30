@@ -10,6 +10,9 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-09-22 - new vertical and rtl option
+*                         - now fixedWidth can be a width value or true to be equal to parent size.
+*                         - some slight modification to offer better support under ie
 *            - 2009-01-27 - new option fixedWidth
 * sample usage:
 * $('ul.menu').DDmenu();
@@ -39,9 +42,11 @@
 		show:'fadeIn', // one of false (equiv to show), show, slideDown or fadeIn
 		hide:'hide',    // one of false (equiv to hide), hide, slideUp or fadeOut
 		speed:[250,0], // time for in/out animation can be a single value or a pair [(int) showSpeed, (int) hideSpeed]
-		fixedWidth: true // does first level childs as same width as their top level parent
+		fixedWidth:true, // does first level childs as same width as their top level parent
+		vertical:false,
+		rtl:false
 	}
-
+	var DDmenuCount=0;
 	$.extend(DDMENU.prototype,{
 		menuId:false,
 		opts: {},
@@ -51,8 +56,17 @@
 				this.opts.speed = [this.opts.speed,this.opts.speed];
 			}
 			this.menuId = elmt.attr('id');
+			DDmenuCount++;
+			if(! this.menuId.length ){
+				this.menuId = elmt.attr('id','ddmenu_'+DDmenuCount);
+			}
 			// get all childs
-			var childs = elmt.children('li').each(function(){$(this).css('display','inline');});
+			var childs = elmt.children('li').css({
+				zoom: 1,
+				display:this.opts.vertical?'block':'inline'
+			});
+			childs.find('li').css({zoom:1,display:'block'});
+			childs.find('ul').css({padding:0,margin:0});
 			// lookup each submenus
 			var subs  = $('ul',elmt);
 			for(var i=0;i<subs.length;i++){
@@ -68,19 +82,22 @@
 		},
 		setSubPosition: function(sub){
 			sub = $(sub);
-			var parent = sub.parent();
-			var coords = parent.offset();
-			if(parent.parent('ul').attr('id')===this.menuId){
+			var parent = sub.parent(),
+				coords = parent.offset(),
+				firstSubLevel = parent.parent('ul').attr('id')===this.menuId?true:false;
+
+			if( this.opts.fixedWidth && ( firstSubLevel || this.opts.vertical || this.opts.fixedWidth!==true) )
+				sub.width(this.opts.fixedWidth===true?parent.outerWidth():this.opts.fixedWidth);
+
+			if(firstSubLevel){
 				style = {
-					left:  coords.left,
-					top:   coords.top+parent.height()-($.support!=undefined?($.support.boxModel?0:2):($.boxModel?0:2))
+					top:   parseInt(coords.top + (this.opts.vertical? 0 : parent.outerHeight() )),
+					left:  parseInt(coords.left + ( this.opts.vertical ? (this.opts.rtl? 0- sub.outerWidth(): parent.outerWidth()):0))
 				};
-				if( this.opts.fixedWidth )
-					style.width=parent.width();
 			}else{
 				style = {
-					top:  (coords.top-parent.parent('ul').offset().top),
-					left: parent.width()
+					top:  parseInt(coords.top-parent.parent('ul').offset().top),
+					left: this.opts.rtl? 0-sub.outerWidth():parent.outerWidth()
 				};
 			}
 			sub.css(style);
@@ -102,6 +119,7 @@
 			var ddmenu = e.data.DDmenu;
 			var sub = $(parent.children('ul').get(0));
 			ddmenu.setSubPosition(sub);
+
 			if(! sub)
 				return false;
 			if( ddmenu.opts.show ){
