@@ -23,7 +23,7 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 		}
 		#- include required Files
 		foreach($this->requiredFiles as $f)
-			$this->view->_js_includes($f);
+			$this->view->_js_includes($f,preg_match('!^http!',$f)?true:false);
 		#- exectute init method if exists
 		if(method_exists($this,'init'))
 			$this->init();
