@@ -1,0 +1,22 @@
+/** css pour les ratings */
+.rating .star{
+	width:16px;
+	height:16px;
+	font-size:2px;
+	float:left;
+	text-decoration:none;
+	vertical-align:bottom;
+}
+
+.rating .full  {
+	background:url(etoiles.gif) left top  no-repeat ;
+}
+.rating .half  {
+	background:url(etoiles.gif) left -16px no-repeat ;
+}
+.rating .empty {
+	background:url(etoiles.gif) left -32px no-repeat ;
+}
+.rating .hover {
+	background:url(etoiles.gif) left -48px no-repeat ;
+}

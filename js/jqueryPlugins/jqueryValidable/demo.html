@@ -1,0 +1,101 @@
+<html>
+<head>
+	<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" />
+	<!--link type="text/css" rel="stylesheet" href="jquery.validable.css" /-->
+	<script src="libs/jquery.min.js"></script>
+	<script src="libs/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="jquery.validable.js"></script>
+	<style type="text/css">
+		body{
+			font-size:12px;
+		}
+		form div { vertical-align:top; }
+		form label{
+			width:150px;
+			display:inline-block;
+		}
+		.ui-state-success{ background:#f0fff0; border:solid 1px green;}
+
+
+/** Validable */
+.validable-helpWrapper{
+	display:inline;
+	width:0;
+	padding-top:0.2em;
+	margin-left:.4em;
+	position:absolute;
+}
+.validable-helpTip{
+	padding:.2em .4em;
+	position: absolute;
+	white-space:nowrap;
+	margin-left:15px;
+	display:none;
+	z-index:999;
+
+}
+.validable-helpMsg{
+	font-size:.9em;
+	font-style:italic;
+}
+.validable-corner, .validable-cornerBg {
+	position:absolute;
+	width:0;
+	height:0;
+	background: none;
+	border-top:dotted transparent 7px ;
+	border-bottom:dotted transparent 7px;
+	border-right-width:14px;
+	border-right-style:solid;
+	border-left:none;
+	top:2px;
+	left:-15px;
+}
+.validable-cornerBg{
+	border-right-color:transparent;
+	top:-7px;
+	left:2px;
+}
+.validable-required{
+	color:#f00;
+	font-weight:bold;
+}
+
+	</style>
+</head>
+<body>
+	<form action="demo.html" method="get">
+
+		<div>Email <input type="text" name="email1" id="email1" class="required email"/></div>
+		<div><label for="email">Email</label> <input type="text" name="email" id="email" class="required email"/></div>
+		<div><label for="noms">nom</label> <input type="text" name="nom" id="nom" class="required" minlength="2" maxlength="5"/></div>
+		<div><label for="comment">comment</label><textarea name="comment" id="comment"></textarea></div>
+		<div>
+			<label for="gender">gender</label>
+			<label><input type="radio" name="gender" value="f" id="gender"/>Female</label>
+			<label><input type="radio" name="gender" value="m" />Male</label>
+		</div>
+		<div>
+			<label>select <select name="selector"><option>24</option><option>4</option><option>2</option><option>5</option></select></label>
+		</div>
+
+		<button type="button" id="reset">trester</button>
+		<input type="submit" name="submit" value="submit" />
+
+	</form>
+
+	<script type="text/javascript">
+		function check24(v){return (v<24)?true:false;}
+		$('form').validable({
+			rules:{
+				nom:{rule:/^[a-z]+$/,minlength:3,required:true,help:'ne doit contenir que des lettres miniscules'},
+				email1:{required:true,rule:/^[^@]+@[^@]+\.[a-z]{2,3}$/,help:'Doit etre un email valide'},
+				email:{required:true,rule:/^[^@]+@[^@]+\.[a-z]{2,3}$/,help:'Doit etre un email valide'},
+				gender:{required:true,help:'choose between male and female'},
+ 				comment:{minlength:5,maxlength:10, help:'doit faire entre 5 et 10 characteres'},
+				selector:{required:true,help:'ne doit pas etre 24',rule:check24}
+			}
+		}).find(':input').css({border:'solid black 1px'}).addClass('ui-corner-all');
+	</script>
+</body>
+</html>
