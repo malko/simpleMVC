@@ -18,6 +18,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-10-13 - baseView::addViewDir() method now avoid duplicate entry
 *            - 2009-06-22 - new viewInterface method hasLivingInstance()
 *            - 2009-02-06 - now viewInterface implements singleton pattern
 *            - 2008-10-13 - add support for "complex" helper method call (ie: _helperName_methodName)
@@ -109,6 +110,12 @@ class baseView implements viewInterface{
 
 	static protected $_instance = null;
 
+	protected function __construct(abstractController $controller=null,array $layout=null){
+		if( null !== $controller)
+			$this->setController($controller);
+		$this->setLayout($layout);
+	}
+
 	static public function getInstance(abstractController $controller=null,array $layout=null){
 		if( self::$_instance instanceof baseView ){
 			$view = self::$_instance;
@@ -133,11 +140,6 @@ class baseView implements viewInterface{
 			return $returnInstance?self::$_instance:true;
 		}
 		return $returnInstance?null:false;
-	}
-	protected function __construct(abstractController $controller=null,array $layout=null){
-		if(! is_null($controller) )
-			$this->setController($controller);
-		$this->setLayout($layout);
 	}
 
 	function __set($k,$v){
@@ -261,7 +263,7 @@ class baseView implements viewInterface{
 	* @return viewInterface for method chaining
 	*/
 	public function setLayout(array $layout=null){
-		$this->_layout = is_null($layout)?self::$defaultLayout:$layout;
+		$this->_layout = (null===$layout?self::$defaultLayout:$layout);
 		return $this; #- for chaining
 	}
 
@@ -274,6 +276,11 @@ class baseView implements viewInterface{
 	public function addViewDir($viewDir){
 		if(! is_dir($viewDir) )
 			throw new Exception("$viewDir is not a valid directory");
+		#- if already set remove it first so it appear only once at last position
+		if( ($tmp = array_search($viewDir,$this->_viewDirs,true)) !== false){
+			unset($this->_viewDirs[$tmp]);
+			$this->_viewDirs = array_values($this->_viewDirs);
+		}
 		$this->_viewDirs[] = $viewDir;
 		return $this;
 	}

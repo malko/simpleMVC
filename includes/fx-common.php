@@ -284,28 +284,20 @@ function show(){
 	$param = $args[$argc-1];
 	$halt  = false;
 
-	if($param!=='trace'){ //-- detect trace
-		$getTrace = (is_string($param) && substr_count($param,'trace'))?array():false;
-	}else{
-		$getTrace = array();
-		array_pop($args);
-	}
-	if($argc>1 && $param === 'exit'){ //-- detect exit
-		$halt = true;
-		array_pop($args);
-	}
-	if( is_string($param) && preg_match('!^color:([^;]+)!',$param,$m)){ //-- detect color
-		array_pop($args);
-		$color = $m[1];
-		if(substr_count($param,'exit')){
+	if(is_string($param)){
+		if(preg_match('!(^|;)trace(;|$)!',$param))
+			$getTrace = array();
+		if(preg_match('!(^|;)exit(;|$)!',$param))
 			$halt = true;
-		}
-	}else{
-		$color = 'red';
+		$color = match('!(?:^|;)color:([^;]+)(?:;$)!',$param);
+		if( $color || $halt || isset($getTrace))
+			array_pop($args);
 	}
+	if(empty($color))
+		$color = 'red';
 
 	$trace = debug_backtrace();
-	if(false!==$getTrace){
+	if(isset($getTrace)){
 		$_trace = $trace;
 		array_shift($_trace);
 		foreach($_trace as $k=>$v){
