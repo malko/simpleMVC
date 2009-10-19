@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-10-19 - bug correction in write_conf_file() when adding new vars on file not terminated by a new line
 *            - 2009-06-25 - bug correction (notice on undefined $var) in write_conf_file() when first lines are empties or comments
 *            - 2009-02-05 - parse_conf_file will return empty array on error instead of false when $out is true
 *            - 2009-02-04 - now write_conf_file keep empty lines
@@ -104,14 +105,14 @@ function write_conf_file($file,array $config,$force=false){
 	if(is_array($oldconf)){
 		$follow = false;
 		foreach($oldconf as $linenb => $line){
-			if( preg_match("!^\s*(#|$)!",$line)){# keep comment and empty lines
-				$newconf[$linenb]=$line;
+			if( preg_match("!^\s*(#|$)!",$line)){# keep comment and empty lines (ensure end of line)
+				$newconf[$linenb]=preg_match('!\r?\n$!',$line)?$line:"$line\n";
 				continue;
 			}elseif( (!$follow) && preg_match("!^\s*([^#=]+)=([^#\\\\]*)(\\\\?)!",$line,$match)){ # first line of config var
 				$var = trim($match[1]); # get varname
 
-				if(! array_key_exists($var,$config)) # not set so keep the line as is
-					$newconf[$linenb] = $line;
+				if(! array_key_exists($var,$config)) # not set so keep the line as is (ensure end of line)
+					$newconf[$linenb] = preg_match('!\r?\n$!',$line)?$line:"$line\n";
 				else # we have a new value we write it
 					$newconf[$linenb] = _write_conf_line($var,$config[$var],$line);
 
