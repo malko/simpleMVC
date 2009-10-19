@@ -7,6 +7,7 @@
 	div.fieldSet .ui-widget-header{ display:block;}
 	div.fieldSet .ui-widget-header, div.fieldSet, div.formInput{ padding:5px;margin-bottom:5px;}
 	div.fieldSet .ui-widget-header .ui-icon{ float:right;}
+	code{ white-space:pre; font-size:.8em; display:block;border-width:1px; border-style:dotted; padding:.4em;}
 	.editarea{ width:98%;height:350px;}
 </style>
 <h1><?=$this->modelType?> settings </h1>
@@ -27,7 +28,7 @@
 		<input type="text" name="_toStr" value="<?=htmlentities($this->_toStr,ENT_COMPAT,'UTF-8')?>" />
 	</label>
 	<br />
-	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
@@ -54,7 +55,7 @@
 		<br />
 		<div class="ui-buttonset-small">
 			<button type="button" class="ui-button ui-button-circle-plus" id="listAddField"><?= langManager::msg('add list field')?></button>
-		<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+			<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 		</div>
 	</div>
 </form>
@@ -87,7 +88,7 @@
 		<div id="fieldList">
 			<?php
 					if( $this->datasDefs ){
-						$types = array('--- default ---','skip','select','text','textConfirm','password','passwordConfirm','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
+						$types = array('--- default ---','skip','select','selectbuttonset','text','textConfirm','password','passwordConfirm','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
 						$types = array_combine($types,$types);
 						$fieldGroupMethod = '';
 						if( is_object($this->fieldOrder)){
@@ -142,16 +143,60 @@
 			<label><input type="radio" name="fieldGroupMethod" value="tabs" <?= 'tabs'===$fieldGroupMethod?' checked="checked"':''?>/> Tabs</label>
 			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
 		</div>
-		<div class="ui-buttonset">
-			<button type="button" id="resetFieldsOrder" class="ui-button ui-button-trash">Reset fields orders settings</button>
-			<button type="button" id="addFieldSet" class="ui-button">Create an input group container (fieldset)</button>
+		<div class="ui-buttonset ui-buttonset-small">
+			<button type="button" id="resetFieldsOrder" class="ui-button ui-button-arrowreturnthick-1-w"><?php echo langManager::msg('Reset fields orders settings')?></button>
+			<button type="button" id="addFieldSet" class="ui-button ui-button-circle-plus"><?php echo langManager::msg('Add input group container')?></button>
 			<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 		</div>
 	</div>
 </form>
 
+<form action="<?= $this->url('setValidations',null,array('modelType'=>$this->modelType)) ?>" method="post" id="validations">
+	<h3><a name="validations">User input validations</a></h3>
+	<div id="validations-pannel">
+		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
+			<strong>Notes: </strong>
+			<br />
+			User input validation use our jquery.validable plugin here's how you define your rules.<br />
+			All options are optionnals, here a sample exemple:
+			<code>array(
+  'stateElemt'=>'label'
+	'useIcon'   => true
+	'rules'     => array(
+      <span id="validableTemplate">'inputName' => array(
+      'rule'      => '/regexp or javascript callback validation function name/',
+      'maxlength' => int,
+      'minlength' => int,
+      'required'  => bool,
+      'help'      => 'message to display next the input'
+    ),</span>
+  )
+)
+</code>
+<div id="validableTags"> name of user inputs available: <br /></div>
+<script>
+//-- add here quick rule helper
+var validableTags=[];
+$(':input[id^=inputType]').each(function(){
+	validableTags.push(this.id.replace(/^[^\[]+\[([^\]]+)\]$/,'$1'));
+});
+$('#validableTags').append(validableTags.join(',&nbsp;'));
+</script>
+		</div>
+	<?php
+		echo $this->editarea(
+			'validableRules',
+			(empty($_POST['validableRules'])?(empty($this->_modelConfig["VALIDATION"])?'':var_export($this->_modelConfig["VALIDATION"],1)):$_POST['validableRules']),
+			array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')
+		);
+	?>
+	<br />
+	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+	</div>
+</form>
+
 <form action="<?= $this->url('setMessages',null,array('modelType'=>$this->modelType)) ?>" method="post" id="messages">
-	<h3><a name="messages">Field names</a></h3>
+	<h3><a name="messages">Field names translations</a></h3>
 	<div id="messages-pannel">
 	<?php
 		echo $this->formInput('setLang',langManager::getDefaultLang(),'select',array('values'=>$this->langs,'label'=>'Display Lang'));
@@ -161,14 +206,17 @@
 				foreach($ids as $f){
 					if( $f === $this->primaryKey)
 						continue;
-					echo $this->formInput("msgs[$lang][".str_replace(']','\]',$f).']',(isset($this->messages[$lang][$f])?$this->messages[$lang][$f]:null),'text',array('label'=>$f))."\n";
+					echo $this->formInput("msgs[$lang][".str_replace(']','\]',$f).']',(isset($this->messages[$lang][$f])?$this->messages[$lang][$f]:null),'text',array('label'=>$f,'formatStr'=>'<div class="formInput">%label: %input <small>( default: '.langManager::msg($f,null,"adminmodels|default",$lang)." )</small></div>\n"));
 				}
 				echo "</div>";
 			}
 		}
 	?>
 	<br />
-	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+	<div class="ui-buttonset ui-buttonset-small">
+		<button type="button" class="ui-button ui-button-circle-plus" id="addTranslationField"><?= langManager::msg('add new field name translation'); ?></button>
+		<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+	</div>
 	</div>
 </form>
 
@@ -184,7 +232,7 @@
 		echo $this->formInput('actions[list]',empty($list)?0:1,'radio',array('label'=>'Can be listed','values'=>array('no','yes')));
 	?>
 	<br />
-	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
@@ -192,7 +240,7 @@
 	<h3><a name="config">Edit Configuration File</a></h3>
 	<div id="config-pannel">
 		<?= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
-		<button type="submit" class="ui-button ui-button-disk">save</save>
+		<button type="submit" class="ui-button ui-button-small-disk">save</save>
 	</div>
 </form>
 
@@ -200,7 +248,7 @@
 	<h3><a name="model">Edit Model File</a></h3>
 	<div id="model-pannel">
 		<?= $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
-		<button type="submit" class="ui-button ui-button-disk">save</save>
+		<button type="submit" class="ui-button ui-button-small-disk">save</save>
 	</div>
 </form>
 <a  href="<?= $this->listUrl ?>" class="ui-button ui-button-arrowreturnthick-1-w" style="float:right;"><?= langManager::msg('back to list'); ?></a>
@@ -213,7 +261,7 @@ $this->js('
 	var styleClass = "ui-widget-content ui-corner-all";
 
 	//-- make this an accordion
-	var formsIds = {"string":0,"list":1,"forms":2,"messages":3,"actions":4,"config":5,"model":6};
+	var formsIds = {"string":0,"list":1,"forms":2,"validations":3,"messages":4,"actions":5,"config":6,"model":7};
 	var activeForm =  window.location.href.match(/#\/?(\w+)/);
 	activeForm = (null!==activeForm && activeForm.length)?formsIds[activeForm[1]]:1;
 	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:activeForm,collapsible:true});
@@ -298,6 +346,18 @@ $this->js('
 		$("div.langMessages").hide();
 		$("div#langMessages_"+l).show();
 	}).change();
+	$("#addTranslationField").click(function(){
+		var fName = prompt("'.addslashes(langManager::msg('message id:')).'");
+		if(! fName)
+			return;
+		// detection des langues possibles
+		$("select#setLang option").each(function(i){
+			var l = this.innerHTML;
+			$("#langMessages_"+l).append("<div class=\"formInput\">"+fName+": <input type=\"text\" name=\"msgs["+l+"]["+fName+"]\" value=\"\" /></div>");
+		});
+	});
+
+
 	//-- add form option client side validation
 
 	//--- test options are valid json

@@ -14,10 +14,12 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-10-12 - now attach rteInstance to the element
+*                         - allow call of static methods val, and toggleEditMode
 *            - 2009-07-22 - better hasSelection detection
 *            - 2009-07-16 - prefixing internal methods with underscore
 *                         - major rewriting of buttons (better for future evolution) and changes in options buttonSet where you can now set order of elements
-*            - 2009-07-15 - add insetTable support
+*            - 2009-07-15 - add insertTable support
 *            - 2009-03-27 - add rangeObject parameter to insertNode() method
 *                         - getSelection will now trigger focus on editable document (prevent image insertion outside editable document when not focused under ie)
 *            - 2009-03-26 - now edited documents will use standard mode in ie6 instead of quirks mode
@@ -31,20 +33,29 @@
 */
 
 (function($){
-	$.fn.rte = function(options) {
+	$.fn.rte = function() {
 		// if doable we transform textarea to rich text editors
-		if(document.designMode || document.contentEditable) // iterate and reformat each matched element
-			return this.each(function(){ RTE($(this),options); });
-		else
+		if(document.designMode || document.contentEditable){
+			// iterate and reformat each matched element
+			var args = arguments;
+			return this.each(function() { RTE($(this),args); });
+		}else{
 			return this;
+		}
 	}
-	function RTE(elmt, options ){
-		return this instanceof RTE ? this.init(elmt,options): new RTE(elmt, options);
+ function RTE(elmt, args){
+		if( this instanceof RTE  ){
+			if( typeof(args[0]) == "string")
+				return this.init(elmt,args[0],args[1]?args[1]:null);
+			else
+				return this.init(elmt,args[0]);
+		}
+		return new RTE(elmt,args);
 	}
 
 	$.extend(RTE.prototype,{
-		opts:     $.fn.rte.defaults,
-		container: null,
+		opts:     null,
+		container:null,
 		textarea: null,
 		toolbar:  null,
 		iframe:   null,
@@ -106,22 +117,43 @@
 			spacer:{cmd:'spacer',label:null,img:null}
 		},
 
-		init: function(elmt,options){
+		init: function(elmt,options,methodParams){
 			// prepare options without overriding default ones
-			this.opts     = $.extend({}, $.fn.rte.defaults, options);
-			this.opts._buttonExp = new RegExp('.*('+this.opts.buttonSet+').*','i'); // used internally to easily [en/dis]able some buttons
-			this.id       = elmt.attr('id')?elmt.attr('id'):(elmt.attr('name')?elmt.attr('name'):'');
-			this.textarea = elmt;
+			if( typeof(options) == 'string'){
+				//check for living Instance
+				var instance = elmt.get(0).rteInstance;
+				if(! instance instanceof RTE ){
+					this.init(elmt);
+					instance = elmt.get(0).rteInstance;
+				}
+				switch(options){
+					case 'val':
+						elmt.val(methodParams);
+						instance.syncFromTextarea();
+						break;
+					case 'toggleEditMode':
+						instance.toggleEditMode();
+						break;
+				}
+				return instance;
+			}
+			self = this;
+			elmt.get(0).rteInstance = self;
+			self.opts     = $.extend({}, $.fn.rte.defaults, options);
+			self.opts._buttonExp = new RegExp('.*('+this.opts.buttonSet+').*','i'); // used internally to easily [en/dis]able some buttons
+			self.id       = elmt.attr('id')?elmt.attr('id'):(elmt.attr('name')?elmt.attr('name'):'');
+			self.textarea = elmt;
+
 			// create iframe elments
-			this._initIframe()
+			self._initIframe()
 				._initToolBar()     // create toolbar elements
 				._arrangeElements() // put all together
 				._initIframe();     // set iframe content and make it editable.
 
-			if(this.textarea.is(':disabled')){
-				$(this.iframe).hide();
+			if(self.textarea.is(':disabled')){
+				$(self.iframe).hide();
 			}else{
-				this.textarea.hide();
+				self.textarea.hide();
 			}
 
 			// data synchronisation between textarea/iframe */
@@ -137,7 +169,7 @@
 				this.iframe = document.createElement("iframe");
 				this.iframe.frameBorder = this.iframe.frameMargin = this.iframe.framePadding=0;
 				this.iframe.id = 'RTE_FRAME_'+this.id;
-				$(this.iframe).width(this.textarea.width()).height(this.textarea.height());
+				//$(this.iframe).width(this.textarea.width()).height(this.textarea.height());
 			}else{
 				var css = this.opts.css_url?"<link type='text/css' rel='stylesheet' href='"+this.opts.css_url+"' />":'';
 				this.content = this.textarea.val();
@@ -155,7 +187,7 @@
 				else// IE
 					this.editable = this.iframe.contentWindow.document;
 				this.editable.open();
-				this.editable.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"<style>td{border:solid black 1px !important;}</style></head><body class='frameBody' style='height:100%;margin:0;'>"+this.content+"</body></html>");
+				this.editable.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"<style>td{border:solid black 1px !important;}</style></head><body class='frameBody' style='height:100%;width:100%;margin:0;'>"+this.content+"</body></html>");
 				this.editable.close();
 				this.editable.contentEditable = 'true';
 				this.editable.designMode = 'on';
@@ -168,9 +200,13 @@
 			this.textarea.wrap('<div class="rte" id="RTE_'+this.id+'"></div>').before(this.iframe);
 			$(this.iframe).before(this.toolbar);
 			this.container = $('#RTE_'+this.id);
-			this.container.width(this.opts.width!=0 ? this.opts.width : this.textarea.width())
-				.height(this.opts.height!=0 ? this.opts.height : (parseInt(this.textarea.height())+parseInt(this.toolbar.outerHeight())+'px'))
+			var height = this.opts.height!=0 ? this.opts.height : (parseInt(this.textarea.height())+parseInt(this.toolbar.outerHeight()));
+			this.container.width((this.opts.width!=0 ? this.opts.width : this.textarea.width())+'px')
+				.height( height+'px')
 				.css('text-align','center');
+			height -= parseInt(this.toolbar.height());
+			$(this.iframe).height(height+'px');
+			$(this.textarea).height(height+'px');
 			return this;
 		},
 		_initToolBar: function(){
@@ -195,8 +231,8 @@
 					this._appendFormatButtonFromDef(bDef);
 				}
 			}
-			return this;
-		},
+      return this;
+    },
 		_appendFormatButtonFromDef: function(def){
 			var cmd = def.cmd;
 			if( cmd instanceof Object){
@@ -239,17 +275,17 @@
 			this.textarea.val($(this.editable).find('body').html());
 		},
 
-		setSelectors: function(){
-			if(! this.opts.buttonSet.match(/format|class/) )
-				return;
-			var node = this.getSelectedElement();
-			var classIndex = formatIndex = 0;
-			var classSel = $('select.classSel', this.toolbar).get(0);
-			var formatSel=$('select.formatSel', this.toolbar).get(0);
+    setSelectors: function(){
+    	if(! this.opts.buttonSet.match(/format|class/) )
+    		return;
+    	var node = this.getSelectedElement();
+    	var classIndex = formatIndex = 0;
+    	var classSel = $('select.classSel', this.toolbar).get(0);
+    	var formatSel=$('select.formatSel', this.toolbar).get(0);
 
-			while(node.parentNode && classIndex===0 && formatIndex===0 ){
+    	while(node.parentNode && classIndex===0 && formatIndex===0 ){
 				var nName = node.nodeName.toLowerCase();
-				if( formatSel && formatIndex === 0 ){
+    		if( formatSel && formatIndex === 0 ){
 					for(var i=0;i<formatSel.options.length;i++){
 						if(nName==formatSel.options[i].value.toLowerCase()){
 							formatIndex=i;
@@ -257,7 +293,7 @@
 						}
 					}
 				}
-				if( classSel &&classIndex === 0 ){
+    		if( classSel &&classIndex === 0 ){
 					var cName = $(node).attr('class');
 					if( cName ){
 						for(var i=0;i<classSel.options.length;i++){
@@ -275,7 +311,7 @@
 			if(classSel)
 				classSel.selectedIndex=classIndex;
 			return true;
-		},
+    },
 
 		toggleEditModeCB: function(e){ e.data.rte.toggleEditMode(); return false},
 		toggleEditMode: function(){
@@ -382,7 +418,7 @@
 		},
 
 		/** return the parent node of the selection or range if returnRange is true */
-		getSelectedElement: function(returnRange) {
+    getSelectedElement: function(returnRange) {
 			if(this.textarea.is(':visible'))
 				return false;
 			this.editable.body.focus(); // ensure editable to be focused
@@ -404,7 +440,7 @@
 				node = range.commonAncestorContainer;
 			}
 			return returnRange?range:node;
-		},
+    },
 
 		formatText: function(command, option) {
 			if(this.textarea.is(':visible'))
@@ -457,7 +493,7 @@
 		*/
 		classOptions: [
 			['span:title','title'],
-			['div:test','test']
+      ['div:test','test']
 		],
 		/**
 		* set what is viewable or not in toolbar and in which order

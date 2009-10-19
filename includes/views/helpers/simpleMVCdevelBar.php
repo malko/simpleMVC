@@ -27,7 +27,7 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 			foreach($dynCss as $css)
 				$this->js('$.DynCss("'.$css.'","simpleMVCDynCssAppend");');
 		}
-		return '<div id="sMVCtoolBar" class="ui-buttonset ui-buttonset-normal"><button id="sMVCtoolBarToggle" class="ui-button ui-button-circle-triangle-w"></button>'
+		return '<style>#sMVCpannels .sMVCpannel,#sMVCmodelsList {display:none}</style><div id="sMVCtoolBar" class="ui-buttonset ui-buttonset-small"><button id="sMVCtoolBarToggle" class="ui-button ui-button-circle-triangle-w"></button>'
 		.'<button id="sMVCmodels" class="ui-button ui-button-gear">Models</button><button id="sMVCshow" class="ui-button ui-button-info">Show </button>'
 		.'<button id="sMVCphperr" class="ui-button ui-button-alert">PHP Errors </button><button id="sMVCdb" class="ui-button ui-button-clock">Db::profiler</button></div>'
 		.'<div id="sMVCpannels"><div id="sMVCshow_div" class="sMVCpannel">

@@ -22,14 +22,39 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 				$this->view->_js_loadPlugin($p);
 		}
 		#- include required Files
-		foreach($this->requiredFiles as $f)
+		foreach($this->requiredFiles as $f){
 			$this->view->_js_includes($f,preg_match('!^http!',$f)?true:false);
+		}
 		#- exectute init method if exists
 		if(method_exists($this,'init'))
 			$this->init();
 		#- register plugin
 		$this->view->_js_registerPlugin($this);
 	}
+
+	static function _optionString($opts,$indentSize=0){
+		if(! is_array($opts)){
+			if( null===$opts)
+				return '';
+			if( preg_match('!^\s*function\s*\(!i',$opts) )
+				return $opts;
+			if(! preg_match('!^\s*(\[.*\]|\{.*\}|["\'].*["\'])\s*$!s',$opts) )
+				$opts = "'$opts'";
+			return $opts;
+		}
+		$str = array();
+		$isObject = false;
+		foreach($opts as $k=>$opt){
+			if((! $isObject) && ! is_numeric($k) )
+				$isObject = true;
+			$str[]= ($isObject?"$k:":'').(is_bool($opt)?($opt?'true':'false'):self::_optionString($opt,$indentSize>0?$indentSize+1:0));
+		}
+		$indentStr = "\n".str_repeat("\t",$indentSize);
+		$indentStrEnd = "\n".str_repeat("\t",max(0,$indentSize-1));
+		$str = implode(",$indentStr",$str);
+		return $isObject?'{'."$indentStr$str$indentStrEnd}":"[$indentStr$str$indentStrEnd]";
+	}
+
 	final static public function uniqueId(){
 		static $id;
 		if( ! isset($id) )

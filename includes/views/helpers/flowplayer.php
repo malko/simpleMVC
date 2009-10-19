@@ -7,7 +7,7 @@ class flowplayer_viewHelper extends jsPlugin_viewHelper{
 		'js/flowplayer/jquery.tools.min.js',
 	);
 	public $requiredPlugins = array('jquery');
-	static public $swfPath  = 'js/flowplayer/flowplayer-3.1.1.swf';
+	static public $swfPath  = 'js/flowplayer/flowplayer-3.1.3.swf';
 
 	static private $_currentId = 0;
 
@@ -72,11 +72,12 @@ class flowplayer_viewHelper extends jsPlugin_viewHelper{
 		#- making options
 		if( is_string($flvUrl) ){
 			$options['clip']['url'] = $flvUrl;
+			if( isset($options['xitiTracking']))
+				$this->xitiTracking($options);
 		}else{
 			$options['playlist'] = $flvUrl;
 			$options['plugins']['controls']['playlist']=true;
 		}
-
 		#- options display  (used for overlay)
 
 		$optStr = self::_optionString($options,1);
@@ -105,29 +106,24 @@ class flowplayer_viewHelper extends jsPlugin_viewHelper{
 				},
 				// when overlay is closed, unload our player
 				onClose: function() {
-					player_$id.unload();
+					player_$id.unload().stop();
 				}
 			});
 		");
 		return $maskedPlayer;
 	}
 
-	static function _optionString($opts,$indentSize=0){
-		if(! is_array($opts)){
-			if(! preg_match('!^\s*(\[.*\]|\{.*\}|["\'].*["\'])\s*$$!s',$opts) )
-				$opts = "'$opts'";
-			return $opts;
-		}
-		$str = array();
-		$isObject = false;
-		foreach($opts as $k=>$opt){
-			if((! $isObject) && ! is_numeric($k) )
-				$isObject = true;
-			$str[]= ($isObject?"$k:":'').(is_bool($opt)?($opt?'true':'false'):self::_optionString($opt,$indentSize>0?$indentSize+1:0));
-		}
-		$indentStr = "\n".str_repeat("\t",$indentSize);
-		$indentStrEnd = "\n".str_repeat("\t",max(0,$indentSize-1));
-		$str = implode(",$indentStr",$str);
-		return $isObject?'{'."$indentStr$str$indentStrEnd}":"[$indentStr$str$indentStrEnd]";
+	function xitiTracking(&$options){
+		$contentType = 'video';
+		$level2 = $this->level2Xiti();
+		$label = match('!^.*?/?([^/\.]+)\.(.*)$!',$options['clip']['url'],1);
+		$label  = preg_replace('!^-_!','',str_replace('%3A',':',$this->urlWordCleaner($label,':')));
+		$options['clip']['onStart']  = "function(clip) { xt_rm('$contentType','$level2','$label','play');}";
+		$options['clip']['onPause']  = "function(clip) { xt_rm('$contentType','$level2','$label','pause');}";
+		$options['clip']['onStop']   = "function(clip) { xt_rm('$contentType','$level2','$label','stop');}";
+		$options['clip']['onFinish'] = "function(clip) { xt_rm('$contentType','$level2','$label','stop');}";
+		$options['clip']['onUnload'] = "function(clip) { xt_rm('$contentType','$level2','$label','stop');}";
+		$options['plugins']['controls']['stop'] = true;
+		$this->_js_script("$(window).unload(function(clip) { xt_rm('$contentType','$level2','$label','stop'); });");
 	}
 }

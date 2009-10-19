@@ -57,7 +57,7 @@ function show(){
 	function uiButton(icon,label,opts,returnHTML){
 		var o = {click:false,tagName:'button',id:false};
 		if( typeof(opts) != 'undefined') o = $.extend(o,opts);
-		var bt = $('<'+o.tagName+(o.id?' id="'+o.id+'"':'')+' class="ui-state-default ui-corner-all" style="vertical-align:bottom;margin:0 0.2em;"><span class="ui-icon ui-icon-'+icon+'"></span></'+o.tagName+'>');
+		var bt = $('<'+o.tagName+(o.id?' id="'+o.id+'"':'')+(o.tagName==='button'?' type="button"':'')+' class="ui-state-default ui-corner-all" style="vertical-align:bottom;margin:0 0.2em;"><span class="ui-icon ui-icon-'+icon+'"></span></'+o.tagName+'>');
 		if(typeof(label)!='undefined' && label.length){
 			if( $.browser.msie ){
 				bt.append(label).css({position:'relative',paddingLeft:'4px'});

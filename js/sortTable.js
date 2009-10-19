@@ -10,6 +10,7 @@
 *
 * @since 2006-08-24
 * @changelog
+*            - 2009-09-01 - add arrowBefore and noArrow options
 *            - 2009-06-24 - add bodyRendering callback option
 *            - 2009-04-01 - add saveUserPrefs options to save user preferences by cookies
 * @example
@@ -52,8 +53,10 @@ sortTable = {
 		pageSize: 10,
 		pageNb: 1,
 		// html to append to header cells to show the sorting order //
+		arrowBefore:false,
 		upArrow: ' &uarr;',
 		downArrow: ' &darr;',
+		noArrow:'',
 		saveUserPrefs:true, // whether or not to use cookies to save user prefs
 		// list of possible page size users can set manually, put false if you don't want to allow them to change pageSize
 		userPageSize: [10,20,30,50,['all','all']],
@@ -262,6 +265,7 @@ sortTable = {
 	_renderTh: function(tid,col){
 		// get label
 		var label = this.headers[tid][col];
+		var options = this.options[tid];
 		var unsortable = false;
 		if(typeof label == 'object'){
 			unsortable = label.unsortable;
@@ -286,7 +290,17 @@ sortTable = {
 		// add arrow if required
 		if( col===this.sortingCol[tid] ){
 			var w = this.sortingWay[tid];
-			cell.innerHTML += this.options[tid][((this.sortingWay[tid]=='asc')?'downArrow':'upArrow')];
+			if( this.options[tid].arrowBefore){
+				cell.innerHTML = options[((this.sortingWay[tid]=='asc')?'downArrow':'upArrow')]+cell.innerHTML;
+			}else{
+				cell.innerHTML += options[((this.sortingWay[tid]=='asc')?'downArrow':'upArrow')];
+			}
+		}else if(! unsortable && options.noArrow.length){
+			if( options.arrowBefore){
+				cell.innerHTML = options.noArrow+cell.innerHTML;
+			}else{
+				cell.innerHTML += options.noArrow;
+			}
 		}
 		return cell;
 	},

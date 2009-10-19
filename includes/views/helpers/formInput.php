@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2009-09-04 - add support for selecbuttonset
 *            - 2009-06-02 - prefix confirm inputs with _smvc_
 *            - 2009-05-05 - add support for text/password confirm fields
 *            - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin
@@ -28,6 +29,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	* @param mixed  $value     string or list of values (for multiple selectors or checkboxes)
 	* @param string $type      type of input to use
 	*                          - select
+	*                          - selectbuttonset
 	*                          - t[e]xt[Confirm]
 	*                          - password[Confirm]
 	*                          - [text]area|forcetextarea
@@ -136,7 +138,13 @@ class formInput_viewHelper extends abstractViewHelper{
 					);
 				break;
 			case 'select':
+			case 'selectbuttonset':
 				$opts = '';
+				if( $type==='selectbuttonset'){
+					$this->view->helperLoad('button');
+					$this->_js_scriptOnce("$('.formInput select.ui-selectbuttonset').selectbuttonset();",'formInputSelectButtonSetLoader');
+					$options['class'] = 'ui-selectbuttonset'.(empty($options['class'])?$options['class']:'');
+				}
 				if( !empty($options['values']) ){
 					foreach($options['values'] as $k=>$v){
 						if( is_array($value) )

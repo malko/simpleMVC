@@ -73,6 +73,11 @@
 			echo '</table>';
 		}
 	}
+	if( ! empty($this->_modelConfig['VALIDATION'])){
+		$this->_validable_form($this->_modelConfig['VALIDATION'],'form.adminForm');
+		if( $this->_model_ )
+			$this->_js_script("$('form').validable('check')");
+	}
 ?>
 <div style="text-align:right;">
 	<div class="ui-buttonset" style="margin:0.2em 0;">

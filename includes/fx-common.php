@@ -70,7 +70,7 @@ function smvcAutoload($className){
 				$dirs[] = LIB_DIR.'/views';
 				$dirs[] = ROOT_DIR.'/views';
 			}else{
-				foreach( abstractController::getCurrentViewInstance(true)->get_viewDirs() as $d)
+				foreach( abstractController::getCurrentViewInstance(true)->getViewDirs() as $d)
 						$dirs[] = "$d/helpers";
 			}
 			$className = str_replace($m[0],'',$className);
@@ -323,19 +323,31 @@ function show(){
 					$traceArgs[] = $a;
 				}
 			}
-			$traceArgs = count($traceArgs)?"\n\t".implode(",\n\t",$traceArgs)."\n":'';
+			$traceArgs = count($traceArgs)?implode(", ",$traceArgs):'';
 			$traceFile = empty($v['file'])?'':'in '.str_replace(ROOT_DIR.'/','',$v['file'])." at line $v[line]\n";
 			@$getTrace[$k] = $traceFile.(($v['object']||$v['class'])?$v[$v['object']?'object':'class'].$v['type']:'')."$v[function]($traceArgs);";
 		}
-		$args[]="↓↓↓↓-------------------------- FOLLOWING IS BACKTRACE LAST CALL FIRST --------------------------↓↓↓↓";
-		$args[]=str_replace("\t","  ",implode("\n".str_repeat('__',49)."\n\n",$getTrace));
+		$args[]="↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ FOLLOWING IS BACKTRACE LAST CALL FIRST ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓";
+		$args[]=implode("\n".str_repeat('__',50)."\n\n",$getTrace);
 	}
 
 	$str = array();
-	foreach($args as $arg){
-		$str[] = print_r($arg,1);
-	}
-	$str = implode("\n".str_repeat('--',50)."\n",$str);
+	foreach($args as $arg)
+    $str[]= preg_replace('!^\r?\n!m','',print_r($arg,1));
+
+	$cleanExps = array(
+		'!^([\t ]+)!me', //-- reduce tab size
+		'!((db|dbprofiler|mysqli?db|sqlitedb3?) Object)\n(\s+)\(.*?\n\3\)\n!si', //-- avoid dbs object printing
+		'/(?!<\s|^)Object\s*\*RECURSION\*\s*\n/', //-- reduce recursion to one line
+		'/(?!<\s|^)Array\s*\(\s*\)\n/', //-- reduce emty array to single line
+	);
+	$cleanReplace = array(
+		'str_repeat(" ",strlen("$1")/2);',
+		"$1 (#--> HIDDEN BY SHOW <--#)\n",
+		"Object (#--> RECURSION <--#)\n",
+		"Array()\n"
+	);
+	$str = preg_replace($cleanExps,$cleanReplace,implode("\n".str_repeat('--',50)."\n",$str));
 	$preStyle = 'style="color:'.$color.';border:dashed '.$color.' 1px;max-height:350px;overflow:auto;margin-top:0;"';
 	$bStyle   = 'style="color:'.$color.';text-decoration:underline;margin-bottom:0"';
 	$trace = str_replace(ROOT_DIR.'/','',$trace[0]['file'])

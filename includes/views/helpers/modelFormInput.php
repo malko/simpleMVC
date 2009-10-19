@@ -4,6 +4,8 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2009-10-12 - add support for controller define input types
+*            - 2009-09-04 - boolean values are now selectbuttonset by defaults
 *            - 2009-06-25 - add sort options for hasMany relations.
 *            - 2009-05-28 - now manage hasMany relations as well
 *            - 2009-05-11 - empty date/datetime/time values with no default are set to current date.
@@ -34,7 +36,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 		$datasDefs = abstractModel::_getModelStaticProp($modelName,'datasDefs');
 
 		if(! isset($options['label'])){
-			$options['label'] = langManager::msg($keyName,null,$this->view->_langManagerDicName);
+			$options['label'] = ucFirst(langManager::msg($keyName,null,$this->view->_langManagerDicName));
 		}
 
 		if( (!empty($options['uneditable'])) && $modelName instanceof abstractModel ){
@@ -75,7 +77,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 					$choices->{$options['sort']}();
 					unset($options['sort']);
 				}
-				$options['values'][0] = langManager::msg('empty %s value',array($keyName));
+				$options['values'][0] = langManager::msg('empty %s value',array(langManager::msg($keyName)));
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();
 			}
@@ -90,7 +92,15 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			return $this->formInput($keyName,$modelName->PK,'hidden');
 		}
 		#- try to get def from datas array
-		if( !empty($datasDefs[$keyName]) ){
+		if( empty($datasDefs[$keyName]) ){
+			if( isset($options['value']))
+				$value = $options['value'];
+			elseif( $modelName instanceof abstractModel)
+				$value = $modelName->{$keyName};
+			else
+				$value=null;
+			return $this->formInput($keyName,$value,empty($options['type'])?'txt':$options['type'],$options);
+		}else{
 			if(isset($options['value']) )
 				$value = $options['value'];
 			else
@@ -127,7 +137,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			if( empty($options['values']) && in_array($datasDefs[$keyName]['Type'],array('tinyint(1)','tinyint(1) unsigned','bool'),'true') ){
 				$options['values'] =  array(0=>langManager::msg('no'),1=>langManager::msg('yes'));
 				if( empty($options['type']) )
-					$options['type']='radio';
+					$options['type']='selectbuttonset';
 			}
 
 			#- then textareas

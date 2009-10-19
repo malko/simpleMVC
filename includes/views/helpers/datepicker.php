@@ -17,7 +17,7 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 		#- ~ 'js/jqueryPlugins/jqueryDatepicker/18n/ui.datepicker-fr.js',
 		#- ~ 'js/jqueryPlugins/jqueryDatepicker/jquery-ui-personalized-1.6b.packed.js'
 	);
-	public $requiredPlugins = array('jqueryui');
+	public $requiredPlugins = array('jqueryui|button');
 
 	function init(){
 		$lg=langManager::getCurrentLang();
@@ -25,7 +25,6 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 			$.datepicker.setDefaults($.extend({},".($lg!=='en'?"$.datepicker.regional['$lg'],":'')."{
 					showOn:'both',
 					buttonText:'".($lg==='fr'?'Choisir une date':'pick a date')."',
-					buttonImage: '".GUI_IMG_URL."/icones/date.png',
 					dateFormat: 'yy-mm-dd',
 					highlightWeek: true,
 					defaultDate: +1
@@ -42,7 +41,10 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 		}
 		if( empty($value) || $value==='0000-00-00')
 			$value = date('Y-m-d');
-		$this->_js_script('$("#'.$idElement.'").datepicker('.$datePickerOptionStr.')');
+		$this->_js_script('
+		$("#'.$idElement.'").datepicker('.$datePickerOptionStr.')
+			.next(".ui-datepicker-trigger").addClass("ui-button ui-button-i-calendar").css("padding","0");
+		');
 
 		return 	'<input type="text" id="'.$idElement.'" name="'.$idElement.'" value="'.$value.'" />';
 	}

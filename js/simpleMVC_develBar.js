@@ -171,11 +171,14 @@ var cookies={
 	//-- Manage DynCss
 	simpleMVCDynCssAppend= function(e){
 		if( ! $('#sMVCcss').length){ //- create elements
-			btCss = $('<button id="sMVCcss" class="ui-button">DynCss</button></div>').appendTo(toolBar);//.css(toolBarButtonStyle);
+			btCss = $('<button id="sMVCcss" class="ui-button">DynCss</button></div>').appendTo(toolBar).button()
+			btCss.parent('.ui-buttonset').buttonset('propagateSettings');//.css(toolBarButtonStyle);
+			if(! btDataMenu.is(':visible') )
+				btCss.attr('style','display:none!important');
 			cssDiv= $('<div id="sMVCcss_div" class="sMVCpannel"><h1>jqueryDynCss generated</h1>').appendTo('#sMVCpannels');
 			addPanel(btCss,cssDiv);
 		}
-		$('<pre></pre>').html(e.innerHTML).appendTo(cssDiv);
+		$('<pre style="text-align:left;"></pre>').html(e.innerHTML).appendTo(cssDiv);
 		if( cookies.get('SMVCDevToggle') != 1)
 			btCss.hide();
 	}
@@ -183,16 +186,19 @@ var cookies={
 
 	//-- toggle button
 	btToggle.click(function(){
-		if(dataMenu.is(':visible'))
-			btDataMenu.click();
-		$('BUTTON',toolBar).not(this).toggle();
-		var visible = $('#sMVCmodels',toolBar).is(':visible');
-		$(this).button('option','icon',visible?'ui-icon-circle-triangle-e':'ui-icon-circle-triangle-w')
+		dataMenu.hide();
+		var sibs = $(':button',toolBar).not(this);
+		var visible = btDataMenu.is(':visible');
+		if( visible)
+			sibs.attr('style','display:none!important');
+		else
+			sibs.attr('style','');
+		$(this).button('option','icon',visible?'ui-icon-circle-triangle-w':'ui-icon-circle-triangle-e')
 		//this.innerHTML = visible?'&gt;':'&lt;';
 		cookies.set('SMVCDevToggle',visible?1:0);
 		$('.sMVCpannel:visible').css('width',getWidth());
 	});
-	if( cookies.get('SMVCDevToggle') != 1)
+	if( cookies.get('SMVCDevToggle') == 1 )
 		btToggle.click();
 
 	//-- no report to handle so just remove the bar

@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-09-   - first attempt for validation integration.
 *            - 2009-07-06 - now load config for each action
 *            - 2009-07-02 - add LIST_FILTER configuration
 *            - 2009-06-04 - add model and config file edition
@@ -44,7 +45,7 @@ class adminmodelsController extends modelsController{
 			self::appendAppMsg("$this->configFile isn't writable.",'error');
 		}
 		$this->loadModelConfig();
-		$this->pageTitle = langManager::msg($this->modelType);
+		$this->pageTitle = ucFirst(langManager::msg($this->modelType));
 	}
 
 	function loadModelConfig(){
@@ -52,11 +53,11 @@ class adminmodelsController extends modelsController{
 			return false;
 		$this->_config = parse_conf_file($this->configFile,true);
 		foreach($this->_config as $k => $v){
-			if( preg_match('!^(LIST(?:_FILTERS)?|ACTION|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
+			if( preg_match('!^(LIST(?:_FILTERS)?|VALIDATION|ACTION|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
 				if( $m[1] === 'ACTION' )
 					$this->_allowedActions = 	json_decode($v,true);
 				else
-					$this->_modelConfig[$m[1]] = json_decode($v,true);
+					$this->_modelConfig[$m[1]] = json_decode($v,$m[1]==='FORM_ORDER'?false:true);
 			}
 		}
 		$this->view->_config = $this->_config;
@@ -128,6 +129,7 @@ class adminmodelsController extends modelsController{
 		$this->_toStr = $this->readModel__ToStr($this->modelType);
 		$this->datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
 		$hasOnes     = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne'));
+		$hasMany     = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasMany'));
 		foreach($this->datasDefs as $v)
 			$this->datasFields .= "<span class=\"sMVC_dataField\">%$v</span> &nbsp; ";
 		foreach($hasOnes as $v)
@@ -161,7 +163,14 @@ class adminmodelsController extends modelsController{
 		$this->view->listUrl = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
 		#--- locale settings
 		$this->langs = langManager::$acceptedLanguages;
-		$_idMsgs = array_merge(array('save','back','Add new item'),$this->datasDefs,$hasOnes);
+		$_idMsgs = array_merge(array('save','back','Add new item'),$this->datasDefs,$hasMany,$hasOnes);
+		if( (!empty($this->_modelConfig['VALIDATION'])) && !empty($this->_modelConfig['VALIDATION']['rules']) ){
+			foreach($this->_modelConfig['VALIDATION']['rules'] as $rule){
+				if( !empty($rule['help'])){
+					$_idMsgs[] = $rule['help'];
+				}
+			}
+		}
 		foreach($this->langs as $l){
 			$messages[$l] = parse_conf_file(langManager::lookUpDic('adminmodels_'.$this->modelType,$l),true);
 			$idMsgs[$l]   = array_unique(empty($messages[$l])?$_idMsgs:array_merge($_idMsgs,array_keys($messages[$l])));
@@ -200,6 +209,22 @@ class adminmodelsController extends modelsController{
 		#- write config
 		write_conf_file($this->configFile,$config,true);
 		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'list'));
+	}
+	function setValidationsAction(){
+		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+			return $this->forward(ERROR_DISPATCH);
+		if(empty($_POST['validableRules']) ){
+			$config["VALIDATION_$this->modelType"] = '--UNSET--';
+		}else{
+			if( false !== eval('$rules = '.str_replace("\r\n","\n",$_POST['validableRules']).';')){
+				$config["VALIDATION_$this->modelType"] = json_encode($rules);
+			}else{
+				self::appendAppMsg("Please check the syntax of your validations rules.",'error');
+				return $this->forward('configure');
+			}
+		}
+		write_conf_file($this->configFile,$config,true);
+		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'validations'));
 	}
 	/**
 	* set how to render administrations forms for the given model

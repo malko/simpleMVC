@@ -157,10 +157,15 @@ abstract class abstractController{
 			return $livingView;
 		if(! $failSafe)
 			return null;
+		#- failsafe and get an view empty view with viewDirs correctly set
+		$view = call_user_func(array(self::$defaultViewClass,'getInstance'));
+		foreach(self::$defaultViewDirs as $d)
+			$view->addViewDir($d);
+		return $view;
 		#- failsafe and get a view from default controller
-		$controller = (defined('DEFAULT_DISPATCH')?preg_replace('!:.*$!','',DEFAULT_DISPATCH):'default').'Controller';
-		$controller = new $controller;
-		return $controller->view;
+		#- ~ $controller = (defined('DEFAULT_DISPATCH')?preg_replace('!:.*$!','',DEFAULT_DISPATCH):'default').'Controller';
+		#- ~ $controller = new $controller;
+		#- ~ return $controller->view;
 	}
 
 	###--- DISPATCH STACK MANAGEMENT ---###

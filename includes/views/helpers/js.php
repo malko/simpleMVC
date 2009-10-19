@@ -15,6 +15,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-09-03 - add new jsPlugins method support jsPlugins::_onGetPending()
 *            - 2009-05-05 - add new js method scriptOnce same as script method but with a check that script isn't already appended
 *            - 2009-03-27 - add jqueryUI plugin
 *            - 2009-02-08 - loadPlugin now check for registeredPlugins before trying to load it
@@ -141,6 +142,14 @@ class js_viewHelper extends abstractViewHelper{
 		static $calledTime;
 		if( ! strlen(self::$pendingScript) )
 			return $this->getIncludes();
+
+		//--append plugins _onGetPending;
+		foreach($this->getRegisteredPlugins() as $plugin){
+			if( method_exists($plugin.'_viewHelper','_onGetPending')){
+				$this->view->getHelper($plugin)->_onGetPending();
+			}
+		}
+
 		if( $this->isRegistered('jquery') ){
 			$script = "jQuery().ready(function(){\n".self::$pendingScript."\n});";
 		}else{
@@ -148,7 +157,6 @@ class js_viewHelper extends abstractViewHelper{
 			$script = "function jsReady$calledTime(){".self::$pendingScript."};\n"
 				."if(window.addEventListener){ window.addEventListener('load',jsReady$calledTime,false); }else if(window.attachEvent){ window.attachEvent('onload', jsReady$calledTime); }";
 		}
-
 		self::$pendingScript = '';
 
 		return $this->getIncludes()."\n<script type=\"text/javascript\">/*<![CDATA[*/\n$script\n/*]]>*/</script>\n";
@@ -206,38 +214,4 @@ class js_viewHelper extends abstractViewHelper{
 */
 class jquery_viewHelper extends jsPlugin_viewHelper{
 	public $requiredFiles = array('js/jquery.js');
-}
-/**
-* dummy jsPlugin that load jquery-ui usefull for jsPlugins that require jquery-ui
-* @class jqueryui_viewHelper
-*/
-class jqueryui_viewHelper extends jsPlugin_viewHelper{
-	public $requiredFiles = array(
-		'js/jqueryPlugins/bgiframe/jquery.bgiframe.min.js',
-		'js/jquery-ui.js',
-		'js/css/redmond/jquery-ui-1.7.2.custom.css'
-	);
-	public $requiredPlugins = array(
-		'jquery'
-	);
-
-	function init(){
-		$this->_js_script('$.ui.dialog.defaults.bgiframe = true;');
-	}
-
-
-	/**
-	* possible options:
-	* priority: (string) primary|secondary
-	* disabled: (bool)
-	*
-	*/
-	function button($selector=".ui-button",array $options=null){
-		static $initiated;
-		if( ! isset($initiated)){
-			$this->_js_includes('js/ui.button.min.js');
-			$this->_js_includes('js/ui-button.css');
-		}
-		$this->_js_script("$('$selector').button(".(is_array($options)?json_encode($options):'').");");
-	}
 }
