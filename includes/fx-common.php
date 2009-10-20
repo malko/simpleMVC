@@ -289,7 +289,7 @@ function show(){
 			$getTrace = array();
 		if(preg_match('!(^|;)exit(;|$)!',$param))
 			$halt = true;
-		$color = match('!(?:^|;)color:([^;]+)(?:;$)!',$param);
+		$color = match('!(?:^|;)color:([^;]+)(?:;|$)!',$param);
 		if( $color || $halt || isset($getTrace))
 			array_pop($args);
 	}
