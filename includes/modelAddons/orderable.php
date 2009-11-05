@@ -13,6 +13,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-11-05 - bug correction on onBeforeDelete method
 *            - 2009-07-01 - make use of abstractModel::getLivingModelInstances() to also check orderableField value in already instanciated model for newly created model
 *                         - won't save anymore on temporary models so you must be cautious when working with temporary models to manually save them after moving them arround (or creating multiple models)
 *            - 2009-04-02 - now setOrderableGroupFieldValue() method automaticly set correct type for groupValue if not a related hasOne istance
@@ -373,7 +374,7 @@ class orderableModelAddon extends modelAddon{
 			$gValue = $this->modelInstance->datas[$gField];
 			$collection = abstractModel::getFilteredModelInstances($this->modelName,array('WHERE '.$oField.'>? AND '.$gField.'=?',$pos,$gValue));
 		}
-		$collection->decrement($oField)->removeTemporaries()->save();
+		$collection->decrement($oField)->removeTemporaries(true)->save();
 		return;
 	}
 }
