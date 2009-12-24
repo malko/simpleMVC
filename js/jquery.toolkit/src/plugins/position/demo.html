@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:v = "urn:schemas-microsoft-com:vml">
+<head>
+	<link rel="stylesheet" type="text/css" href="../../jquery.toolkit.css" />
+	<script src="../../../jquery-1.3.2.js" type="text/javascript"></script>
+	<script src="../../jquery.toolkit.js" type="text/javascript"></script>
+	<script src="jquery.tk.position.js" type="text/javascript"></script>
+	<style>
+		body{ font-size:12px; text-align:center;}
+		#test-container{ width: 550px; height:650px; background:#888; float:left;}
+		.testElmt,.testElmt2{ display:inline-block; zoom:1; width:50px;height:50px; background:#fff0e0;border:solid #bbf 10px;margin:25px;}
+		.testElmt2{ border:solid #fbb 5px;}
+	</style>
+</head>
+<body>
+<h1>Demonstrating xcss plugin</h1>
+<div class="tk-inlineStack" id="test-container">
+	<div class="testElmt" style="position:relative;margin:50px;float:right;">
+		<div id="positionable" class="testElmt2" style="opacity:.5">test position -able</div>
+	</div>
+	<div class="tk-inlineStack tk-border tk-corner">
+		<h3>positionable testing</h3>
+		<select id="_yRef" onchange="$('#yref').val($(this).val()).change();">
+			<option selected="selected">top</option>
+			<option>innerTop</option>
+			<option>middle</option>
+			<option>innerBottom</option>
+			<option>bottom</option>
+		</select>
+		<input type="text" id="yref" name="yref" value="top" onchange="$('#positionable').positionable('set_yRef',this.value);"/>
+		<br />
+		<select id="_xRef" onchange="$('#xref').val($(this).val()).change();">
+			<option selected="selected">left</option>
+			<option>innerLeft</option>
+			<option>center</option>
+			<option>innerRight</option>
+			<option>right</option>
+		</select>
+		<input type="text" id="xref" name="xref" value="left" onchange="$('#positionable').positionable('set_xRef',this.value);"/>
+		<br />
+		x: <input type="text" name="x" value="0" onchange="$('#positionable').positionable('set_x',this.value);"/>
+		<br />
+		y: <input type="text" name="y" value="0" onchange="$('#positionable').positionable('set_y',this.value);"/>
+	</div>
+
+	<hr />
+<br />
+<br />
+
+	<div id="test_topleft" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-top-left" rel="#test_topleft">top left</div>
+	<div id="test_top" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-top" rel="#test_top">top </div>
+	<div id="test_topright" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-top-right" rel="#test_topright">top right</div>
+	<br />
+	<div id="test_lefttop" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-left-top" rel="#test_lefttop">left top</div>
+	<div id="test_left" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-left" rel="#test_left">left </div>
+	<div id="test_leftbottom" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-left-bottom" rel="#test_leftbottom">left bottom</div>
+	<br />
+	<div id="test_righttop" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-right-top" rel="#test_righttop">right top</div>
+	<div id="test_right" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-right" rel="#test_right">right </div>
+	<div id="test_rightbottom" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-right-bottom" rel="#test_rightbottom">right bottom</div>
+	<br />
+	<div id="test_bottomleft" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-bottom-left" rel="#test_bottomleft">bottom left</div>
+	<div id="test_bottom" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-bottom" rel="#test_bottom">bottom </div>
+	<div id="test_bottomright" class="testElmt">test position reference</div><div class="tk-position tk-positionRelative-bottom-right" rel="#test_bottomright">bottom right</div>
+
+</div>
+
+<script>
+jQuery(function(){
+	$('.tk-position').addClass('tk-border tk-inlineStack').hide().positionRelative().show().click(function(){
+		dbg($(this).positionRelative('update').positionable('get_options'));
+	});
+	$("#positionable").positionable();
+});
+</script>
+
+</body>
+</html>
