@@ -5,7 +5,9 @@
 * for a field named mydate added methods will be:
 * - setFrMydate('dd/mm/yyyy') to set a date so you can do $modelInstance->frMydate='dd/mm/yyyy' too
 * - getFrMydate() return mydate in 'dd/mm/yyyy' format so you can use $modelInstance->frMydate to get it
-* - strftimeFrMydate('strftime format string') same as using strftime (will try to change LC_TIME and restore it )
+* - strftimeMydate('strftime format string') same as using strftime on strtotimed value (won't try to change LC_TIME )
+* - strftimeFrMydate('strftime format string') same as using strftime on strtotimed value (will try to change LC_TIME and restore it )
+* - dateMydate('strftime format string') same as using date on strtotimed value
 * @package class-db
 * @subpackage modelAddons
 * @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
@@ -17,6 +19,8 @@
 *            - $LastChangedBy: malko $
 *            - $HeadURL$
 * @changelog
+*            - 2009-04-09 - add strftime[dateField] and date[dateField] methods
+*                         - import datefr2us and dateus2fr methods as internals to skip dependencies on fx-common
 *            - 2009-04-09 - add strftimeFr[dateField] methods
 class frDateModel extends BASE_frDateModel{
 	static protected $modelAddons = array('frDate');
@@ -28,7 +32,7 @@ class frDateModelAddon extends modelAddon{
 	static protected $_internals=array();
 
 	/**
-	* constructor will set new modelInstance to last position
+	* constructor will set overloaded methods
 	*/
 	public function __construct(abstractModel $modelInstance,$PK=null){
 		parent::__construct($modelInstance,$PK);
@@ -42,7 +46,9 @@ class frDateModelAddon extends modelAddon{
 					if( isset($datasDefs["fr$k"]) || $this->modelInstance->_methodExists("setFr$k") || $this->modelInstance->_methodExists("getFr$k") )
 						continue;
 					self::$_internals[$this->modelName][] = 'setFr'.ucFirst($k);
+					self::$_internals[$this->modelName][] = 'strftime'.ucFirst($k);
 					self::$_internals[$this->modelName][] = 'strftimeFr'.ucFirst($k);
+					self::$_internals[$this->modelName][] = 'date'.ucFirst($k);
 					self::$_internals[$this->modelName][] = 'getFr'.ucFirst($k);
 				}
 			}
@@ -51,23 +57,54 @@ class frDateModelAddon extends modelAddon{
 	}
 
 	public function __call($m,$a){
-		if( preg_match('!^getFr(.*)$!i',$m,$match)){
-			$field = abstractModel::_cleanKey($this->modelName,'datasDefs',$match[1]);
-			return dateus2fr($this->modelInstance->{$field});
-		}
-		if( preg_match('!^setFr(.*)$!i',$m,$match)){
-			$field = abstractModel::_cleanKey($this->modelName,'datas',$match[1]);
-			return $this->modelInstance->{$field} = datefr2us($a[0]);
-		}
-		if( preg_match('!^strftimeFr(.*)$!i',$m,$match)){
-			$field = abstractModel::_cleanKey($this->modelName,'datas',$match[1]);
-			$loc = setlocale(LC_TIME,0);
-		 	$tmpLoc = setlocale(LC_TIME,array('fr_FR.utf8','fr_FR.UTF8','fr_FR.utf-8','fr_FR.UTF-8','fr_FR','fr'));
-			$str = strftime($a[0],strtotime($this->modelInstance->{$field}));
-			if(preg_match('!utf-?8!i',$tmpLoc))
-				$str =  utf8_encode($str);
-			setlocale(LC_TIME,$loc);
-      return $str;
+		if(! preg_match('!^(getFr|setFr|strftime(?:Fr)?|date(?:Fr)?)(.*)$!i',$m,$match) )
+			return false;
+		if( false===($field = abstractModel::_cleanKey($this->modelName,'datas',$match[2])) )
+			return false;
+		$m = strtolower($match[1]);
+		switch($m){
+			case 'getfr':
+				return self::dateus2fr($this->modelInstance->{$field});
+			case 'setfr':
+				return $this->modelInstance->{$field} = self::datefr2us($a[0]);
+			case 'date':
+				return date($a[0],strtotime($this->modelInstance->{$field}));
+			case 'strftime':
+			case 'strftimefr':
+				$timeStamp = strtotime($this->modelInstance->{$field});
+				if( $m === 'strftime')
+					return strftime($a[0],$timeStamp);
+				return self::_frLocalisedDateFuncCall('strftime',$a[0],$timeStamp);
 		}
 	}
+
+	static public function _frLocalisedDateFuncCall($dateFunc,$param=null,$time=null){
+		static $locales;
+		if(! isset($locales) )
+			$locales = array('fr_FR.utf8','fr_FR.UTF8','fr_FR.utf-8','fr_FR.UTF-8','fr_FR','fr');
+		$loc = setlocale(LC_TIME,0);
+		if(! in_array($loc,$locales,true) )
+			$tmpLoc = setlocale(LC_TIME,$locales);
+		$res = $dateFunc($param,$time);
+		if( isset($tmpLoc) )
+			setlocale(LC_TIME,$loc);
+		return preg_match('!utf-?8!i',isset($tmpLoc)?$tmpLoc:$loc)?utf8_encode($res):$res;
+	}
+	static public function dateus2fr($date,$noTime=false){
+		if( empty($date) )
+			return '00/00/0000';
+		if(! strpos($date,' '))
+			return implode('/',array_reverse(preg_split('!/|-!',$date)));
+		list($date,$time) = explode(' ',$date);
+		return self::dateus2fr($date).($noTime?'':' '.$time);
+	}
+	static public function datefr2us($date,$noTime=false){
+		if( empty($date) )
+			return '0000-00-00';
+		if(! strpos($date,' '))
+			return implode('-',array_reverse(preg_split('!/|-!',$date)));
+		list($date,$time) = explode(' ',$date);
+		return self::dateus2fr($date).($noTime?'':' '.$time);
+	}
+
 }
