@@ -11,6 +11,9 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-12-16 - bug correction in forward with full dispatch string as action
+*            - 2009-11-24 - now redirect() method redirect to HTTP_REFERER or DEFAULT_DISPATCH if no URI given.
+*            - 2009-10-23 - now __call() will try to render a view script with the action name if no action is found before trying to call a view method
 *            - 2009-07-20 - new static method getCurrentViewInstance()
 *            - 2009-04-28 - new static property $appMsgUseLangManager to allow appMsgs to be checked against loaded dictionaires in langManager.
 *            - 2009-04-28 - new method forward() call form with only one string dispatch parameter as returned by getCurrentDispatch() (ie: 'controller:action') (old way still working)
@@ -87,7 +90,7 @@ abstract class abstractController{
 	/** set the view method to call for undefined var assignation */
 	static public  $viewAssignMethod = 'assign';
 	/** pointer on the view */
-	public  $view = null;
+	public $view = null;
 
 	/** internally use to get the controller name */
 	protected $name = '';
@@ -97,7 +100,7 @@ abstract class abstractController{
 	static protected $dispatchStack= array();
 
 	/** set the way appMsg are prepared %T and %M will be respectively replaced byt msgType and msgStr*/
-	static public  $appMsgModel = "<div class='ui-state-%T %T'>%M</div>";
+	static public  $appMsgModel = "<div class=\"ui-state-%T %T tk-state-%T tk-notify  tk-notify-7500\">%M</div>";
 	/** set the way repeated appMsgs are treated
 	* - 0: won't perform any check and so will display all messages,
 	* - 1: avoid consecutive message repetition by checking that last message is different)
@@ -377,10 +380,21 @@ abstract class abstractController{
 				$this->view->render($method);
 			$this->_currentActionEnd($method);
 			return $result;
-		}elseif($this->view instanceof viewInterface){ #- default to send method call to view
+		}elseif($this->view instanceof viewInterface){ #- check for a view corresponding to this controller/action
+			if( false===$this->view->lookUpScriptByAction($method,null,':controller_:action.tpl.php') ){
+				try{
 			return call_user_func_array(array($this->view,$method),$args);
+				}catch(viewException $e){
+					throw new BadMethodCallException(get_class($this)."::$method() method doesn't exist");
+				}
 		}else{
-			throw new Exception(get_class($this)."::$method() method doesn't exist");
+				$this->_currentActionStart($method);
+				$this->view->render($method);
+				$this->_currentActionEnd($method);
+				return;
+			}
+		}else{
+			throw new BadMethodCallException(get_class($this)."::$method() method doesn't exist");
 		}
 	}
 
@@ -414,7 +428,7 @@ abstract class abstractController{
 	*/
 	public function forward($actionName,$controllerName=null){
 		if( strpos($actionName,':') )
-			list($controller,$actionName)=explode(':',$actionName,2);
+			list($controllerName,$actionName)=explode(':',$actionName,2);
 		if(empty($controllerName) || in_array($controllerName,array($this->getName(),get_class($this)),true)){
 			$this->$actionName();
 		}else{
@@ -431,13 +445,17 @@ abstract class abstractController{
 	* redirect user to the given uri
 	* @param str   $uri				 there's no management of url rewriting using this method
 	*                          as it can be used for external redirection.
+	*                          if null is passed then will default to HTTP_REFERER || DEFAULT_DISPATCH
 	* @param mixed $params     string or array of additionnal params to append to the uri
 	*                          (no filtering only urlencode array values)
 	* @param bool/int $withResponseCode  put true to specify a permanent redirection (code 301)
 	*                                    you also can pass an int as $http_response_code (404 for example)
 	* @param bool  $keepGoing  put true if you don't want to trigger a user exit().
 	*/
-	public function redirect($uri,$params=null,$permanent=false,$keepGoing=false){
+	public function redirect($uri=null,$params=null,$permanent=false,$keepGoing=false){
+		if( null === $uri ){
+			$uri = isset($_SERVER['HTTP_REFERER'])?$_SERVER['HTTP_REFERER']:$this->url(DEFAULT_DISPATCH);
+		}
 		if(! is_null($params) ){
 			if(is_array($params)){
 				foreach($params as $k=>$v){
@@ -476,5 +494,11 @@ abstract class abstractController{
 	function redirectAction($action,$controller=null,$params=null,$withResponseCode=false,$keepGoing=false){
 		$url = $this->view->url($action,$controller,$params);
 		return $this->redirect($url,null,$withResponseCode,$keepGoing);
+	}
+
+	function clearCacheAction(){
+		if( DEVEL_MODE )
+			cacheManager::clear(0);
+		return $this->redirect();
 	}
 }
