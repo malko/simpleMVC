@@ -5,10 +5,10 @@ class swfobject_viewHelper extends jsPlugin_viewHelper{
 	public $requiredFiles   = array('js/swfobject.js');
 	public $requiredPlugins = array();
 
-	function swfobject($swfUrl,$name='myswf',$w='100%',$h='100%',$v=8,$bg='#fff',$defaultContent=""){
+	function swfobject($swfUrl,$name='myswf',$w='100%',$h='100%',$v=8,$bg='#fff',$defaultContent="",$wmode=""){
 		$this->_js_script("
 		var fo = new SwfObject('$swfUrl', '$name', '$w', '$h', '$v', '$bg');
-			fo.addParam('quality', 'high');
+			fo.addParam('quality', 'high');".($wmode?"fo.addParam('wmode', '$wmode');":'')."
 			//fo.setAttribute('redirectUrl', 'noflash.php');
 			fo.write('$name');
 		");

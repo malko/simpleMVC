@@ -151,7 +151,7 @@ class js_viewHelper extends abstractViewHelper{
 		}
 
 		if( $this->isRegistered('jquery') ){
-			$script = "jQuery().ready(function(){\n".self::$pendingScript."\n});";
+			$script = "jQuery(function(){\n".self::$pendingScript."\n});";
 		}else{
 			$calledTime = isset($calledTime)?$calledTime+1:0;
 			$script = "function jsReady$calledTime(){".self::$pendingScript."};\n"
@@ -179,8 +179,11 @@ class js_viewHelper extends abstractViewHelper{
 		}
 		#- check paths
 		if(! $absolutePath ){
-		if( ! is_file(self::$scriptRootDir.'/'.$file) )
-			return false;
+			if( ! is_file(self::$scriptRootDir.'/'.$file) ){
+				if( defined('DEVEL_MODE') && DEVEL_MODE )
+					show(__class__.'::'.__function__."($file) file not found!",'trace');
+				return false;
+			}
 			$file = self::$scriptRootUrl.'/'.$file;
 		}
 		if( isset(self::$includedFiles[$file]) )

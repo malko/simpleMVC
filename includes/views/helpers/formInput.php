@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2009-10-22 - add support for validable options
 *            - 2009-09-04 - add support for selecbuttonset
 *            - 2009-06-02 - prefix confirm inputs with _smvc_
 *            - 2009-05-05 - add support for text/password confirm fields
@@ -64,6 +65,24 @@ class formInput_viewHelper extends abstractViewHelper{
 
 		$value = null!==$value?$value:(isset($options['default'])?$options['default']:'');
 		$labelStr = (isset($options['label'])?"<label for=\"$options[id]\">$options[label]</label>":'');
+
+		#- check for some validable options.
+		$validableOptsNames = array('required','help','minlength','maxlength','rule');
+		$supportMaxlength = array('txt','text','pass','password','txtConfirm','passwordConfirm');
+		$validableOpts = array();
+		$validableForm = $this->view->getController() instanceof modelsController?'form.adminForm':'form';
+		foreach($validableOptsNames as $key){
+			if( $key==="maxlength" && in_array($type,$supportMaxlength) )
+				continue;
+			if( ! empty($options[$key])){
+				$validableOpts[$key] = $options[$key];
+				unset($options[$key]);
+			}
+		}
+		if( !empty($validableOpts)){
+			$this->validable($name,$validableOpts,$validableForm);
+		}
+
 		switch($type){
 			case 'skip':
 				return '';
@@ -85,20 +104,25 @@ class formInput_viewHelper extends abstractViewHelper{
 						$confirmOpts = array_merge($confirmOpts,$options['confirmOpts']);
 
 					$confirm = $this->formInput("_smvc_confirm[$name]",$value,$type,$confirmOpts);
+					$this->validable("_smvc_confirm[$name]",array('rule'=>'formInputConfirm'),$validableForm);
 					$this->_js_scriptOnce("
-						function formInputCheckConfirm(id){
-							var o = $('input#'+id);
-							var c = $('input#formInputConfirm_'+id);
-							if( c.val()===o.val() ){
-								o.removeClass('ui-state-error');
-								c.removeClass('ui-state-error');
-							}else{
-								o.addClass('ui-state-error');
-								c.addClass('ui-state-error');
-							}
+					window.formInputConfirm = function(val){
+						var m = this.id.match(/^formInputConfirm_(.*)/);
+						var oValidable = $('#'+m[1]).data('validable');
+						if( m && oValidable.check() && oValidable._elmt.val()==val){
+							return true;
 						}
+						return false;
+					}
 					",'formInputCheckConfirm');
-					$this->js("$('input#$confirmOpts[id],input#$options[id]').keyup(function(){formInputCheckConfirm('$options[id]');});",'jqueryui');
+					$this->js("
+						$('input#$options[id]').change(function(){
+							var oValidable = $('input#$confirmOpts[id]').data('validable');
+							if( $(this).val())
+								oValidable.required= $(this).val()!==''?true:false;
+							oValidable.check();
+						})
+					");
 				}
 				if($type==='txt')
 					$type='text';
@@ -126,6 +150,14 @@ class formInput_viewHelper extends abstractViewHelper{
 					break;//-- dummy break
 				} #--- else continue to rte
 			case 'rte':
+					if( !empty($validableOpts) ){
+						if( !empty($validableOpts['help'])) // add help display on the iframe focus
+							$_rteValidableOpts['helpTrigger'] = "#RTE_FRAME_$options[id]";
+						if( (!empty($validableOpts['required'])) && ! isset($validableOpts['rule']))
+							$_rteValidableOpts['rule'] = 'requiredRteValidable';
+						if( isset($_rteValidableOpts))
+							$this->validable($name,$_rteValidableOpts,$validableForm);
+					}
 					$rteOptions = array('value' => $value,'rows'=>10,'cols'=>50);
 					foreach($options as $k=>$o){
 						if( in_array($k,array('rows','cols','disabled','style','rteOpts')) )
@@ -143,7 +175,10 @@ class formInput_viewHelper extends abstractViewHelper{
 				if( $type==='selectbuttonset'){
 					$this->view->helperLoad('button');
 					$this->_js_scriptOnce("$('.formInput select.ui-selectbuttonset').selectbuttonset();",'formInputSelectButtonSetLoader');
-					$options['class'] = 'ui-selectbuttonset'.(empty($options['class'])?$options['class']:'');
+					$options['class'] = 'ui-selectbuttonset'.(empty($options['class'])?'':" $options[class]");
+					if(! empty($validableOpts)){
+						$this->validable($name,array('helpTrigger'=>"#$options[id] ~ .ui-buttonset .ui-button",'helpAfter'=>"#$options[id] ~ .ui-buttonset"),$validableForm);
+					}
 				}
 				if( !empty($options['values']) ){
 					foreach($options['values'] as $k=>$v){
@@ -192,6 +227,9 @@ class formInput_viewHelper extends abstractViewHelper{
 				break;//-- dummy break
 			case 'date':
 			case 'datepicker':
+				if( !empty($validableOpts) ){
+					$this->validable($name,array('helpAfter'=> "#$options[id] ~ .ui-datepicker-trigger"),$validableForm);
+				}
 				return $this->formatInput(
 					$labelStr,
 					$this->datepicker($name,$value,empty($options['pickerOptStr'])?null:$options['pickerOptStr']),
@@ -200,6 +238,15 @@ class formInput_viewHelper extends abstractViewHelper{
 				break;//--dummy break
 			case 'time':
 			case 'timepicker':
+				if( !empty($validableOpts) ){
+					$this->validable($name,array(
+							'helpAfter'=> "#timepicker_$options[id]",
+							'helpTrigger'=> "#timepicker_$options[id] input",
+							'stateElmt'=> "#timepicker_$options[id] input",
+						),
+						$validableForm
+					);
+				}
 				return $this->formatInput(
 					$labelStr,
 					$this->timepicker($name,$value,empty($options['pickerOptStr'])?null:$options['pickerOptStr']),
@@ -207,6 +254,15 @@ class formInput_viewHelper extends abstractViewHelper{
 				);
 			case 'datetime':
 			case 'datetimepicker':
+				if( !empty($validableOpts) ){
+					$this->validable($name,array(
+							'helpAfter'=> "#timepicker_time_$options[id]",
+							'helpTrigger'=> "#date_$options[id], #timepicker_time_$options[id] input",
+							'stateElmt'=> "#date_$options[id], #timepicker_time_$options[id] input",
+						),
+						$validableForm
+					);
+				}
 				return $this->formatInput(
 					$labelStr,
 					$this->_datepicker_withTime($name,$value,empty($options['pickerOpts'])?null:$options['pickerOpts']),
@@ -214,10 +270,17 @@ class formInput_viewHelper extends abstractViewHelper{
 				);
 				break;//--dummy break
 			case 'file':
-				if( self::$useFileEntry){
+			case 'fileentry':
+			case 'fileextended':
+				if( $type==='fileentry' || ( $type=='file' && self::$useFileEntry ) ){
+					if( !empty($validableOpts))
+						$this->validable($name,array('helpAfter'=>"#bt$options[id]"),$validableForm);
 					$inputStr = $this->_filemanager_entry($name,$value,$options);
 				}else{
-					$inputStr = "<input type=\"file\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
+					$inputStr = "<input type=\"file\" name=\"$name\" ".$this->getAttrStr($options)." />";
+					if( $type==='fileextended' && $value){
+						$inputStr .= "<br /><label><input type=\"checkbox\" name=\"filedelete[$name]\" value=\"1\" /> ".langManager::msg('Delete current file ')."<a href=\"$value\" target=\"_blank\">".basename($value).'</a></label>';
+					}
 				}
 				return $this->formatInput(
 					$labelStr,

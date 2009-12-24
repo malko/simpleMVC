@@ -81,7 +81,7 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 		#- ~ <div id="'+fmb.dialogId+'" title="File selection" style="display:none;">\
 			#- ~ <div id="'+fmb.fmId+'" style="width:250px;overflow:auto;height:300px;"></div></div>
 
-		$options = json_encode(array_merge(self::$defaultOptions,(array)$options));
+		$options = self::_optionString(array_merge(self::$defaultOptions,(array)$options));
 		$this->_js_script("$('#$id').filemanager($options)");
 		return $divStr;
 	}
@@ -99,7 +99,7 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 	function button($jsCallBack='undefined',$id=null,array $options=null){
 		if( null===$id)
 			$id=self::uniqueId();
-		$options = json_encode(array_merge(self::$defaultOptions,(array)$options));
+		$options = self::_optionString(array_merge(self::$defaultOptions,(array)$options));
 		$this->_js_script("$('#$id').filemanagerButton($jsCallBack,$options)");
 		return '<button id="'.$id.'" class="ui-state-default ui-corner-all" title="browse"><span class="ui-icon ui-icon-folder-collapsed" title="browse">browse</span></button>';
 	}
@@ -115,9 +115,13 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 	*/
 	function entry($inputName,$value=null,array $options=null){
 		$id = preg_replace('![^a-z0-9_-]!i','',$inputName);
-		$options = json_encode(array_merge(self::$defaultOptions,(array)$options));
+		if(empty($options['size']))
+			$size = '';
+		else
+			$size = " size=\"$options[size]\"";unset($options['size']);
+		$options = self::_optionString(array_merge(self::$defaultOptions,(array)$options));
 		$this->_js_script("$('#$id').filemanagerEntry($options)");
-		return '<input type="text" name="'.$inputName.'" id="'.$id.'" value="'.$value.'" class="filemanagerEntry"/>';
+		return '<input type="text" name="'.$inputName.'" id="'.$id.'" value="'.$value.'" class="filemanagerEntry"'.$size.'/>';
 	}
 
 }

@@ -7,6 +7,7 @@
 * - eventually define an init() method to take particuliar actions at load time.
 * @class jsPlugin_viewHelper
 * @changelog
+*            - 2009-10-20 - _optionString() method now preserve regexp object too
 *            - 2009-03-24 - add common method getuniqueId
 */
 abstract class jsPlugin_viewHelper extends abstractViewHelper{
@@ -32,14 +33,17 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 		$this->view->_js_registerPlugin($this);
 	}
 
+	/**
+	* render a php array to a javascript optionObject preserving anonymous functions and regex obects
+	*/
 	static function _optionString($opts,$indentSize=0){
 		if(! is_array($opts)){
 			if( null===$opts)
 				return '';
 			if( preg_match('!^\s*function\s*\(!i',$opts) )
 				return $opts;
-			if(! preg_match('!^\s*(\[.*\]|\{.*\}|["\'].*["\'])\s*$!s',$opts) )
-				$opts = "'$opts'";
+			if(! preg_match('!^\s*(\[.*\]|\{.*\}|["\'].*["\']|^/.*/[igm]+$)\s*$!s',$opts) )
+				$opts = "'".preg_replace("/(?<!\\\\)'/","\'",$opts)."'";
 			return $opts;
 		}
 		$str = array();
@@ -47,7 +51,7 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 		foreach($opts as $k=>$opt){
 			if((! $isObject) && ! is_numeric($k) )
 				$isObject = true;
-			$str[]= ($isObject?"$k:":'').(is_bool($opt)?($opt?'true':'false'):self::_optionString($opt,$indentSize>0?$indentSize+1:0));
+			$str[]= ($isObject?"'$k':":'').(is_bool($opt)?($opt?'true':'false'):self::_optionString($opt,$indentSize+1));
 		}
 		$indentStr = "\n".str_repeat("\t",$indentSize);
 		$indentStrEnd = "\n".str_repeat("\t",max(0,$indentSize-1));
