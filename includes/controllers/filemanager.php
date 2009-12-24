@@ -30,6 +30,6 @@ class filemanagerController extends abstractController{
 	}
 
 	static function checkAccess($m){
-		return true; // please configure your access restrictions rules here
+		return false; // please configure your access restrictions rules here
 	}
 }

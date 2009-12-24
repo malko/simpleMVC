@@ -11,8 +11,8 @@
 */
 #- next three lines depends on your needs they correspond to my developpment settings and are optionals, they could have be defined in the php.ini for example.
 ini_set('default_charset','utf-8');
+mb_internal_encoding('UTF-8');
 date_default_timezone_set('Europe/Paris');
-
 
 #- name of the execution context, in fact the application name, most of the time i like to use the parent directory name.
 define('FRONT_NAME',basename(dirname(__file__)));
@@ -38,6 +38,7 @@ session_start();
 #- abstractModel::$useDbProfiler = DEVEL_MODE?true:false;
 
 #- Set default views directories lasts will be try first and vice-versa
+abstractController::$appMsgIgnoreRepeated = DEVEL_MODE?0:2;
 abstractController::$defaultViewClass = 'baseView';
 abstractController::$defaultViewDirs  = array(
 	LIB_DIR.'/views',
@@ -51,16 +52,17 @@ baseView::$defaultLayout = array(
   'footer.tpl.php'
 );
 #- some helpers configuration
-#- formInput_viewHelper::$useRTE = true;
 #- formInput_viewHelper::$useFileEntry = true;
 #- filemanager_viewHelper::$defaultOptions['prefixValue']='';
 #- rte_viewHelper::$defaultRteOptions=array(
 #- 	'imgPath' => ROOT_URL.'/js/jqueryPlugins/jqueryRte/',
-#- 	'css_url' => FRONT_URL.'/views/default.css'
+#- 	'css_url' => ROOT_URL.'/rte.css'
 #- );
 
 #- if multilingual then setup langManager
 #- first set directories for dictionaries lookUp
+#- abstractController::$appMsgUseLangManager = true;
+#- langManager::$acceptedLanguages = array('fr','en');
 #-langManager::$localesDirs = array(
 #-	ROOT_DIR.'/locales',
 #-	APP_DIR.'/locales',
@@ -103,9 +105,9 @@ try{
 		$controller = new $cname;
 }catch(Exception $e){
 	if( DEVEL_MODE )
-		show($e->getMessage(),'color:orange;trace;exit');
-	abstractController::appendAppMsg($e->getMessage(),'error');
-	$controller = new defaultController;
+		show($e->getMessage(),$e->getTrace(),'color:orange;exit');
+	abstractController::appendAppMsg(langManager::msg("Can't find '%s' controller.",array($_controller)),'error');
+	$controller = new defaultController();
 	$controller->redirectAction(ERROR_DISPATCH,null,null,404);
 }
 #- action call
@@ -113,8 +115,7 @@ try{
   $controller->$_action();
 }catch(Exception $e){
 	if( DEVEL_MODE )
-		show($e->getMessage(),$e->getTrace(),'color:maroon;trace;exit');
-	abstractController::appendAppMsg($e->getMessage(),'error');
+		show($e->getMessage(),$e->getTrace(),'color:maroon;exit');
+	abstractController::appendAppMsg(langManager::msg("Can't find '%s' action for '%s' controller.",array($_action,$_controller)),'error');
 	$controller->redirectAction(ERROR_DISPATCH,null,null,404);
 }
-
