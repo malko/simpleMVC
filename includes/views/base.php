@@ -18,6 +18,9 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2009-12-09 - cacheName now take currentLang into account when langManager is used
+*            - 2009-11-20 - add support for cacheManager on helpers calls
+*            - 2009-10-23 - add viewException
 *            - 2009-10-13 - baseView::addViewDir() method now avoid duplicate entry
 *            - 2009-06-22 - new viewInterface method hasLivingInstance()
 *            - 2009-02-06 - now viewInterface implements singleton pattern
@@ -86,6 +89,7 @@ interface viewInterface{
 	function getPendingAppMsgs();
 }
 
+class viewException extends Exception{}
 /**
 * @class baseView
 */
@@ -186,19 +190,40 @@ class baseView implements viewInterface{
 			if( isset($this->{$match[1]}) )
 				return $this->{$match[1]};
 		}
-
+		$cached = false;
+		if( strpos($m,'_cached_')===0 ){
+			$cached = true;
+			$m = substr($m,8);
+			$cacheName = $m.(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').(empty($a)?'':'_'.md5(serialize($a)));
+			$res = cacheManager::get($cacheName);
+			if( null !== $res)
+				return $res;
+		}
 		#- try helpers method calls
 		if(! preg_match('!^_([a-zA-Z0-9]+?)_(.*)!',$m,$match) ){ #- call to default helper methods
 			$helper = $this->getHelper($m,true);
+			if( $cached)
+				return cacheManager::set($cacheName,call_user_func_array(array($helper,$m),$a));
 			return call_user_func_array(array($helper,$m),$a);
 		}else{ #- considering we are in presence of a "complex" helper method call ie: _helperName_methodName()
 			if( method_exists($match[1].'_viewHelper',$match[2]) ){
 				$helper = $this->getHelper($match[1],true);
+				if( $cached)
+					return cacheManager::set($cacheName,call_user_func_array(array($helper,$match[2]),$a));
 				return call_user_func_array(array($helper,$match[2]),$a);
 			}
 		}
+		#- if(! preg_match('!^_([a-zA-Z0-9]+?)_(.*)!',$m,$match) ){ #- call to default helper methods
+			#- $helper = $this->getHelper($m,true);
+			#- return call_user_func_array(array($helper,$m),$a);
+		#- }else{ #- considering we are in presence of a "complex" helper method call ie: _helperName_methodName()
+			#- if( method_exists($match[1].'_viewHelper',$match[2]) ){
+				#- $helper = $this->getHelper($match[1],true);
+				#- return call_user_func_array(array($helper,$match[2]),$a);
+			#- }
+		#- }
 		#- nothing was found at all throw an exception
-		throw new Exception(__class__."::$m() unsupported method call.");
+		throw new viewException(__class__."::$m() unsupported method call.");
 	}
 
 	/**
@@ -227,8 +252,10 @@ class baseView implements viewInterface{
 		#- return new instance of helper
 		$helperKey = strtolower($helperName);
 		$helperName.= '_viewHelper';
-		if(! class_exists($helperName) ){
-			throw new Exception("$helperName view Helper not found");
+		try{
+			class_exists($helperName);
+		}catch(Exception $e){
+			throw new viewException("$helperName view Helper not found");
 		}
 		$this->_loadedHelpers[$helperKey] = new $helperName($this);
 		return $this->_loadedHelpers[$helperKey];
@@ -275,7 +302,7 @@ class baseView implements viewInterface{
 	*/
 	public function addViewDir($viewDir){
 		if(! is_dir($viewDir) )
-			throw new Exception("$viewDir is not a valid directory");
+			throw new viewException("$viewDir is not a valid directory");
 		#- if already set remove it first so it appear only once at last position
 		if( ($tmp = array_search($viewDir,$this->_viewDirs,true)) !== false){
 			unset($this->_viewDirs[$tmp]);
