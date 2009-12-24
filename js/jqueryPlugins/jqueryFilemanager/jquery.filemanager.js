@@ -2,6 +2,7 @@
 * define filemanager, filemanagerButton, filemanagerEntry plugins
 * @require jquery.ui >= 1.7
 * @changelog
+*           - 2009-10-22 - now filemanagerEntry() trigger a change event when a file is selected
 *           - 2009-04-02 - resize rootList when container is scrolled to keep a info buttons clickable
 *           - 2009-03-24 - add filemanagerButton extension
 *           - 2009-03-23 - add option parameter prefixValue for filemanagerEntries
@@ -127,7 +128,7 @@ function show(){
 			var i = $('#'+inputId);
 			if( ! i.length )
 				i = $('input[name="'+inputId+'"]')
-			i.val((this.opts.prefixValue?this.opts.prefixValue:'')+path);
+			i.val((this.opts.prefixValue?this.opts.prefixValue:'')+path).change();
 
 			return false;
 		}

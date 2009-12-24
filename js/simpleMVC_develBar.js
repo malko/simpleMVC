@@ -52,10 +52,10 @@ var cookies={
 		//- background:'#F0F0F0', position:'absolute', left:0, top:0,
 		//- zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
 		//- border:'solid #333 1px',borderTop:'none',borderLeft:'none'
-		position:'absolute', left:0, top:0,
+		position:'absolute', left:0, top:0,textAlign:'left',
 		zIndex:999,  overflow:'auto', display:'none'
 	};
-	var pannelTitleStyle = { color:'#555', fontSize:'18px', margin:'10px 0', borderBottom:'solid #555 1px' };
+	var pannelTitleStyle = { color:'#555', fontSize:'18px', margin:'10px 0', borderBottom:'solid #555 1px'};
 	/*var toolBarButtonStyle = {border:'solid #555 1px','border-top':'none',color:'#333',cursor:'pointer',background:'#F0F0F0',margin:0};
 	$('button',toolBar).css(toolBarButtonStyle);*/
 
@@ -131,7 +131,7 @@ var cookies={
 
 	//-- Manage DB::profiler reports display
 	var report = $('#dbProfilerReport').parent('table');
-	var dbMsgs = $('b.dbMsg'); // append eventual class-db errors
+	var dbMsgs = $('div.dbMsg'); // append eventual class-db errors
 	if( (report.length+dbMsgs.length)==0){
 		btDb.hide().remove();
 		dbDiv.hide().remove();
@@ -155,12 +155,14 @@ var cookies={
 			position:'absolute',
 			zIndex:1000,
 			left:'-1px',
+			top:btDataMenu.innerHeight(),
 			textAlign:'left',
 			listStyleType:'none',
 			listStyleImage:'none',
 			margin:'2px 0',
-			padding:'0 10px'
-		}).addClass('ui-widget-content ui-corner-bottom').hide();
+			padding:'0 10px',
+			display:'none'
+		}).addClass('ui-widget-content ui-button-none ui-corner-bottom');
 		$('li',dataMenu).css({fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
 		btDataMenu.bind('click',{p:dataMenu},function(e){
 			var p = e.data.p;
@@ -192,7 +194,7 @@ var cookies={
 		if( visible)
 			sibs.attr('style','display:none!important');
 		else
-			sibs.attr('style','');
+			sibs.show();
 		$(this).button('option','icon',visible?'ui-icon-circle-triangle-w':'ui-icon-circle-triangle-e')
 		//this.innerHTML = visible?'&gt;':'&lt;';
 		cookies.set('SMVCDevToggle',visible?1:0);

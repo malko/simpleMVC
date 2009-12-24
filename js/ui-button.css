@@ -22,3 +22,7 @@
 .ui-button-inlineBlockFix.ui-button-orientation-t .ui-button-icon{width:16px;}
 .ui-button-inlineBlockFix.ui-button-orientation-b .ui-button-icon{width:16px;}
 .ui-button-inlineBlockFix .ui-button-icon{margin:0;}
+
+@media screen and (-webkit-min-device-pixel-ratio:0){
+	.ui-button-label.ui-button-label-empty{ height: 1.3em;}
+}

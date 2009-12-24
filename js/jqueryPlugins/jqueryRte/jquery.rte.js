@@ -137,7 +137,7 @@
 				}
 				return instance;
 			}
-			self = this;
+			var self = this;
 			elmt.get(0).rteInstance = self;
 			self.opts     = $.extend({}, $.fn.rte.defaults, options);
 			self.opts._buttonExp = new RegExp('.*('+this.opts.buttonSet+').*','i'); // used internally to easily [en/dis]able some buttons
@@ -201,11 +201,17 @@
 			$(this.iframe).before(this.toolbar);
 			this.container = $('#RTE_'+this.id);
 			var height = this.opts.height!=0 ? this.opts.height : (parseInt(this.textarea.height())+parseInt(this.toolbar.outerHeight()));
-			this.container.width((this.opts.width!=0 ? this.opts.width : this.textarea.width())+'px')
+			var width  = this.opts.width!=0 ? this.opts.width : this.textarea.outerWidth();
+			this.container.width(width+'px')
+				.height( height+'px')
+				.css('text-align','center');
+			height -= parseInt(this.toolbar.outerHeight());
+			$(this.iframe).width(width).height(height+'px');
+			/*this.container.width((this.opts.width!=0 ? this.opts.width : this.textarea.width())+'px')
 				.height( height+'px')
 				.css('text-align','center');
 			height -= parseInt(this.toolbar.height());
-			$(this.iframe).height(height+'px');
+			$(this.iframe).height(height+'px');*/
 			$(this.textarea).height(height+'px');
 			return this;
 		},
@@ -272,7 +278,7 @@
 
 		syncFromEditor: function(){
 			this.setSelectors();
-			this.textarea.val($(this.editable).find('body').html());
+			this.textarea.val($(this.editable).find('body').html()).change();
 		},
 
     setSelectors: function(){

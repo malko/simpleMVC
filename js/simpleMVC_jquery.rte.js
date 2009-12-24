@@ -147,3 +147,7 @@ cbRteLinkDialog=function(rte,range){
 	rteDg.range = range;
 	rteLinkDialog.dialog('open');
 }
+
+requiredRteValidable = function(val){
+	return val.match(/^(<br( \/)?>|<p>&nbsp;<\/p>)$/i)?false:true
+}
