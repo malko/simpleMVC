@@ -6,6 +6,7 @@ if((! isset($_POST['dir'])) && isset($_GET['dir']))
 $fm = new fileManager(dirname(dirname(__file__)).'/test',dirname(dirname($_SERVER['PHP_SELF'])).'/test');
 echo $fm->processRequest();
 */
+error_reporting(0);
 class fileManager{
 
 	/** define the physic path to root dir */
