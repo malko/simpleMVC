@@ -68,10 +68,13 @@ baseView::$defaultLayout = array(
 #-	APP_DIR.'/locales',
 #-);
 #- then set current lang in session
-#-if( isset($_SESSION['lang']) )
-#-	langManager::setCurrentLang($_SESSION['lang']);
-#-else
-#-	$_SESSION['lang'] = langManager::langDetect(true);
+#- if( isset($_SESSION['lang']) || isset($_COOKIE['lang']) ){
+#- 	if(empty($_SESSION['lang']))
+#- 		$_SESSION['lang'] = $_COOKIE['lang'];
+#- 	langManager::setCurrentLang($_SESSION['lang']);
+#- }else{
+#- 	$_SESSION['lang'] = langManager::langDetect(true);
+#- }
 #- set default dictionary for model filters messages (usefull only if you use abstractModels and langManager in the same app)
 #- abstractModel::$dfltFiltersDictionary='filters';
 
@@ -82,6 +85,8 @@ if( USE_REWRITE_RULES ){
 		if(isset($_GET[$_SERVER['PATH_INFO']]) && empty($_GET[$_SERVER['PATH_INFO']])){
 			unset($_GET[$_SERVER['PATH_INFO']]);
 		}
+	}elseif((!isset($_SERVER['PATH_INFO'])) && PHP_SAPI==='cli' && isset($argv[1]) ){ // read from command line first parameter
+		$_SERVER['PATH_INFO'] = ($argv[1][1]==='/'?'':'/').$argv[1];
 	}
 	if( isset($_SERVER['PATH_INFO']) ){
 		$route = explode('/',substr($_SERVER['PATH_INFO'],1));

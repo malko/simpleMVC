@@ -8,6 +8,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-01-04 - add cli support for show
 *            - 2009-06-22 - autoloading viewHelpers will now check in active view setted _viewDirs
 *            - 2009-04-20 - now more show when not in DEVEL_MODE
 *            - 2009-03-16 - use spl_register_autoload for better autoload support when included in other application.
@@ -289,7 +290,7 @@ function show(){
 			$getTrace = array();
 		if(preg_match('!(^|;)exit(;|$)!',$param))
 			$halt = true;
-		$color = match('!(?:^|;)color:([^;]+)(?:;|$)!',$param);
+		$color = match('!(?:^|;)color:([^;]+)(?:;|$)!',$param,1);
 		if( $color || $halt || isset($getTrace))
 			array_pop($args);
 	}
@@ -345,6 +346,19 @@ function show(){
 	$trace = str_replace(ROOT_DIR.'/','',$trace[0]['file'])
 		.(empty($trace[1]['function'])? '' : ' in '.(isset($trace[1]['class'])?$trace[1]['class'].$trace[1]['type']:'').$trace[1]['function'].'()')
 		.':'.$trace[0]['line'];
+
+	if( PHP_SAPI === 'cli' ){
+		require_once(LIB_DIR.'/db/scripts/libs/class-console_app.php');
+		if(! preg_match('!black|red|green|brown|blue|magenta|cyan|grey!',$color) ){
+			$color = 'red';
+		}
+		console_app::tagged_string("Show ( $trace )\n $str",$color,true);
+		if( $halt ){
+			console_app::msg('SCRIPT EXITED BY SHOW','bold|red');
+			exit();
+		}
+		return false;
+	}
 	echo "<div class=\"show\" style=\"background:#F0F0F0;text-align:left;font-size:12px;\"><strong $bStyle>Show ( $trace )</strong><br /><pre $preStyle><xmp>$str</xmp></pre></div>";
 	if($halt){
 		echo "<h5 style=color:red;text-align:center;>SCRIPT EXITED BY SHOW</h5>";
