@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-01-05 - add support for trailing comments
 *            - 2009-10-19 - bug correction in write_conf_file() when adding new vars on file not terminated by a new line
 *            - 2009-06-25 - bug correction (notice on undefined $var) in write_conf_file() when first lines are empties or comments
 *            - 2009-02-05 - parse_conf_file will return empty array on error instead of false when $out is true
@@ -27,6 +28,23 @@
 *            - 2005-09-30 - remove GUI_TYPE==GTK suppport
 *                         - optimize all the code for better performance (parsing) and better multiline support (writing)
 *            - 2005-06-11 - now write_conf_file() can unset or comment some vars using --COMMENT--,--UNSET-- in place of the value
+* @example
+# config file are in the form VAR_NAME = VAR_VALUE
+# any line starting with a # (evenutally preceded by some blank chars) will be considered as comments.
+# so this is a commentary
+# multiline values may be used in which case each lines must be terminated by a \
+VAR = this is a \
+multiline value
+# you may reuse a previously defined var (in the config file or as php constants) by encapsulting it between % chars
+VAR1 = VAL1
+VAR2 = val 2 contains VAR1 value as well: %VAR1%
+# to avoid accidental replacement % chars may be doubled to be escaped
+VAR3 = val 3 won't contain VAR1 value %%VAR1%%
+# commentary may be append to the end of the line
+VAR4 = value # trailing commentary
+# and # inside values must be escaped by a \ to avoid to get considered as commentary
+VAR5 = this contain a \# and this is not a comment
+
 */
 
 /**
@@ -45,8 +63,18 @@ function parse_conf_file($file_path,$out = false){
 
 	if( $out)
 		$out_ = array();
-	$_search = array("/(?<!%)(%(?=[a-z_])([a-z0-9_]+)%)/ie",'!%%!',"!\\\\\s*\r?\n!");
-	$_replce = array("isset(\$out_['\\2'])?\$out_['\\2']:(defined('\\2')?\\2:'\\0');",'%',"\n");
+	$_search = array(
+		"/(?<!%)(%(?=[a-z_])([a-z0-9_]+)%)/ie", # previously defined replacement
+		'!%%!',                                 # doubled %
+		"!\\\\\s*\r?\n!",                       # multiline escapment
+		"/(?<!\\\\)#.*$/",                      # trailing comments
+	);
+	$_replce = array(
+		"isset(\$out_['\\2'])?\$out_['\\2']:(defined('\\2')?\\2:'\\0');",
+		'%',
+		"\n",
+		'',
+	);
 
 	# parse conf file
 	$preserve = false;
