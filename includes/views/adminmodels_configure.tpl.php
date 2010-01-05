@@ -81,6 +81,16 @@
 				<li> rteOpts      is used for rte options</li>
 				<li> uneditable   setted to true will allow field to be filled only at item creation time, and will be disabled the rest of the time.</li>
 				<li> sort         is only used for hasMany relations and require a valid modelCollection sort method to be call ({"sort":"rsortByName"}).</li>
+				<li>User input validation use our jquery.validable plugin here's how you define your rules.<br />
+			All options are optionnals, here a thoose:
+			<code>- useIcon   => bool (default: true)
+- stateElemt=>'label|self|jQuerySelector'     (self as default)
+- rule      => '/regexp or javascript callback validation function name/',
+- maxlength => int,
+- minlength => int,
+- required  => bool (default: false)
+- help      => 'message to display next the input as a tooltip'
+</code></li>
 			</ul>
 			<strong>Warning: </strong>Options are not checked for validation so be carrefull to pass a valid json string as define in php json_encode.
 		</div>
@@ -88,7 +98,7 @@
 		<div id="fieldList">
 			<?php
 					if( $this->datasDefs ){
-						$types = array('--- default ---','skip','select','selectbuttonset','text','textConfirm','password','passwordConfirm','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','codepress');
+						$types = array('--- default ---','skip','select','selectbuttonset','text','textConfirm','password','passwordConfirm','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','fileextended','fileentry','codepress');
 						$types = array_combine($types,$types);
 						$fieldGroupMethod = '';
 						if( is_object($this->fieldOrder)){
@@ -148,50 +158,6 @@
 			<button type="button" id="addFieldSet" class="ui-button ui-button-circle-plus"><?php echo langManager::msg('Add input group container')?></button>
 			<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 		</div>
-	</div>
-</form>
-
-<form action="<?= $this->url('setValidations',null,array('modelType'=>$this->modelType)) ?>" method="post" id="validations">
-	<h3><a name="validations">User input validations</a></h3>
-	<div id="validations-pannel">
-		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
-			<strong>Notes: </strong>
-			<br />
-			User input validation use our jquery.validable plugin here's how you define your rules.<br />
-			All options are optionnals, here a sample exemple:
-			<code>array(
-  'stateElemt'=>'label'
-	'useIcon'   => true
-	'rules'     => array(
-      <span id="validableTemplate">'inputName' => array(
-      'rule'      => '/regexp or javascript callback validation function name/',
-      'maxlength' => int,
-      'minlength' => int,
-      'required'  => bool,
-      'help'      => 'message to display next the input'
-    ),</span>
-  )
-)
-</code>
-<div id="validableTags"> name of user inputs available: <br /></div>
-<script>
-//-- add here quick rule helper
-var validableTags=[];
-$(':input[id^=inputType]').each(function(){
-	validableTags.push(this.id.replace(/^[^\[]+\[([^\]]+)\]$/,'$1'));
-});
-$('#validableTags').append(validableTags.join(',&nbsp;'));
-</script>
-		</div>
-	<?php
-		echo $this->editarea(
-			'validableRules',
-			(empty($_POST['validableRules'])?(empty($this->_modelConfig["VALIDATION"])?'':var_export($this->_modelConfig["VALIDATION"],1)):$_POST['validableRules']),
-			array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')
-		);
-	?>
-	<br />
-	<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
 	</div>
 </form>
 
@@ -261,7 +227,7 @@ $this->js('
 	var styleClass = "ui-widget-content ui-corner-all";
 
 	//-- make this an accordion
-	var formsIds = {"string":0,"list":1,"forms":2,"validations":3,"messages":4,"actions":5,"config":6,"model":7};
+	var formsIds = {"string":0,"list":1,"forms":2,"messages":3,"actions":4,"config":5,"model":6};
 	var activeForm =  window.location.href.match(/#\/?(\w+)/);
 	activeForm = (null!==activeForm && activeForm.length)?formsIds[activeForm[1]]:1;
 	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:activeForm,collapsible:true});

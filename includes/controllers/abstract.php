@@ -383,11 +383,11 @@ abstract class abstractController{
 		}elseif($this->view instanceof viewInterface){ #- check for a view corresponding to this controller/action
 			if( false===$this->view->lookUpScriptByAction($method,null,':controller_:action.tpl.php') ){
 				try{
-			return call_user_func_array(array($this->view,$method),$args);
+					return call_user_func_array(array($this->view,$method),$args);
 				}catch(viewException $e){
 					throw new BadMethodCallException(get_class($this)."::$method() method doesn't exist");
 				}
-		}else{
+			}else{
 				$this->_currentActionStart($method);
 				$this->view->render($method);
 				$this->_currentActionEnd($method);
