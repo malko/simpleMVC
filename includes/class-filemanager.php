@@ -1,4 +1,9 @@
 <?php
+/**
+* @class fileManager
+* @changelog
+*            - 2010-01-12 - set umask to 0 before upload and restore it.
+*/
 /*
 if((! isset($_POST['dir'])) && isset($_GET['dir']))
 	$_POST = $_GET;
@@ -253,8 +258,9 @@ class fileManager{
 		$destPath = $realPath.$_FILES['newfile']['name'];
 		if( file_exists($destPath))
 			return $this->response($additionalDatas,array('error'=>"fileAlreadyExists",'basepath'=>$path));
+		$uMask = umask(0);
 		$res = move_uploaded_file($_FILES['newfile']['tmp_name'],$destPath);
-
+		umask($uMask);
 		return $this->response(
 			$additionalDatas,
 			array('basepath'=>$path),

@@ -22,7 +22,7 @@ define('ROOT_DIR',dirname(dirname(__file__)));
 define('CONF_DIR',ROOT_DIR.'/config');
 
 #- include common function set and most important, will declare the autoloader and parse configs files.
-require '../includes/fx-common.php';
+require ROOT_DIR.'/includes/fx-common.php';
 
 #- starting session in corresponding context and ensure each MVC application has it's own session
 if( isset($_SESSION) )
@@ -45,12 +45,6 @@ abstractController::$defaultViewDirs  = array(
 	APP_DIR.'/views'
 );
 
-#- setting default layout
-baseView::$defaultLayout = array(
-  'header.tpl.php',
-  ':controller_:action.tpl.php|default_:action.tpl.php',
-  'footer.tpl.php'
-);
 #- some helpers configuration
 #- formInput_viewHelper::$useFileEntry = true;
 #- filemanager_viewHelper::$defaultOptions['prefixValue']='';
@@ -98,6 +92,12 @@ if( USE_REWRITE_RULES ){
 	}
 }
 
+#- setting default layout
+baseView::getInstance()->setLayout(array(
+  'header.tpl.php',
+  ':controller_:action_'.langManager::getCurrentLang().'.tpl.php|:controller_:action.tpl.php|default_:action.tpl.php',
+  'footer.tpl.php'
+));
 list($_defaultController,$_defaultAction) = explode(':',DEFAULT_DISPATCH);
 #- get requested controller and action
 $_controller = isset($_POST['ctrl'])?$_POST['ctrl']:(isset($_GET['ctrl'])?$_GET['ctrl']:(!empty($_controller)?$_controller:$_defaultController));

@@ -38,8 +38,8 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		$datas   = "var $tableId = [\n        ".implode(",\n        ",$jsData)."\n      ];\n";
 		$controller = $this->getController()->getName();
 		#- $baseUrl = APP_URL.'/'.$controller->getName.'/';
-		$msgEdit = htmlentities(langManager::msg('Edit'));
-		$msgDel  = htmlentities(langManager::msg('Delete'));
+		$msgEdit = htmlentities(langManager::msg('Edit'),ENT_COMPAT,'utf-8');
+		$msgDel  = htmlentities(langManager::msg('Delete'),ENT_COMPAT,'utf-8');
 		$this->js("
 			var options = { rowRendering: function(row,data){
 				$(row).addClass(data.rowid%2?'row':'altrow');
