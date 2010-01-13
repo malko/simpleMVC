@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-01-13 - add differents pageTitles for add and edit actions.
 *            - 2009-09-xx - first attempt for validation integration.
 *            - 2009-07-06 - now load config for each action
 *            - 2009-07-02 - add LIST_FILTER configuration
@@ -116,8 +117,7 @@ class adminmodelsController extends abstractController{
 			if( preg_match('!^(LIST(?:_FILTERS)?|VALIDATION|ACTION|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
 				if( $m[1] === 'ACTION' )
 					$this->_allowedActions = 	json_decode($v,true);
-				else
-					$this->_modelConfig[$m[1]] = json_decode($v,$m[1]==='FORM_ORDER'?false:true);
+				$this->_modelConfig[$m[1]] = json_decode($v,$m[1]==='FORM_ORDER'?false:true);
 			}
 		}
 		$this->view->_config = $this->_config;
@@ -278,6 +278,7 @@ class adminmodelsController extends abstractController{
 		}
 		if(!empty($this->fieldFilters))
 			$this->view->assign($this->fieldFilters) ;
+		$this->pageTitle = $this->langMsg('Add new '.$this->modelType);
 		return $this->forward('form');
 	}
 	function editAction(){
@@ -293,6 +294,7 @@ class adminmodelsController extends abstractController{
 		}
 		$this->view->_model_ = $model;
 		$this->view->assign($model->datas);
+		$this->pageTitle = $this->langMsg('Edit '.$this->modelType);
 		return $this->forward('form');
 	}
 	function formAction(){

@@ -89,8 +89,8 @@ foreach($this->inputOpts as $o){
 <div style="text-align:right;">
 	<div class="ui-buttonset" style="margin:0.2em 0;">
 		<?php
-			if( empty($this->_modelConfig['ACTION']) || $this->_modelConfig['ACTION']['list'] )
-				echo '<button type="button" onclick="window.location=\''.$this->listUrl.'\';" class="ui-button ui-button-arrowreturnthick-1-w">'.langManager::msg('back',null,$this->_langManagerDicName).'</button>';
+			$backAction = "window.location='".(( empty($this->_modelConfig['ACTION']) || $this->_modelConfig['ACTION']['list'] )?$this->listUrl:DEFAULT_DISPATCH)."';";
+			echo '<button type="button" onclick="'.$backAction.'" class="ui-button ui-button-arrowreturnthick-1-w">'.langManager::msg('back',null,$this->_langManagerDicName).'</button>';
 		?>
 		<button type="submit" class="ui-button ui-button-disk"><?php echo langManager::msg('save',null,$this->_langManagerDicName); ?></button>
 	</div>
