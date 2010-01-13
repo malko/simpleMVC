@@ -1,0 +1,10 @@
+#Order Deny,Allow
+# Allow from apache.org
+Allow from 192.168.10
+Deny from all
+
+
+#<Limit POST>
+# AuthType Basic
+#require valid-user
+#</Limit>
