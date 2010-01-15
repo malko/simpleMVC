@@ -1,4 +1,16 @@
 <?php
+/**
+declaration variable: Ok
+	@var: val|"val"|'val' ;
+remplacement var: Ok
+nested: Ok
+import: Ok
+	@:[.#]ruleName
+	@!:[.#]ruleName
+	@:[.#]ruleName[property]
+*/
+
+
 	#- set editor id (will be also used as part as the storage key)
 	if( ! empty($_GET['editorId']) ){
 		$editorId =$_GET['editorId'];
@@ -73,7 +85,11 @@
 <div id="<?=$editorId?>" class="tk-cssEditor"></div>
 <script>
 (function($){
-
+	if(! String.prototype.trim){
+		String.prototype.trim = function(){
+			return this.replace(/^\s*|\s*$/,'');
+		}
+	}
 	$.toolkit('tk.cssEditor',{
 		_storableOptions:{
 			elementLevel:'content|rawFilePath|compFilePath'
@@ -111,14 +127,14 @@
 			// if notify plugin is present then initialise it
 			if( $.tk.notifybox ){
 				self.notify = $.tk.notifybox.initDefault({vPos:'top',hPos:'right'});
-				self.notify.notifybox('msg','<div class="tk-state-success">editor initialized.</div>');
+				$('<div class="tk-state-success">editor initialized.</div>').notify();
 			}
 			// define posts callBacks
 			self._loadRawContentResponse= function(data,status){
 				if(status==='success' && data.length){
 					self.set('content',data);
 					if( self.notify){
-						self.notify.notifybox('msg','<div class="tk-state-info">raw content loaded</div>');
+						$('<div class="tk-state-info">raw content loaded</div>').notify();
 					}
 				}
 			};
@@ -151,45 +167,126 @@
 			}
 			return c;
 		},
+		_parseRawString: function(str,compact){
+			//-- remove commentaries and extra lines/spaces
+			str = str.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*\n/mg,'').replace(/^\s*/mg,'').replace(/\n\n+/g,'\n');
+			compact=compact?true:false;
+			var parseStr='',
+				parseKey='',
+				fullKey='',
+				stackKey = [],
+				stackStr = [],
+				rules = {},
+				ruleOrder = {},
+				defined={},
+				delayed={},
+				funcs={},
+				imports=[],
+				i,match,endPos;
+
+			//-- read func and var defined:
+			/*str.replace(/\s*@([a-z_][a-z0-9_]*):([^,;]*|"([^"]+\\")*"|'([^']+\\'))[,;]/ig,function(m,k,v){
+				defined[k]=v;
+			})*/
+			//-- defined reading
+			str = str.replace(/\s*(@[a-z_][a-z0-9_]*)\s*:\s*(?:([^;"']*)|("([^"]+|\\")*"|'([^']+|\\')'));|@import\s+url.*?;/ig,function(m,k,v1,v2){
+				if( k===''){
+					imports.push(m);
+				}else if( v1 !== '' ){
+					defined[k]=v1;
+				}else if( v2 != '' ){
+					eval('defined[k]='+v2+';');
+				}
+				return '';
+			});
+			var lines = str.split('\n'),
+				l=lines.length;
+
+			for(i=0;i<l;i++){
+				parseStr += lines[i]+'\n';
+				if( parseStr.indexOf('{') > -1){ // look up for an identifier
+					match = parseStr.match(/^(\s*|[\s\S*]+?[;\}]\s*)([^;\{\}]+)\s*\{([\s\S]*)$/);
+					parseKey=match[2].trim();
+					parseStr = match[3].trim();
+					fullKey = (stackKey.length?stackKey.join(' ')+(parseKey.substr(0,1)===':'?'':' '):'') + parseKey;
+					ruleOrder[fullKey]=true;
+					stackKey.push(parseKey);
+					stackStr.push(match[1].trim());
+				}
+				endPos = parseStr.indexOf('}');
+				if(endPos > -1){ // close current value
+					parseKey = stackKey.pop();
+					fullKey = (stackKey.length?stackKey.join(' ')+(parseKey.substr(0,1)===':'?'':' '):'') + parseKey;
+					rules[fullKey] = (undefined!==rules[fullKey]?rules[fullKey]+'\n':'')+parseStr.substr(0,endPos).trim();
+					parseStr = (stackStr.length?stackStr.pop():'')+parseStr.substr(endPos+1);
+					continue;
+				}
+			}
+			//-- no that we have correctly unnested all that mess we can execute the rules
+			str = imports.length?imports.join('\n')+'\n':'';
+
+			var replaceCbs = {
+				'import':[ // rule import
+					/@!?:\s*([^;\n\{\}]+)/g,
+					function(m,p){
+						p = p.trim();
+						if( p.indexOf('[') > -1){ // replace @:rules[rule]
+							match = p.match(/^(.*)?\s*\[\s*([^\]]+?)\s*\]$/);
+							match = rules[match[1]].match(new RegExp(match[2]+'\\s*:\\s*([^\\{\\};]+?)\\s*;'));
+							return match[1]?match[1]:m;
+						}
+						if(m.substr(1,1)==='!'){ //- repace @:@mixin
+							var id,_id;
+							for( id in ruleOrder){
+								if( id.match(new RegExp('^'+p+'(?![a-zA-Z0-9_])(.+)$'))){
+									_id = id.replace(p,parseKey);
+									delayed[_id] = (delayed[_id] ?delayed[_id]:' ')+rules[id];
+								}
+							}
+						}
+						return rules[p]?rules[p]:m;
+					}
+				],
+				'vars':[ // var replacement
+					/@[a-z_][a-z0-9_]*/ig,
+					function(m){
+						return defined[m]?defined[m]:m;
+					}
+				],
+				'clean':[
+					/([{;])\s*(?!$)/g,
+					compact?'$1':'$1\n\t'
+				]
+			},cb;
+//dbg(defined,rules);
+			for(parseKey in ruleOrder){
+				if(undefined===rules[parseKey]){
+					if( $.tk.notify ){
+						$('<div class="tk-state-error">Undefined rule '+parseKey+'</div>').notify();
+					}
+					continue;
+				}
+				for(cb in replaceCbs ){
+					rules[parseKey] = rules[parseKey].replace(replaceCbs[cb][0],replaceCbs[cb][1]);
+				}
+				if( parseKey.indexOf('@')===0){
+					continue;
+				}
+				str += parseKey+(compact?'{':'{\n\t')+rules[parseKey]+(compact?'}\n':'\n}\n');
+				for(i in delayed){
+					str += i+(compact?'{':'{\n\t')+delayed[i]+(compact?'}\n':'\n}\n');
+				}
+				delayed = {};
+			}
+
+			return str.replace(/;\s*;/g,';');
+		},
 		computeStyle: function(action){
 			if( typeof(action)!=='string')
 				action = 'inject';
 			var self = this,
-				c = this._saveContent(),
-				// lecture des variables: on parse les commentaires en début de fichier
-				toParse = c.replace(/^\s*\/\*+([\s\S]*?)\*+\/[\s\S]*$/,'$1').replace(/^@([a-zA-Z_]+[a-zA-Z_0_9]*)\s*=/mg,'var $1 ='),
-				out = c.substr(c.indexOf('*/')+2);//- remove first comment
-			// read defined rules if any
-
-			try{
-				eval(toParse);
-			}catch(e){
-				if( self.notify){
-					self.notify.notifybox('msg','<div class="tk-state-error">'+e+'</div>');
-				}else{
-					alert(e);
-				}
-				return false;
-			};
-			// now apply them
-			out = out.replace(/@([a-zA-Z_]+[a-zA-Z_0_9]*)(\(.*?\))?/g,function(m,name,params){
-				var r = '';
-				try{
-					if( !params ){
-						r = eval(name);
-					}else{
-						eval('r='+name+params);
-					}
-				}catch(e){
-					if( self.notify){
-						self.notify.notifybox('msg','<div class="tk-state-error">'+e+'</div>');
-					}else{
-						alert(e);
-					}
-					return m;
-				}
-				return r;
-			});
+				c = this._saveContent();
+			out = self._parseRawString(c,self.options.compactOutput);
 			switch(action){
 				case 'export':
 					var w = window.open('','cssEditorComputedStyleExport','toolbar=no,statusbar=no,scrollbars=yes');
@@ -197,24 +294,26 @@
 					break;
 				case 'inject':
 					// check for a computed style element in parent if none create it
-					var parentHead = $('head',window.opener.document),
-						s = $('style#cssEditorComputedStyle',parentHead),
-						l = $('link[href$='+self.elmt.attr('id')+'.css]',parentHead);
-					cssPath = window.location.href.replace(/[^\/]*$/,'')+self.options.compFilePath;
-					out = out.replace(/url\((\.\/|)?(?!http:\/\/)/g,'url('+cssPath+(cssPath.substr(-1)==='/'?'':'/'));
-					if( l.length)
-						l.remove();
-					if( s.length)
-						s.remove();
-					if($.support.style){
-						s = $('<style id="cssEditorComputedStyle" type="text/css"></style>').text(out);
-					}else{ // ie version
-						s = window.opener.document.createElement('STYLE');
-						s.setAttribute('type','text/css');
-						s.styleSheet.cssText = out;
-						s =$(s);
+					if( window.opener){
+						var parentHead = $('head',window.opener.document),
+							s = $('style#cssEditorComputedStyle',parentHead),
+							l = $('link[href$='+self.elmt.attr('id')+'.css]',parentHead);
+						cssPath = window.location.href.replace(/[^\/]*$/,'')+self.options.compFilePath;
+						out = out.replace(/url\((\.\/|)?(?!http:\/\/)/g,'url('+cssPath+(cssPath.substr(-1)==='/'?'':'/'));
+						if( l.length)
+							l.remove();
+						if( s.length)
+							s.remove();
+						if($.support.style){
+							s = $('<style id="cssEditorComputedStyle" type="text/css"></style>').text(out);
+						}else{ // ie version
+							s = window.opener.document.createElement('STYLE');
+							s.setAttribute('type','text/css');
+							s.styleSheet.cssText = out;
+							s =$(s);
+						}
+						s.appendTo(parentHead);
 					}
-					s.appendTo(parentHead)
 					break;
 				case 'return':
 					this.editor.focus();
@@ -259,10 +358,12 @@
 			//dbg(e.which,e.ctrlKey)
 			if(! e.ctrlKey)
 				return true;
-			var ed = this.editor;
+			var ed = this.editor,
+				letsgo = true;
 
 			switch(e.which){
 				case 100://ctrl+d  duplicate line or selection
+				case 68:
 					var s = ed.selection();
 					if( s.length ){
 						ed.replaceSelection(s+''+s);
@@ -271,22 +372,29 @@
 						s = ed.lineContent(l);
 						ed.setLineContent(l,s+'\n'+s);
 					}
-					e.preventDefault();
-					ed.focus();
-					return false;
+					letsgo = false;
+					break;
+				case 101: //e
+				case 69:
+					this.computeStyle('export');
+					letsgo = false;
 					break;
 				case 115: //s
 				case 83:
 					if( e.shiftKey){
 						this.saveRawContent();
 						this.saveComputedContent();
-						e.preventDefault();
-						return false;
+						letsgo = false;
 					}
 					break;
 			}
-			return true;
-		},
+			if( letsgo){
+				return true;
+			}
+			e.preventDefault();
+			ed.focus();
+			return false;
+		}
 	});
 	$.tk.cssEditor.defaults={
 		editorApi: 'codeMirror',
@@ -296,6 +404,7 @@
 			height:'95%'
 		},
 		content:null,
+		compactOutput:false,
 		rawFilePath:'../../',
 		compFilePath:'../../'
 	}
@@ -339,10 +448,12 @@
 						textWrapping:false,
 						saveFunction:function(){
 							tkWidget.computeStyle('inject');
+							return false;
 						},
 						initCallback:function(){
 							tkWidget._applyOpts('content');
 							$(tkWidget.editor.win.document).keypress(function(e){tkWidget.shortCutKey(e)});
+							tkWidget.editor.focus();
 						}
 					});
 			},
