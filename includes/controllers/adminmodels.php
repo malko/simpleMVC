@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-01-15 - bug correction on save
 *            - 2010-01-13 - add differents pageTitles for add and edit actions.
 *            - 2009-09-xx - first attempt for validation integration.
 *            - 2009-07-06 - now load config for each action
@@ -376,6 +377,9 @@ class adminmodelsController extends abstractController{
 		if( $model->hasFiltersMsgs() ){
 			self::appendAppMsg($model->getFiltersMsgs(),'error');
 			$this->view->assign($model->datas);
+			if( isset($_POST[$modelPKName])){
+				$this->view->_model_ = $model;
+			}
 			return $this->forward('form',$this->getName());
 		}
 		if($model->isTemporary())
