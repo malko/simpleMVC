@@ -7,6 +7,7 @@
 * - eventually define an init() method to take particuliar actions at load time.
 * @class jsPlugin_viewHelper
 * @changelog
+*            - 2010-01-18 - _optionString() bug correction
 *            - 2009-10-20 - _optionString() method now preserve regexp object too
 *            - 2009-03-24 - add common method getuniqueId
 */
@@ -42,8 +43,9 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 				return '';
 			if( preg_match('!^\s*function\s*\(!i',$opts) )
 				return $opts;
-			if(! preg_match('!^\s*(\[.*\]|\{.*\}|["\'].*["\']|^/.*/[igm]+$)\s*$!s',$opts) )
+			if(! preg_match('!^\s*(\[.*\]|\{.*\}|["\'].*["\']|/.*/[igm]*|\d+|true|false)\s*$!s',$opts) ){
 				$opts = "'".preg_replace("/(?<!\\\\)'/","\'",$opts)."'";
+			}
 			return $opts;
 		}
 		$str = array();

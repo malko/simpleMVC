@@ -15,6 +15,7 @@ class validable_viewHelper extends jsPlugin_viewHelper{
 			$this->rules[$parentForm]['rules'][$inputName] = array_merge($this->rules[$parentForm]['rules'][$inputName],$options);
 		else
 			$this->rules[$parentForm]['rules'][$inputName] = $options;
+		return $this;
 	}
 
 	function form(array $options,$formIdentifier='form'){
