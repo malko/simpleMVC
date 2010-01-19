@@ -152,6 +152,7 @@
 			<label><input type="radio" name="fieldGroupMethod" value="fieldset"<?= 'fieldset'===$fieldGroupMethod?' checked="checked"':''?>/> FieldSet</label>
 			<label><input type="radio" name="fieldGroupMethod" value="tabs" <?= 'tabs'===$fieldGroupMethod?' checked="checked"':''?>/> Tabs</label>
 			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
+			<label><input type="radio" name="fieldGroupMethod" value="" <?= empty($fieldGroupMethod)?' checked="checked"':''?>/> none</label>
 		</div>
 		<div class="ui-buttonset ui-buttonset-small">
 			<button type="button" id="resetFieldsOrder" class="ui-button ui-button-arrowreturnthick-1-w"><?php echo langManager::msg('Reset fields orders settings')?></button>

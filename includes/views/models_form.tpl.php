@@ -46,16 +46,17 @@ foreach($this->inputOpts as $o){
 					$groupStr .= $this->modelFormInput(isset($this->_model_)?$this->_model_:$this->modelType,$f,$opts);
 				}
 				$groupStr .= "\n</table>\n";
+				$groupName = langManager::msg(empty($group->name)?$this->modelType:$group->name,null,$this->_langManagerDicName);
 				switch($fieldGroupMethod){
 					case 'tabs':
-						$tabs = (isset($tabs)?$tabs:'')."<li><a href=\"#tabs-$k\">$group->name</a></li>";
+						$tabs = (isset($tabs)?$tabs:'')."<li><a href=\"#tabs-$k\">$groupName</a></li>";
 						$formStr .= "\n<div id=\"tabs-$k\">$groupStr\n</div>\n";
 						break;
 					case 'accordion':
-						$formStr .= "\n<h3><a href=\"#\">$group->name</a></h3>\n<div>$groupStr\n</div>\n";
+						$formStr .= "\n<h3><a href=\"#\">$groupName</a></h3>\n<div>$groupStr\n</div>\n";
 						break;
 					default:
-						$formStr .= "\n<fieldset id=\"fieldGroup_$group->name\">\n\t<legend>$group->name</legend>\n$groupStr\n</fieldset>\n";
+						$formStr .= "\n<fieldset id=\"fieldGroup_$group->name\">\n\t<legend>$groupName</legend>\n$groupStr\n</fieldset>\n";
 				}
 			}
 			$tabs = isset($tabs)?"<ul>$tabs</ul>":'';

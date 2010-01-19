@@ -10,6 +10,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-01-19 - configure: add possibility to use groupMethod with only one fieldSet
+*                         - improve multilingual support
 *            - 2010-01-15 - bug correction on save
 *            - 2010-01-13 - add differents pageTitles for add and edit actions.
 *            - 2009-09-xx - first attempt for validation integration.
@@ -96,7 +98,7 @@ class adminmodelsController extends abstractController{
 			self::appendAppMsg("$this->configFile isn't writable.",'error');
 		}
 		$this->loadModelConfig();
-		$this->pageTitle = ucFirst(langManager::msg($this->modelType,null,$this->getName().'|default'));
+		$this->pageTitle = ucFirst(langManager::msg($this->modelType,null,$this->getName().'_'.$this->modelType.'|'.$this->getName().'|default'));
 	}
 
 	function _isAllowedAction_($action,$msg=null,$dispatchRedirect=DEFAULT_DISPATCH){
@@ -273,6 +275,7 @@ class adminmodelsController extends abstractController{
 	}
 
 	function addAction(){
+		$this->setDictName();
 		if(empty($this->fieldFilters) && !empty($_GET['_filters'])) {
 			$filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
 			$this->fieldFilters = array_combine($filters[0],$filters[1]);
@@ -283,6 +286,7 @@ class adminmodelsController extends abstractController{
 		return $this->forward('form');
 	}
 	function editAction(){
+		$this->setDictName();
 		$this->_isAllowedAction_('edit');
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Identifiant d\'enregistrement à modifié manquant','error');
@@ -300,7 +304,6 @@ class adminmodelsController extends abstractController{
 	}
 	function formAction(){
 		$this->_isAllowedAction_(null===$this->view->_model_?'add':'edit',null,$this->getName().':list');
-		$this->setDictName();
 		$this->view->datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
 
@@ -339,6 +342,7 @@ class adminmodelsController extends abstractController{
 	}
 
 	function saveAction(){
+		$this->setDictName();
 		if( empty($_POST) ){
 			self::appendAppMsg('Aucune données à enregistrée.','error');
 			$this->_isAllowedAction_('list',false);
@@ -491,13 +495,19 @@ class adminmodelsController extends abstractController{
 		}
 		$this->inputTypes = empty($inputTypes)?array():$inputTypes;
 		$this->inputOptions = empty($inputOptions)?array():$inputOptions;
-		if( !empty($this->_modelConfig['FORM_ORDER']))
+		if( !empty($this->_modelConfig['FORM_ORDER'])){
 			$this->fieldOrder = $this->_modelConfig['FORM_ORDER'];
-
+			if( is_object($this->fieldOrder) ){
+				foreach( $this->fieldOrder as $k=>$fldGroup ){
+					if( is_object($fldGroup) && !empty($fldGroup->name) )
+						$_idMsgs[] = $fldGroup->name;
+				}
+			}
+		}
 		$this->view->listUrl = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
 		#--- locale settings
 		$this->langs = langManager::$acceptedLanguages;
-		$_idMsgs = array_merge(array('save','back','Add new item'),$this->datasDefs,$hasMany,$hasOnes,$_idMsgs);
+		$_idMsgs = array_merge(array('save','back','Add new item',$this->modelType,'Edit '.$this->modelType,'Add new '.$this->modelType),$this->datasDefs,$hasMany,$hasOnes,$_idMsgs);
 		foreach($this->langs as $l){
 			$messages[$l] = parse_conf_file(langManager::lookUpDic('adminmodels_'.$this->modelType,$l),true);
 			$idMsgs[$l]   = array_unique(empty($messages[$l])?$_idMsgs:array_merge($_idMsgs,array_keys($messages[$l])));
@@ -571,7 +581,8 @@ class adminmodelsController extends abstractController{
 					continue;
 				$c[$k] = $options;
 			}
-			if(! isset($_POST['fieldSet']) ){ #- no grouping so just stock order of elements
+			#- if(! isset($_POST['fieldSet']) ){ #- no grouping so just stock order of elements
+			if(empty($_POST['fieldGroupMethod']) ){ #- no grouping so just stock order of elements
 				$config['FORM_ORDER_'.$this->modelType] = json_encode(array_keys($_POST['inputTypes']));
 			}else{
 				$order = array('fieldGroupMethod'=>empty($_POST['fieldGroupMethod'])?'fieldset':$_POST['fieldGroupMethod']);

@@ -15,7 +15,7 @@ class multilingualModelAddon extends modelAddon{
 	* - :LC the langcode in all uppercase
 	* this may be ovveride in the model that implement this addon directly.
 	*/
-	static public $_multilingualFieldScheme = ':name_:LC'; // sprintf will receive current lang as 1st param and fieldName as second
+	static public $_multilingualFieldScheme = ':name_:lc'; // sprintf will receive current lang as 1st param and fieldName as second
 	static private $_internals = array();
 	protected $multilingualFieldScheme = null;
 
