@@ -19,6 +19,7 @@
 *            - $LastChangedBy: malko $
 *            - $HeadURL$
 * @changelog
+*            - 2010-01-22 - error correction in datefr2us when used with dateTime format
 *            - 2009-04-09 - add strftime[dateField] and date[dateField] methods
 *                         - import datefr2us and dateus2fr methods as internals to skip dependencies on fx-common
 *            - 2009-04-09 - add strftimeFr[dateField] methods
@@ -104,7 +105,7 @@ class frDateModelAddon extends modelAddon{
 		if(! strpos($date,' '))
 			return implode('-',array_reverse(preg_split('!/|-!',$date)));
 		list($date,$time) = explode(' ',$date);
-		return self::dateus2fr($date).($noTime?'':' '.$time);
+		return self::datefr2us($date).($noTime?'':' '.$time);
 	}
 
 }
