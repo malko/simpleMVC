@@ -232,7 +232,24 @@ import: Ok
 						p = p.trim();
 						if( p.indexOf('[') > -1){ // replace @:rules[rule]
 							match = p.match(/^(.*)?\s*\[\s*([^\]]+?)\s*\]$/);
+							if(null === match){
+								if( $.tk.notify ){
+									$('<div class="tk-state-error">can\'t import inexistant rule '+p+'</div>').notify();
+								}
+								return m;
+							}else if( undefined===rules[match[1]]){
+								if( $.tk.notify ){
+									$('<div class="tk-state-error">can\'t import inexistant rule property from inexistant rule '+match[1]+'</div>').notify();
+								}
+								return m;
+							}
 							match = rules[match[1]].match(new RegExp(match[2]+'\\s*:\\s*([^\\{\\};]+?)\\s*;'));
+							if( null === match){
+								if( $.tk.notify ){
+									$('<div class="tk-state-error">can\'t import inexistant rule property'+p+'</div>').notify();
+								}
+								return m;
+							}
 							return match[1]?match[1]:m;
 						}
 						if(m.substr(1,1)==='!'){ //- repace @:@mixin
@@ -378,6 +395,14 @@ import: Ok
 				case 69:
 					this.computeStyle('export');
 					letsgo = false;
+					break;
+				case 103: //g
+				case 71:
+					var l = prompt('Go to line:');
+					if( l ){
+						letsgo=false;
+						ed.selectLines(ed.nthLine(l),0);
+					}
 					break;
 				case 115: //s
 				case 83:

@@ -36,13 +36,13 @@ $.toolkit('tk.notifybox',{
 		var sY = scrollY[1] && (!scrollY[0] || scrollY[0]>scrollY[1])?scrollY[1]:scrollY[0];
 		sY = scrollY[2] && (!sY || sY>scrollY[1])?scrollY[1]:sY;
 
-		var scrollX = [
+		/*var scrollX = [
 			window.pageXOffset ? window.pageXOffset : 0,
 			document.documentElement ? document.documentElement.scrollTop : 0,
 			document.bodX ? document.bodX.scrollTop : 0
 		]
 		var sX = scrollX[1] && (!scrollX[0] || scrollX[0]>scrollX[1])?scrollX[1]:scrollX[0];
-		sX = scrollX[2] && (!sX || sX>scrollX[1])?scrollX[1]:sX;
+		sX = scrollX[2] && (!sX || sX>scrollX[1])?scrollX[1]:sX;*/
 
 
 		var vCss={};

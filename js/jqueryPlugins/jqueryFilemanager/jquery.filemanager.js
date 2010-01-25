@@ -61,7 +61,7 @@ function show(){
 		var bt = $('<'+o.tagName+(o.id?' id="'+o.id+'"':'')+(o.tagName==='button'?' type="button"':'')+' class="ui-state-default ui-corner-all" style="vertical-align:bottom;margin:0 0.2em;"><span class="ui-icon ui-icon-'+icon+'"></span></'+o.tagName+'>');
 		if(typeof(label)!='undefined' && label.length){
 			if( $.browser.msie ){
-				bt.append(label).css({position:'relative',paddingLeft:'4px'});
+				bt.append(label).css({position:'relative',paddingLeft:($.browser.version>=8?16:4)+'px'});
 				var i = $('span.ui-icon',bt).css({position:'absolute',left:'0px'});
 			}else{
 				bt.append(label).css({position:'relative',paddingLeft:'20px'});
@@ -91,7 +91,7 @@ function show(){
 			fmb.fmId = 'fmanagerButton_'+eid;
 			fmb.dialogId = 'fmanagerButtonDialog_'+eid;
 			fmb.dialog = $('<div id="'+fmb.dialogId+'" title="File selection" style="display:none;">\
-			<div id="'+fmb.fmId+'" style="width:auto;overflow:auto;height:300px;"></div></div>');
+			<div id="'+fmb.fmId+'" class="fmanagerButtonDialogContent"></div></div>');
 			fmb.dialog.appendTo('body')
 			fmb.fileClicked = cbFileClicked;
 			if( typeof(opts) === 'undefined')
