@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-02-08 - now redirectAction and forward only use the dispatch string as first parameter and so drop support for second controller parmeter (this will break backward compatibility so carrefull on updating older version)
 *            - 2009-12-16 - bug correction in forward with full dispatch string as action
 *            - 2009-11-24 - now redirect() method redirect to HTTP_REFERER or DEFAULT_DISPATCH if no URI given.
 *            - 2009-10-23 - now __call() will try to render a view script with the action name if no action is found before trying to call a view method
@@ -419,16 +420,15 @@ abstract class abstractController{
 	###--- FORWARD AND REDIRECTION MANAGEMENT MANAGEMENT ---###
 	/**
 	* forward the dispatching to another action in same or other controller.
-	* @param string $actionName      previously it could only take the target 'actionName'
-	*                                but it may now also be passed as a full dispatch form ie: 'controllerName:actionName'.
-	* @param string $controllerName  this parameter is only required if you want to forward action to another controller
-	*                                and if $actionName isn't given in dispatch form (ie: 'controllerName:actionName')
-	*                                @note if this parameter is given with $actionName in dispatch form it will simply be override by
-	*                                controllerName given in the dispatch
+	* @param string $dispatchString dispatch string 'controller:action', 'controller:' or simply 'action'
 	*/
-	public function forward($actionName,$controllerName=null){
-		if( strpos($actionName,':') )
-			list($controllerName,$actionName)=explode(':',$actionName,2);
+	public function forward($dispatchString){
+		if( strpos($dispatchString,':') ){
+			list($controllerName,$actionName)=explode(':',$dispatchString,2);
+		}else{
+			$controllerName = null;
+			$actionName = $dispatchString;
+		}
 		if(empty($controllerName) || in_array($controllerName,array($this->getName(),get_class($this)),true)){
 			$this->$actionName();
 		}else{
@@ -482,8 +482,7 @@ abstract class abstractController{
 	}
 	/**
 	* like redirect but in a more easyer way.
-	* @param str   $action     target action name or full dispatch string (controllerName:actionName)
-	* @param str   $controller default to the current controller name and ignored if $action is a full dispatch string
+	* @param str   $dispatchString dispatch string 'controller:action', 'controller:' or simply 'action'
 	* @param mixed $params     string or array of additionnal params to append to the uri
 	*                          any value for action or ctrl params will be removed.
 	* @param bool/int $withResponseCode  put true to specify a permanent redirection (code 301)
@@ -491,8 +490,8 @@ abstract class abstractController{
 	* @param bool  $keepGoing  put true if you don't want to trigger a user exit().
 	* @see url_viewHelper::ur() methods for more infos on first three parameters
 	*/
-	function redirectAction($action,$controller=null,$params=null,$withResponseCode=false,$keepGoing=false){
-		$url = $this->view->url($action,$controller,$params);
+	function redirectAction($dispatchString,$params=null,$withResponseCode=false,$keepGoing=false){
+		$url = $this->view->url($dispatchString,$params);
 		return $this->redirect($url,null,$withResponseCode,$keepGoing);
 	}
 

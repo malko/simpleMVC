@@ -3,13 +3,17 @@
 * create getter for multilingual fields
 * for example if you have models with name_en, name_fr, and so on as data fields
 * you will be abble to point the unexistant name property that will point to the current language setting.
-*
+* @example sample multilingualModelClass
+class multilingualModel extends BASE_multilingualModel{
+	static protected $modelAddons = array('multilingual');
+  static public $_multilingualFieldScheme = ':name_:lc';
+}
 */
 class multilingualModelAddon extends modelAddon{
 
 	/**
 	* format string for localized field names, placholders are:
-	* - fieldName (the fieldName without the localised part (ex: name)
+	* - :name fieldName (the fieldName without the localised part (ex: name)
 	* - :lc the langcode as return by the langmanager
 	* - :Lc the langcode first letter upperCase
 	* - :LC the langcode in all uppercase

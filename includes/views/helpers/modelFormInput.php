@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2010-02-09 - add sort options for hasOne relations too
 *            - 2009-10-12 - add support for controller define input types
 *            - 2009-09-04 - boolean values are now selectbuttonset by defaults
 *            - 2009-06-25 - add sort options for hasMany relations.
@@ -51,7 +52,11 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				$value = $datasDefs[$relsDefs['hasOne'][$keyName]['localField']]['Default'];
 			}
 			if( empty($options['values']) ){
-				eval ('$choices = '.$relsDefs['hasOne'][$keyName]['modelName'].'::getAllInstances();');
+				$choices = abstractModel::getAllModelInstances($relsDefs['hasOne'][$keyName]['modelName']);
+				if( !empty($options['sort'])){
+					$choices->{$options['sort']}();
+					unset($options['sort']);
+				}
 				if( $relsDefs['hasOne'][$keyName]['relType'] !== 'dependOn' ){
 					$options['values'][0] = '--- '.langManager::msg($options['label']).' ---';
 				}

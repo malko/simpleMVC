@@ -16,6 +16,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-02-08 - drop support for second $controllerName parameter now only support dipatchString as first parameter
 *            - 2009-06-23 - wordCleaner() add html_entity_decode charset parameter and remove utf8_decode
 *            - 2009-06-12 - wordCleaner() add utf8_decode after html_entity_decode and now keep traces of already cleaned words (more memory but better performance)
 *            - 2009-06-04 - new static property $wordCleanerSkippedChars to allow chars to pass over wordCleaner
@@ -49,7 +50,7 @@ class url_viewHelper extends abstractViewHelper{
 		}
 		if( self::$argSeparator === null)
 			self::$argSeparator = ini_get('arg_separator.output');
-  }
+	}
 
 	static public function setUseRewriteRules($useRewriteRules){
 		self::$useRewriteRules = (bool) $useRewriteRules;
@@ -57,10 +58,7 @@ class url_viewHelper extends abstractViewHelper{
 
 	/**
 	* compile an internal application url
-	* @param string $action     name of the target mvc action
-	*                           (may also be a full dispatch string like 'controllerName:actionName' in wich case $controller parameter will be ignored)
-	* @param string $controller name of the target controller if null then the current controller setted in attached view will be used.
-	*                           @note will be ignored if $action parameter is a full dispatch string ('controllerName:actionName')
+	* @param string $dispatchString dispatch string like 'controllerName:actionName','controllerName:','action'
 	* @param mixed  $params     can be a string or an array :
 	*                           - sting: is used as a queryString to add at the end of generated URL. string must be already urlencoded
 	*                             this must be a "standard" URL queryString it will be correctly rewrited if rewriteRules are in use.
@@ -70,11 +68,15 @@ class url_viewHelper extends abstractViewHelper{
 	* @param string $appUrl     allow you to set the base url to use in place of default APP_URL it's usefull to prepare links for other apps
 	* @return string target URL.
 	*/
-	function url($action,$controller=null,$params=null,$alreadyEncoded=false,$appUrl=null){
-		if( strpos($action,':')!==false) # manage $action as a full dispatch string
-			list($controller,$action)=explode(':',$action,2);
+	function url($dispatchString,$params=null,$alreadyEncoded=false,$appUrl=null){
+		if( strpos($dispatchString,':')!==false){ # manage $action as a full dispatch string
+			list($controller,$action)=explode(':',$dispatchString,2);
+		}else{
+			$controller = null;
+			$action = $dispatchString;
+		}
 		# gestion du controller
-		if( is_null($controller) )
+		if( empty($controller) )
 			$controller = $this->getController()->getName();
 		# preparation de la queryString
 		if(! empty($params) ){

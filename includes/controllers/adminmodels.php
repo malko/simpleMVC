@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-02-08 - make it compatible with url,redirectAction and forward that dropped support for controllerName as second argument
 *            - 2010-01-19 - configure: add possibility to use groupMethod with only one fieldSet
 *                         - improve multilingual support
 *            - 2010-01-15 - bug correction on save
@@ -107,7 +108,7 @@ class adminmodelsController extends abstractController{
 				$msg = 'unauthorized action!';
 			if($msg)
 				self::appendAppMsg($msg,'error');
-			return $this->redirectAction($dispatchRedirect,null,array('modelType'=>$this->modelType,'embed'=>empty($_GET['embed'])?'':'on'));
+			return $this->redirectAction($dispatchRedirect,array('modelType'=>$this->modelType,'embed'=>empty($_GET['embed'])?'':'on'));
 		}
 		return true;
 	}
@@ -290,12 +291,12 @@ class adminmodelsController extends abstractController{
 		$this->_isAllowedAction_('edit');
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Identifiant d\'enregistrement à modifié manquant','error');
-			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+			return $this->redirectAction('list',array('modelType'=>$this->modelType));
 		}
 		$model = abstractModel::getModelInstance($this->modelType,$_GET['id']);
 		if(! $model instanceof $this->modelType ){
 			self::appendAppMsg('Enregistrement inexistant en base de données','error');
-			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+			return $this->redirectAction('list',array('modelType'=>$this->modelType));
 		}
 		$this->view->_model_ = $model;
 		$this->view->assign($model->datas);
@@ -311,8 +312,8 @@ class adminmodelsController extends abstractController{
 		if (!empty($_GET['_filters']))
 			$args['_filters'] = $_GET['_filters'] ;
 
-		$this->view->actionUrl = $this->view->url('save',$this->getName(),$args, true);
-		$this->view->listUrl   = $this->view->url('list',$this->getName(),$args, true);
+		$this->view->actionUrl = $this->view->url('save',$args, true);
+		$this->view->listUrl   = $this->view->url('list',$args, true);
 
 		if( !empty($this->_config) ){
 			if( !empty($this->_modelConfig['FORM']) )
@@ -327,18 +328,18 @@ class adminmodelsController extends abstractController{
 		if( ! isset($_GET['id'])){
 			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
 			$this->_isAllowedAction_('list',false);
-			return $this->redirectAction('list',null,array('modelType'=>$this->modelType,"_filters"=>$filters),true);
+			return $this->redirectAction('list',array('modelType'=>$this->modelType,"_filters"=>$filters),true);
 		}
 		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
 		if( ! $m instanceof abstractModel){
 			self::appendAppMsg('La page que vous avez demadée n\'exite pas.','error');
 			$this->_isAllowedAction_('list',false);
-			return $this->redirectAction('list',null,array('modelType'=>$this->modelType,"_filters"=>$filters),true);
+			return $this->redirectAction('list',array('modelType'=>$this->modelType,"_filters"=>$filters),true);
 		}
 		$m->{$_GET['prop']} = $_GET['state'];
 		$m->save();
 		$this->_isAllowedAction_('list',false);
-		return $this->redirectAction('list',null,array('modelType'=>$this->modelType,"_filters"=>$filters),true);
+		return $this->redirectAction('list',array('modelType'=>$this->modelType,"_filters"=>$filters),true);
 	}
 
 	function saveAction(){
@@ -346,7 +347,7 @@ class adminmodelsController extends abstractController{
 		if( empty($_POST) ){
 			self::appendAppMsg('Aucune données à enregistrée.','error');
 			$this->_isAllowedAction_('list',false);
-			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
+			return $this->redirectAction('list',array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 		}
 
 		if(isset($_POST['_smvc_confirm']) ){ # manage confirm fields
@@ -373,7 +374,7 @@ class adminmodelsController extends abstractController{
 			if(! $model instanceof $this->modelType ){
 				self::appendAppMsg('Mise à jour d\'un élément inexistant en base de données.','error');
 				$this->_isAllowedAction_('list',false);
-				return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
+				return $this->redirectAction('list',array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 			}
 			$model->_setDatas($_POST);
 		}
@@ -384,7 +385,7 @@ class adminmodelsController extends abstractController{
 			if( isset($_POST[$modelPKName])){
 				$this->view->_model_ = $model;
 			}
-			return $this->forward('form',$this->getName());
+			return $this->forward('form');
 		}
 		if($model->isTemporary())
 			$successMsg = "Nouvel enregistrement ajouté.";
@@ -394,9 +395,9 @@ class adminmodelsController extends abstractController{
 		self::appendAppMsg($successMsg,'success');
 		if( empty($this->_allowedActions['list'])){
 			$this->_isAllowedAction_('edit',false);
-			return $this->redirectAction('edit',$this->getName(),array('modelType'=>$this->modelType,'id'=>$model->PK,'embed'=>(empty($_GET['embed'])?'':'on'),'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
+			return $this->redirectAction('edit',array('modelType'=>$this->modelType,'id'=>$model->PK,'embed'=>(empty($_GET['embed'])?'':'on'),'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
 		}
-		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on'),'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
+		return $this->redirectAction('list',array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on'),'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
 	}
 
 	function delAction(){
@@ -404,7 +405,7 @@ class adminmodelsController extends abstractController{
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Manque d\'information sur l\'action à effectuer.','error');
 			$this->_isAllowedAction_('list',false);
-			return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType));
+			return $this->redirectAction('list',array('modelType'=>$this->modelType));
 		}
 		$model =  abstractModel::getModelInstance($this->modelType,$_GET['id']);
 		if(! $model instanceof $this->modelType ){
@@ -414,7 +415,7 @@ class adminmodelsController extends abstractController{
 			self::appendAppMsg('Enregistrement supprimée.','success');
 		}
 		$this->_isAllowedAction_('list',false);
-		return $this->redirectAction('list',$this->getName(),array('modelType'=>$this->modelType,'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
+		return $this->redirectAction('list',array('modelType'=>$this->modelType,'_filters'=>(empty($_GET['_filters'])?'':$_GET['_filters'])));
 	}
 	###--- methods for orderable models ---###
 	function moveupAction(){
@@ -423,15 +424,15 @@ class adminmodelsController extends abstractController{
 			$args['_filters'] = $_GET['_filters'] ;
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Manque d\'information sur l\'action à effectuer.','error');
-			return $this->redirectAction('list',$this->getName(),$args);
+			return $this->redirectAction('list',$args);
 		}
 		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
 		if(! $m instanceof $this->modelType ){
 			self::appendAppMsg('Enregistrement introuvable en base de données.','error');
-			return $this->redirectAction('list',$this->getName(),$args);
+			return $this->redirectAction('list',$args);
 		}
 		$m->moveUp();
-		return $this->redirectAction('list',null,$args);
+		return $this->redirectAction('list',$args);
 	}
 	function movedownAction(){
 		$args = array('modelType'=>$this->modelType) ;
@@ -439,15 +440,15 @@ class adminmodelsController extends abstractController{
 			$args['_filters'] = $_GET['_filters'] ;
 		if(! isset($_GET['id']) ){
 			self::appendAppMsg('Manque d\'information sur l\'action à effectuer.','error');
-			return $this->redirectAction('list',$this->getName(),$args);
+			return $this->redirectAction('list',$args);
 		}
 		$m = abstractModel::getModelInstance($this->modelType,$_GET['id']);
 		if(! $m instanceof $this->modelType ){
 			self::appendAppMsg('Enregistrement introuvable en base de données.','error');
-			return $this->redirectAction('list',$this->getName(),$args);
+			return $this->redirectAction('list',$args);
 		}
 		$m->moveDown();
-		return $this->redirectAction('list',null,$args);
+		return $this->redirectAction('list',$args);
 	}
 	###--- configurations methods ---###
 	/**
@@ -504,7 +505,7 @@ class adminmodelsController extends abstractController{
 				}
 			}
 		}
-		$this->view->listUrl = $this->view->url('list',$this->getName(),array('modelType'=>$this->modelType));
+		$this->view->listUrl = $this->view->url('list',array('modelType'=>$this->modelType));
 		#--- locale settings
 		$this->langs = langManager::$acceptedLanguages;
 		$_idMsgs = array_merge(array('save','back','Add new item',$this->modelType,'Edit '.$this->modelType,'Add new '.$this->modelType),$this->datasDefs,$hasMany,$hasOnes,$_idMsgs);
@@ -526,7 +527,7 @@ class adminmodelsController extends abstractController{
 			return $this->forward(ERROR_DISPATCH);
 		if( isset($_POST['_toStr']) )
 			$this->replaceModel__ToStr($this->modelType,$_POST['_toStr']);
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'string'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'string'));
 	}
 	/**
 	* set model fields to display in list
@@ -545,7 +546,7 @@ class adminmodelsController extends abstractController{
 		}
 		#- write config
 		write_conf_file($this->configFile,$config,true);
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'list'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'list'));
 	}
 	function setValidationsAction(){
 		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
@@ -561,7 +562,7 @@ class adminmodelsController extends abstractController{
 			}
 		}
 		write_conf_file($this->configFile,$config,true);
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'validations'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'validations'));
 	}
 	/**
 	* set how to render administrations forms for the given model
@@ -595,7 +596,7 @@ class adminmodelsController extends abstractController{
 			$config['FORM_'.$this->modelType] = empty($c)?'--UNSET--':json_encode($c) ;
 			write_conf_file($this->configFile,$config,true);
 		}
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'forms'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'forms'));
 	}
 
 	function resetFieldsOrder(){
@@ -603,7 +604,7 @@ class adminmodelsController extends abstractController{
 			return $this->forward(ERROR_DISPATCH);
 		$config['FORM_ORDER_'.$this->modelType] = '--UNSET--';
 		write_conf_file($this->configFile,$config,true);
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'forms'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'forms'));
 	}
 	/**
 	* configure langmanager messages for the given model administration
@@ -621,7 +622,7 @@ class adminmodelsController extends abstractController{
 				$dict[$id] = strlen($msg)?$msg:'--UNSET--'; // unset empty values
 			write_conf_file(APP_DIR."/locales/$l/adminmodels_$this->modelType",$dict,true);
 		}
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'messages'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'messages'));
 	}
 
 	function setActionsAction(){
@@ -630,7 +631,7 @@ class adminmodelsController extends abstractController{
 		foreach($_POST['actions'] as $k=>$v)
 			$_POST['actions'][$k] =  (bool) $v;
 		write_conf_file($this->configFile,array("ACTION_$this->modelType"=>json_encode($_POST['actions'])),true);
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'actions'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'actions'));
 	}
 	/**
 	* re-generate models from database
@@ -645,7 +646,7 @@ class adminmodelsController extends abstractController{
 		}
 		if(! is_writable(LIB_DIR.'/models') ){
 			self::appendAppMsg("Model directory must be writable.",'error');
-			return $this->redirect($_SERVER['HTTP_REFERER']);
+			return $this->redirect();
 		}
 		#- do generation for each setted databases
 		modelgenerator::$excludePrefixedTables=true;
@@ -661,7 +662,7 @@ class adminmodelsController extends abstractController{
 		foreach($modelFiles as $f){
 			chmod($f,0666);
 		}
-		return $this->redirect($_SERVER['HTTP_REFERER']);
+		return $this->redirect();
 	}
 
 	private function readModel__ToStr($modelType){
@@ -716,13 +717,13 @@ class adminmodelsController extends abstractController{
 		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
 			return $this->forward(ERROR_DISPATCH);
 		file_put_contents($this->getModelFilePath($this->modelType),preg_replace('/\r(?=\n)/','',$_POST['smvcModel']));
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'model'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'model'));
 	}
 	function saveEditConfigAction(){
 		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
 			return $this->forward(ERROR_DISPATCH);
 		file_put_contents($this->configFile,preg_replace('/\r(?=\n)/','',$_POST['smvcConfig']));
-		return $this->redirectAction('configure',null,array('modelType'=>$this->modelType,'#'=>'config'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'config'));
 	}
 
 	###--- lang management helpers ---###

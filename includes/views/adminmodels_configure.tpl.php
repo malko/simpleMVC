@@ -12,7 +12,7 @@
 </style>
 <h1><?=$this->modelType?> settings </h1>
 <div id="settings">
-<form action="<?= $this->url('setToString',null,array('modelType'=>$this->modelType)) ?>" method="post" id="string">
+<form action="<?= $this->url('setToString',array('modelType'=>$this->modelType)) ?>" method="post" id="string">
 	<h3><a name="string"><?= $this->modelType ?>::$__toString</a></h3>
 	<div id="string-pannel">
 	<div class="selectors">
@@ -32,7 +32,7 @@
 	</div>
 </form>
 
-<form action="<?= $this->url('setList',null,array('modelType'=>$this->modelType)) ?>" method="post"  id="list">
+<form action="<?= $this->url('setList',array('modelType'=>$this->modelType)) ?>" method="post"  id="list">
 	<h3><a name="list">List</a></h3>
 	<div id="list-pannel">
 		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
@@ -60,7 +60,7 @@
 	</div>
 </form>
 
-<form action="<?= $this->url('setFormInputs',null,array('modelType'=>$this->modelType)) ?>" method="post" id="forms">
+<form action="<?= $this->url('setFormInputs',array('modelType'=>$this->modelType)) ?>" method="post" id="forms">
 	<h3><a name="forms">Forms</a></h3>
 	<div id="forms-pannel">
 		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
@@ -162,7 +162,7 @@
 	</div>
 </form>
 
-<form action="<?= $this->url('setMessages',null,array('modelType'=>$this->modelType)) ?>" method="post" id="messages">
+<form action="<?= $this->url('setMessages',array('modelType'=>$this->modelType)) ?>" method="post" id="messages">
 	<h3><a name="messages">Field names translations</a></h3>
 	<div id="messages-pannel">
 	<?php
@@ -187,7 +187,7 @@
 	</div>
 </form>
 
-<form action="<?= $this->url('setActions',null,array('modelType'=>$this->modelType)) ?>" method="post" id="actions">
+<form action="<?= $this->url('setActions',array('modelType'=>$this->modelType)) ?>" method="post" id="actions">
 	<h3><a name="actions">Allowed Actions</a></h3>
 	<div id="actions-pannel">
 	Choose allowed actions to manage this model
@@ -203,7 +203,7 @@
 	</div>
 </form>
 
-<form action="<?= $this->url('saveEditConfig',null,array('modelType'=>$this->modelType)) ?>" method="post" id="config">
+<form action="<?= $this->url('saveEditConfig',array('modelType'=>$this->modelType)) ?>" method="post" id="config">
 	<h3><a name="config">Edit Configuration File</a></h3>
 	<div id="config-pannel">
 		<?= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
@@ -211,9 +211,76 @@
 	</div>
 </form>
 
-<form action="<?= $this->url('saveEditModel',null,array('modelType'=>$this->modelType)) ?>" method="post" id="model">
+<form action="<?= $this->url('saveEditModel',array('modelType'=>$this->modelType)) ?>" method="post" id="model">
 	<h3><a name="model">Edit Model File</a></h3>
 	<div id="model-pannel">
+		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
+			<strong>ModelsAddons</strong>
+			<ul id="modelAddonList">
+				<li>activable:
+				<code>class activableModel extends BASE_activableModel{
+	//** list of activalbe fields must be real dataField not a relName (neither hasOne or hasMany)
+	public $_activableFields = array('active');
+	static protected $modelAddons = array('activable');
+}</code>
+				</li>
+				<li>formatTime</li>
+				<li>frDate:
+				<code>class frDateModel extends BASE_frDateModel{
+	static protected $modelAddons = array('frDate');
+}</code>
+				</li>
+				<li>mpTreeTraversal:
+				<code>class sample_mpTreeTraversalNode implements mpTreeTraversalModelAddonInterface{
+	static protected $treeFields = array(
+		'right'=>'rightId','left'=>'leftId','id'=>'Id','level'=>'level',//'parent'=>'parentId'
+	);
+	static function getNew(){
+		return self::newNode();
+	}
+	static function newNode(array $datas=null){
+		return mpTreeTraversalModelAddon::newModelNode(self::$modelName,$datas);
+	}
+	static function getTreeCollection($startnode=FALSE,$depth=FALSE,$removeStartNode=false,$fromDB=false){
+		return mpTreeTraversalModelAddon::getModelTreeCollection(self::$modelName,$startnode,$depth,$removeStartNode,$fromDB);
+	}
+	static function HtmlOptions($labelFld,$selected=null,$removed=null,$startnode=null,$depth=null){
+		return mpTreeTraversalModelAddon::modelHtmlOptions(self::$modelName,$labelFld,$selected,$removed,$startnode,$depth);
+	}
+	function delete(){
+		#- ~ $clone = clone $this;
+		$this->_modelAddons['mpTreeTraversal']->removeNode();
+		parent::delete();
+	}
+}</code>
+				</li>
+				<li>multilingual:
+				<code>class multilingualModel extends BASE_multilingualModel{
+	static protected $modelAddons = array('multilingual');
+  static public $_multilingualFieldScheme = ':name_:lc';
+}</code>
+				</li>
+				<li>orderable:
+				<code>class orderableModel extends BASE_orderableModel{
+	//** must be a real dataField not a relName (neither hasOne or hasMany)
+	public $_orderableField = 'ordre';
+	//** may be a real dataField or a hasOne relName (only with a localField in relDef) but must not be an hasMany one
+	//** this one is optional
+	public $_orderableGroupField = false;
+	static protected $modelAddons = array('orderable');
+}</code>
+				</li>
+				<li>rssItem</li>
+				<li>tagCloud</li>
+				<li>withCreateDate:
+				<code>class mymodel extends BASE_mymodel{
+	static protected $modelAddons = array('withCreateDate');
+	public $createDateField = 'createAt';
+	public $createDateStr   = 'Y-m-d- H:i:s';
+}</code>
+				</li>
+			</ul>
+		</div>
 		<?= $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
 		<button type="submit" class="ui-button ui-button-small-disk">save</save>
 	</div>
@@ -303,7 +370,7 @@ $this->js('
 	//- manage fields order reset button
 	$("#resetFieldsOrder").click(function(){
 		if( confirm("Are You sure you want to reset form fields order?") ){
-			window.location="'.$this->url('resetFieldsOrder',null,array('modelType'=>$this->modelType,'#'=>'forms')).'";
+			window.location="'.$this->url('resetFieldsOrder',array('modelType'=>$this->modelType,'#'=>'forms')).'";
 		}
 	});
 
@@ -324,6 +391,16 @@ $this->js('
 		});
 	});
 
+	//-- add toggle on modelAddons list
+	$("#modelAddonList li").each(function(){
+		var e = $(this),
+			code = e.find("code");
+		if( code.length < 1){
+			return;
+		}
+		code.hide().css("cursor","text").click(function(){return false;});
+		e.css("cursor","pointer").click(function(){code.toggle()});
+	});
 
 	//-- add form option client side validation
 

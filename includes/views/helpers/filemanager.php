@@ -24,7 +24,7 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 	//-- init default options
 	function init(){
 		if(is_null(self::$defaultOptions['connector']))
-			self::$defaultOptions['connector'] = $this->url('index','filemanager');
+			self::$defaultOptions['connector'] = $this->url('filemanager:index');
 	}
 	/**
 	* return necessary code to render a filemanager widget
