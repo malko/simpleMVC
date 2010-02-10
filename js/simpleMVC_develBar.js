@@ -183,9 +183,19 @@ var cookies={
 		$('<pre style="text-align:left;"></pre>').html(e.innerHTML).appendTo(cssDiv);
 		if( cookies.get('SMVCDevToggle') != 1)
 			btCss.hide();
-	}
+	};
 
-
+	//-- Manage cssEditor button
+	$('#sMVCcssEditor').click(function(){
+		var editorUrl = $(this).attr('rel'),
+			frontName = editorUrl.replace(/^.*?cssEditor\.php\?editorId=/,'');
+		if( window._cssEditor === undefined){
+			window._cssEditor = window.open(editorUrl,'cssEditor4'+frontName,'dependent=yes,titlebar=no,status=no,scrollbars=yes,menubar=no,location=yes,toolbar=no,height=600,width=800');
+		}else{
+			window._cssEditor.close();
+			delete window._cssEditor;
+		}
+	});
 	//-- toggle button
 	btToggle.click(function(){
 		dataMenu.hide();
