@@ -2,6 +2,8 @@
 /**
 * @since 2009-11-19
 * @package cacheManager
+* @changelog
+*            - 2010-02-10 - add methods cacheManager::(set|get)Backend()
 */
 
 if(! defined('CACHE_MANAGER_ENABLE') )
@@ -14,6 +16,7 @@ if(! defined('CACHE_DB_AUTOCREATE')){
 	$dbCacheBackendAutoCreate	= constant('DEVEL_MODE')?true:false;
 	define('CACHE_DB_AUTOCREATE',$dbCacheBackendAutoCreate);
 }
+
 class cacheManager{
 	/** storage backend to use */
 	static public $useBackend='dbCacheBackend';
@@ -37,10 +40,18 @@ class cacheManager{
 	*/
 	static function init(){
 		if( ! self::$backend instanceof self::$useBackend){
-			self::$backend = new self::$useBackend();
+			$backend = new self::$useBackend();
+			if(! $backend instanceof cacheBackend)
+				throw new RuntimeException(__class__.'::init() invalid cacheBackend');
 			if( self::$autoClear )
 				self::clear(self::$ttl);
 		}
+	}
+	static function setBackend(cacheBackend $backend){
+		self::$backend = $backend;
+	}
+	static function getBackend(){
+		return self::$backend;
 	}
 	/**
 	* start to cache one item (be aware that this method use output buffering methods)
