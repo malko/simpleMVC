@@ -25,10 +25,10 @@ class staticController extends abstractController{
 
   function init(){
     parent::init();
-	if( isset($this->_layout) )
+		if( isset($this->_layout) )
     	$this->view->setLayout($this->_layout);
-	else
-    	$this->view->setLayout(self::$layout);
+		else
+			$this->view->setLayout(self::$layout);
   }
 
   function __call($m,$args=null){
