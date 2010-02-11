@@ -12,6 +12,7 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
 
 @changelog
+ - 2010-02-10 - add urlElementLevel to storableOptions
  - 2010-01-26 - add uniqueId method and use it for any element promoted to widget that haven't id already set
 
 */
@@ -70,15 +71,25 @@ $.toolkit = function(pluginName,prototype){
 					}
 				}
 			}
-			var id = self.elmt.attr('id');
+			var id = self.elmt.attr('id'),
+			v ='',eStored='',encodedUri=escape(window.location.href);
 			if( id.length < 1){
 				id = $.toolkit.uniqueId();
 				self.elmt.attr(id);
 			}
 			if( id && self._storableOptions.elementLevel){
-				var v = '',eStored=self._storableOptions.elementLevel.split(/[,\|]/);
+				eStored=self._storableOptions.elementLevel.split(/[,\|]/);
 				for(var i=0;i<eStored.length;i++ ){
 					v = $.toolkit.storage.get(self._tk.pluginName+'_'+eStored[i]+'_'+id);
+					if( null !== v){
+						self.options[eStored[i]]=v;
+					}
+				}
+			}
+			if( id && self._storableOptions.urlElementLevel){
+				eStored=self._storableOptions.urlElementLevel.split(/[,\|]/);
+				for(var i=0;i<eStored.length;i++ ){
+					v = $.toolkit.storage.get(self._tk.pluginName+'_'+eStored[i]+'_'+id+'_'+encodedUri);
 					if( null !== v){
 						self.options[eStored[i]]=v;
 					}
@@ -156,8 +167,9 @@ $.toolkit.prototype = {
 		optName:'optValue1|optValue2|...optValueN'
 	},
 	_storableOptions:{ // if set options names given there will try to save their state using available $.toolkit.storage api if enable
-		pluginLevel:'optName, ...', // thoose ones will be stored for all plugin instance
-		elementLevel:'optName, ...' // thoose ones will be stored for each plugin instance depending on their element id attribute.
+		pluginLevel:'optName, ...',    // thoose ones will be stored for all plugin instance
+		elementLevel:'optName, ...'    // thoose ones will be stored for each plugin instance depending on their element id attribute.
+		urlElementLevel:'optName, ...' // thoose ones will be stored for each plugin instance depending on the url + element id .
 	}
 	*/
 	elmt:null,
@@ -234,6 +246,8 @@ $.toolkit.prototype = {
 				$.toolkit.storage.set(this._tk.pluginName+'_'+key,value);
 			}else if( this._storableOptions.elementLevel && this._storableOptions.elementLevel.match(exp) ){
 				$.toolkit.storage.set(this._tk.pluginName+'_'+key+'_'+this.elmt.attr('id'),value);
+			}else if( this._storableOptions.urlElementLevel && this._storableOptions.urlElementLevel.match(exp) ){
+				$.toolkit.storage.set(this._tk.pluginName+'_'+key+'_'+this.elmt.attr('id')+'_'+escape(window.location.href),value);
 			}
 		}
 	}
