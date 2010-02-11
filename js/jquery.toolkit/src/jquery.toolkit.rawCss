@@ -1,0 +1,134 @@
+/** theme var definitions **/
+@borderColor: #333;
+@borderSize: 1px;
+@borderStyle: solid;
+@radius:7px;
+/* statuses */
+@statePadding:.4em .8em;
+@warningColor:#950;
+@warningBgColor:#ffb;
+@warningBorderColor:#fb4;
+@errorColor:#922;
+@errorBgColor:#fee;
+@errorBorderColor:#b44;
+@successColor:#292;
+@successBgColor:#efe;
+@successBorderColor:#4b4;
+@infoColor:#229;
+@infoBgColor:#eef;
+@infoBorderColor:#33f;
+
+/** fixing some stuff across browsers */
+.tk-inlineStack, .tk-icon, .tk-icon-small, .tk-icon-medium, .tk-icon-big{
+	zoom:1;
+	display:-moz-inline-stack;
+	display:inline-block;
+	*display:inline;
+}
+.tk-inlineStack .tk-inlineStack, .tk-inlineStack .tk-icon,
+.tk-inlineStack .tk-icon-small, .tk-inlineStack .tk-icon-medium,
+.tk-inlineStack .tk-icon-big{
+	display:-moz-inline-box;
+	display:inline-block;
+	*display:inline;
+}
+.tk-icon, .tk-icon-small, .tk-icon-medium, .tk-icon-big{
+  overflow:hidden;color:rgba(255,255,255,0);font:0/0 Arial;
+}
+.tk-icon, .tk-icon-small{ width:16px;height:16px; }
+.tk-icon-medium{ width:24px;height:24px; }
+.tk-icon-big{ width:32px;height:32px; }
+
+
+/** theming stuffs */
+
+.tk-border { border: @borderStyle @borderColor @borderSize; }
+.tk-border-top{ border-top: @borderStyle @borderColor @borderSize; }
+.tk-border-right{ border-right: @borderStyle @borderColor @borderSize; }
+.tk-border-bottom{ border-bottom: @borderStyle @borderColor @borderSize; }
+.tk-border-left{ border-left: @borderStyle @borderColor @borderSize; }
+.tk-border-none{ border: none; }
+
+.tk-corner{
+	-moz-border-radius:@radius;
+	-webkit-border-radius:@radius;
+	border-radius:@radius;
+}
+.tk-corner-top{
+	-moz-border-radius-topleft:@radius;
+	-moz-border-radius-topright:@radius;
+	-webkit-border-top-left-radius:@radius;
+	-webkit-border-top-right-radius:@radius;
+	border-top-left-radius:@radius;
+	border-top-right-radius:@radius;
+}
+.tk-corner-bottom{
+	-moz-border-radius-bottomleft:@radius;
+	-moz-border-radius-bottomright:@radius;
+	-webkit-border-bottom-left-radius:@radius;
+	-webkit-border-bottom-right-radius:@radius;
+	border-bottom-left-radius:@radius;
+	border-bottom-right-radius:@radius;
+}
+.tk-corner-left{
+	-moz-border-radius-topleft:@radius;
+	-moz-border-radius-bottomleft:@radius;
+	-webkit-border-top-left-radius:@radius;
+	-webkit-border-bottom-left-radius:@radius;
+	border-top-left-radius:@radius;
+	border-bottom-left-radius:@radius;
+}
+.tk-corner-right{
+	-moz-border-radius-topright:@radius;
+	-moz-border-radius-bottomright:@radius;
+	-webkit-border-top-right-radius:@radius;
+	-webkit-border-bottom-right-radius:@radius;
+	border-top-right-radius:@radius;
+	border-bottom-right-radius:@radius;
+}
+.tk-corner-top-left{
+	-moz-border-radius-topleft:@radius;
+	-webkit-border-top-left-radius:@radius;
+	border-top-left-radius:@radius;
+}
+.tk-corner-top-right{
+	-moz-border-radius-topright:@radius;
+	-webkit-border-top-right-radius:@radius;
+	border-top-right-radius:@radius;
+}
+.tk-corner-bottom-left{
+	-moz-border-radius-bottomleft:@radius;
+	-webkit-border-bottom-left-radius:@radius;
+	border-bottom-left-radius:@radius;
+}
+.tk-corner-bottom-right{
+	-moz-border-radius-bottomright:@radius;
+	-webkit-border-bottom-right-radius:@radius;
+	border-bottom-right-radius:@radius;
+}
+
+/** some status classes */
+.tk-state-warning, .tk-state-error, .tk-state-success, .tk-state-info{
+	padding:@statePadding;
+	font-weight:bold;
+}
+.tk-state-warning {
+  background:@warningBgColor;
+  border-color:@warningBorderColor;
+  color:@warningColor;
+}
+.tk-state-error{
+	background:@errorBgColor;
+	border-color:@errorBorderColor;
+	color:@errorColor;
+}
+.tk-state-success{
+	background:@successBgColor;
+	border-color:@successBorderColor;
+	color:@successColor;
+}
+.tk-state-info{
+	background:@infoBgColor;
+	border-color:@infoBorderColor;
+	color:@infoColor;
+}

@@ -4,10 +4,14 @@ declaration variable: Ok
 	@var: val|"val"|'val' ;
 remplacement var: Ok
 nested: Ok
+externalImport: Ok
 import: Ok
 	@:[.#]ruleName
 	@!:[.#]ruleName
 	@:[.#]ruleName[property]
+when nested:
+	:pseudoClass
+	!extend parent selector
 */
 
 
@@ -34,7 +38,7 @@ import: Ok
 	if( !empty($_POST['getRawContent']) ){
 		$rawFile = $_POST['path'].$_POST['id'].'.rawCss';
 		if( !file_exists($rawFile)){
-			exit(-1);
+			echo "/*no saved content found*/";exit;
 		}else{
 			echo file_get_contents($rawFile);
 			exit;
@@ -92,7 +96,7 @@ import: Ok
 	}
 	$.toolkit('tk.cssEditor',{
 		_storableOptions:{
-			elementLevel:'content|rawFilePath|compFilePath'
+			urlElementLevel:'content|rawFilePath|compFilePath'
 		},
 
 		_init:function(){
@@ -163,11 +167,11 @@ import: Ok
 		_saveContent:function(){
 			var c = this.get('content');
 			if((! this.options.disableStorage) && $.toolkit.storage && $.toolkit.storage.enable() ){
-				$.toolkit.storage.set(this._tk.pluginName+'_content_'+this.elmt.attr('id'),c);
+				$.toolkit.storage.set(this._tk.pluginName+'_content_'+this.elmt.attr('id')+'_'+escape(window.location.href),c);
 			}
 			return c;
 		},
-		_parseRawString: function(str,compact){
+		_parseRawString: function(str,compact,baseImportUrl){
 			//-- remove commentaries and extra lines/spaces
 			str = str.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*\n/mg,'').replace(/^\s*/mg,'').replace(/\n\n+/g,'\n');
 			compact=compact?true:false;
@@ -183,13 +187,39 @@ import: Ok
 				funcs={},
 				imports=[],
 				i,match,endPos;
-
+			//make real imports first
+			i= 0;
+			while(match = str.match(/@!import\s+(.*?)\s*(;|$)/m)){
+				str = str.replace(/@!import\s+(.*?)\s*(;|$)/mg,function(m,uri){
+					var resp='';
+					$.ajax({
+						async:false,
+						global:false,
+						dataType:'text',
+						url:match[1].match(/^http:\/\//)?match[1]:baseImportUrl+match[1],
+						error:function(XHR,status){
+							if( $.tk.notify ){
+								$('<div class="tk-state-error">can\'t import '+match[1]+'<br />'+status+'</div>').notify();
+							}else{
+								alert('error while importing '+match[1]+'\n'+status);
+							}
+						},
+						success:function(data){
+							resp = data;
+						}
+					});
+					return resp.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*\n/mg,'').replace(/^\s*/mg,'').replace(/\n\n+/g,'\n');
+				});
+				if( i++ > 50 ){
+					break;
+				}
+			}
 			//-- read func and var defined:
 			/*str.replace(/\s*@([a-z_][a-z0-9_]*):([^,;]*|"([^"]+\\")*"|'([^']+\\'))[,;]/ig,function(m,k,v){
 				defined[k]=v;
 			})*/
 			//-- defined reading
-			str = str.replace(/\s*(@[a-z_][a-z0-9_]*)\s*:\s*(?:([^;"']*)|("([^"]+|\\")*"|'([^']+|\\')'));|@import\s+url.*?;/ig,function(m,k,v1,v2){
+			str = str.replace(/\s*(@[a-z_][a-z0-9_]*)\s*:\s*(?:([^;"']*)|("([^"]+|\\")*"|'([^']+|\\')'));|@import\s+.*?;/ig,function(m,k,v1,v2){
 				if( k===''){
 					imports.push(m);
 				}else if( v1 !== '' ){
@@ -208,7 +238,8 @@ import: Ok
 					match = parseStr.match(/^(\s*|[\s\S*]+?[;\}]\s*)([^;\{\}]+)\s*\{([\s\S]*)$/);
 					parseKey=match[2].trim();
 					parseStr = match[3].trim();
-					fullKey = (stackKey.length?stackKey.join(' ')+(parseKey.substr(0,1)===':'?'':' '):'') + parseKey;
+					fullKey = parseKey.replace(/^([:!])?([\s\S]+)$/,function(m,v1,v2){if( v1 ){return v1===':'?m:v2;} return (stackKey.length?' ':'')+m;});
+					fullKey = (stackKey.length?stackKey.join(' '):'') + fullKey;
 					ruleOrder[fullKey]=true;
 					stackKey.push(parseKey);
 					stackStr.push(match[1].trim());
@@ -216,13 +247,14 @@ import: Ok
 				endPos = parseStr.indexOf('}');
 				if(endPos > -1){ // close current value
 					parseKey = stackKey.pop();
-					fullKey = (stackKey.length?stackKey.join(' ')+(parseKey.substr(0,1)===':'?'':' '):'') + parseKey;
+					fullKey = parseKey.replace(/^([:!])?([\s\S]+)$/,function(m,v1,v2){if( v1 ){return v1===':'?m:v2;} return (stackKey.length?' ':'')+m;});
+					fullKey = (stackKey.length?stackKey.join(' '):'') + fullKey;
 					rules[fullKey] = (undefined!==rules[fullKey]?rules[fullKey]+'\n':'')+parseStr.substr(0,endPos).trim();
 					parseStr = (stackStr.length?stackStr.pop():'')+parseStr.substr(endPos+1);
 					continue;
 				}
 			}
-			//-- no that we have correctly unnested all that mess we can execute the rules
+			//-- no that we have correctly un-nested all that mess we can execute the rules
 			str = imports.length?imports.join('\n')+'\n':'';
 
 			var replaceCbs = {
@@ -286,7 +318,7 @@ import: Ok
 				for(cb in replaceCbs ){
 					rules[parseKey] = rules[parseKey].replace(replaceCbs[cb][0],replaceCbs[cb][1]);
 				}
-				if( parseKey.indexOf('@')===0){
+				if( parseKey.match(/^\s*@/)){
 					continue;
 				}
 				str += parseKey+(compact?'{':'{\n\t')+rules[parseKey]+(compact?'}\n':'\n}\n');
@@ -295,15 +327,14 @@ import: Ok
 				}
 				delayed = {};
 			}
-
-			return str.replace(/;\s*;/g,';');
+			return str.replace(/;(\s*;)+/g,';');
 		},
 		computeStyle: function(action){
 			if( typeof(action)!=='string')
 				action = 'inject';
 			var self = this,
 				c = this._saveContent();
-			out = self._parseRawString(c,self.options.compactOutput);
+			out = self._parseRawString(c,self.options.compactOutput,self.options.rawFilePath);
 			switch(action){
 				case 'export':
 					var w = window.open('','cssEditorComputedStyleExport','toolbar=no,statusbar=no,scrollbars=yes');
