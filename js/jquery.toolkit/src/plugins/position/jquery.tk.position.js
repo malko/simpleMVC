@@ -134,8 +134,7 @@ $.toolkit('tk.positionRelative',{
 				this.options.related = rel;
 			}
 		}
-		this._applyOpts('related');
-		this._applyOpts('borderPolicy|edgePolicy|space|vPos|hPos');
+		this._applyOpts('related|borderPolicy|edgePolicy|space|vPos|hPos');
 	},
 	_set_related:function(elmt){
 		this._related=$(elmt).filter(':first');
@@ -443,9 +442,64 @@ $.tk.positionRelative.defaults={
 	vBorderPolicy:'out',      // in or out specify if we work with the in or out side of the vertical border
 	hBorderPolicy:'out',      // in or out specify if we work with the in or out side of the vertical border
 	vEdgePolicy:'stick',   // none|opposite|stick
-	hEdgePolicy:'opposite',        // none|opposite|stick
+	hEdgePolicy:'stick',        // none|opposite|stick
 	vPrefixClass:'tk-vpos-',
 	hPrefixClass:'tk-hpos-'
 };
+
+
+var mouseRelative={
+	_traking:{ },
+	ids:0,
+	elmt:null,
+	init:function(elmt,options){
+		var self = this;
+		self.elmt = $('<div id="tk-mouse" style="position:absolute;top:0;left:O;width:0px;height:0px;visibility:hidden;display:block;"></div>')
+			.appendTo('body');
+		$('body').mousemove(function(e){
+			self.update(e);
+		});
+
+	},
+	trackStart:function(mouseRelative){
+		if(! this.elmt){
+			this.init();
+		}
+		this._traking[mouseRelative._mouseRelativeId] = mouseRelative;
+	},
+	trackEnd:function(mouseRelative){
+		if(! this.elmt){
+			this.init();
+		}
+		delete this._traking[mouseRelative._mouseRelativeId];
+	},
+	update:function(e){
+		this.elmt.css({top:1+e.clientY+$(window).scrollTop(),left:0+e.clientX+$(window).scrollLeft()});
+		for(var i in this._traking ){
+			this._traking[i].elmt.positionRelative('update');
+		}
+	}
+}
+
+$.toolkit('tk.mouseRelative',{
+	_mouseRelativeId:0,
+	_init:function(){
+		if(null===mouseRelative.elmt){
+			mouseRelative.init();
+		}
+		this._mouseRelativeId = mouseRelative.ids++;
+		this.elmt.positionRelative($.extend({},this.options,{related:mouseRelative.elmt}));
+		this._applyOpts('tracking');
+	},
+	_set_tracking:function(v){
+		v = v?true:false;
+		if( v ){
+			mouseRelative.trackStart(this);
+		}else{
+			mouseRelative.trackEnd(this);
+		}
+		return v;
+	}
+});
 
 })(jQuery);

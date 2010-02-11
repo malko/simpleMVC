@@ -11,6 +11,9 @@ was really missing to better stick to my way of doing things so i start this new
 @author jonathan gotti <jgotti at jgotti dot net>
 @licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
 
+@changelog
+ - 2010-01-26 - add uniqueId method and use it for any element promoted to widget that haven't id already set
+
 */
 
 (function($){
@@ -68,6 +71,10 @@ $.toolkit = function(pluginName,prototype){
 				}
 			}
 			var id = self.elmt.attr('id');
+			if( id.length < 1){
+				id = $.toolkit.uniqueId();
+				self.elmt.attr(id);
+			}
 			if( id && self._storableOptions.elementLevel){
 				var v = '',eStored=self._storableOptions.elementLevel.split(/[,\|]/);
 				for(var i=0;i<eStored.length;i++ ){
@@ -327,6 +334,16 @@ $.toolkit._removeClassExp = function(elmt,exp,add){
 	}
 	return elmt;
 };
+
+/**
+* return a unique id for element
+*/
+$.toolkit.uniqueId = function(){
+	if( window.top.$ && window.top.$.toolkit && window.top.$.toolkit._uniqueId )
+		return 'tkUID'+(++window.top.$.toolkit._uniqueId);
+	window.top.$.toolkit._uniqueId=0;
+	return 'tkUID'+window.top.$.toolkit._uniqueId;
+}
 
 
 })(jQuery);
