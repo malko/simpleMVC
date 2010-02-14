@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-02-12 - bug correction for list configuration in configure action
 *            - 2010-02-08 - make it compatible with url,redirectAction and forward that dropped support for controllerName as second argument
 *            - 2010-01-19 - configure: add possibility to use groupMethod with only one fieldSet
 *                         - improve multilingual support
@@ -78,7 +79,7 @@ class adminmodelsController extends abstractController{
 	function init(){
 		parent::init();
 		self::appendAppMsg("Don't forget to edit the adminModelsController to check for user rights to access it or anyone could be editing your datas","error");
-		
+
 		if(! $this->modelType )
 			$this->modelType = isset($_POST['modelType'])?$_POST['modelType']:(isset($_GET['modelType'])?$_GET['modelType']:false);
 		if( ! $this->modelType){
@@ -476,7 +477,9 @@ class adminmodelsController extends abstractController{
 		$datasDefs = $this->datasDefs;
 		if( count($this->listedFields) ){ //-- restore selected order
 			foreach(array_reverse($this->listedFields) as $k=>$v){
-				unset($datasDefs[array_search($k,$datasDefs)]);
+				$key = array_search($k,$datasDefs,true);
+				if( false!==$key)
+					unset($datasDefs[$key]);
 				array_unshift($datasDefs,$k);
 			}
 		}

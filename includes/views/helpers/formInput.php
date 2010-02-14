@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2010-02-12 - change validable callbacks for confirmations
 *            - 2009-10-22 - add support for validable options
 *            - 2009-09-04 - add support for selecbuttonset
 *            - 2009-06-02 - prefix confirm inputs with _smvc_
@@ -108,15 +109,14 @@ class formInput_viewHelper extends abstractViewHelper{
 					$this->_js_scriptOnce("
 					window.formInputConfirm = function(val){
 						var m = this.id.match(/^formInputConfirm_(.*)/);
-						var oValidable = $('#'+m[1]).data('validable');
-						if( m && oValidable.check() && oValidable._elmt.val()==val){
+						if(m &&  $('#'+m[1]).val()==val){
 							return true;
 						}
 						return false;
 					}
 					",'formInputCheckConfirm');
 					$this->js("
-						$('input#$options[id]').change(function(){
+						$('input#$options[id]').bind('change keyup',function(){
 							var oValidable = $('input#$confirmOpts[id]').data('validable');
 							if( $(this).val())
 								oValidable.required= $(this).val()!==''?true:false;

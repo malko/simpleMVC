@@ -13,7 +13,7 @@
 class datepicker_viewHelper extends  jsPlugin_viewHelper{
 	/** path relative to jQuery_viewHelper::$pluginPath/$pluginName */
 	public $requiredFiles = array(
-		'js/jquery-ui-i18n.js',
+		#- 'js/jquery-ui-i18n.js',
 		#- ~ 'js/jqueryPlugins/jqueryDatepicker/18n/ui.datepicker-fr.js',
 		#- ~ 'js/jqueryPlugins/jqueryDatepicker/jquery-ui-personalized-1.6b.packed.js'
 	);
@@ -21,6 +21,9 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 
 	function init(){
 		$lg=langManager::getCurrentLang();
+		if( $lg!== 'en'){
+			$this->_js_includes('js/jquery-ui-i18n.js');
+		}
 		$this->_js_script("
 			$.datepicker.setDefaults($.extend({},".($lg!=='en'?"$.datepicker.regional['$lg'],":'')."{
 					showOn:'both',
