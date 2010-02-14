@@ -38,7 +38,6 @@ session_start();
 #- abstractModel::$useDbProfiler = DEVEL_MODE?true:false;
 
 #- Set default views directories lasts will be try first and vice-versa
-abstractController::$appMsgIgnoreRepeated = DEVEL_MODE?0:2;
 abstractController::$defaultViewClass = 'baseView';
 abstractController::$defaultViewDirs  = array(
 	LIB_DIR.'/views',

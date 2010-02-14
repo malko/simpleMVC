@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
 <head>
 	<title><?= FRONT_NAME .($this->pageTitle?" - $this->pageTitle":'')?></title>
-	<link rel="stylesheet" href="<?= APP_URL .'/'.FRONT_NAME.'.css' ?>" type="text/css" />
+	<link rel="stylesheet" href="<?= ROOT_URL .'/'.FRONT_NAME.'.css' ?>" type="text/css" />
 	<?php
 		//$this->_jqueryToolkit_initPlugins('notifybox|notify');
 		echo $this->_js_getPending();
