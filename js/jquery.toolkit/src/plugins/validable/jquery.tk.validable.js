@@ -29,16 +29,15 @@ $('#myForm').validable(formValidableOptions);
            - 2009-10-20 - add support for string callbacks
 */
 (function($) {
-
 	$.toolkit('tk.validable',{
 		_requiredElmt:null,
 		_stateIconElmt:null,
 		_labelElmt:null,
-		init:function(){
+		_init:function(){
 			var self = this,
-				id = self.elmt.attr('id');
-			dbg('init',self.elmt)
-			if( elmt.is('form')){
+				id = self.elmt.attr('id'),
+				getStateCB=function(e){return self.getState(e)};
+			if( self.elmt.is('form')){
 				var dfltInputOptions={
 					stateElmt:self.options.stateElmt,
 					useIcon:self.options.useIcon
@@ -50,13 +49,14 @@ $('#myForm').validable(formValidableOptions);
 						input.validable($.extend({},self.dfltInputOptions,self.options.rules[iname]));
 					}
 				});
-				self.elmt.bind('submit.validable',self.getState);
+				self.elmt.bind('submit.validable',getStateCB);
 			}else{
 				self._applyOpts('labelElmt|rule|required|useIcon|help|helpTrigger');
 				//- check trigger
-				self.elmt.bind('change.validable',self.getState);
-				self.elmt.bind('keyup.validable',self.getState);
+				self.elmt.bind('change.validable',getStateCB);
+				self.elmt.bind('keyup.validable',getStateCB);
 			}
+			self.getState();
 		},
 		_set_labelElmt:function(label){
 			var self = this;
@@ -106,7 +106,7 @@ $('#myForm').validable(formValidableOptions);
 				if( self.options.labelElmt){
 					self.options.labelElmt.prepend(self._requiredElmt);
 				}else{
-					self._elmt.after(self._requiredElmt);
+					self.elmt.after(self._requiredElmt);
 				}
 			}
 			return required;
@@ -133,7 +133,7 @@ $('#myForm').validable(formValidableOptions);
 			return msg;
 		},
 		_set_helpTrigger:function(trigger){
-			if( trigger === null || this.options.msg.length<1){
+			if( trigger === null || this.options.help.length<1){
 				$(trigger).each(function(){ $(this).unbind('.validable'); });
 				return null;
 			}
@@ -158,7 +158,7 @@ $('#myForm').validable(formValidableOptions);
 			if( null===elmt){
 				elmt = this.elmt;
 			}
-			this.iconElmt.insertAfter(elmt);
+			this._stateIconElmt.insertAfter(elmt);
 		},
 		_setState:function(state){
 			var stateElmt = this.elmt;
@@ -179,7 +179,7 @@ $('#myForm').validable(formValidableOptions);
 					this._stateIconElmt.removeClass('ui-icon-cancel')
 						.addClass('ui-icon ui-icon-check');
 				}
-				if( this.msg.length>0){
+				if( this.options.help.length>0){
 					this.elmt.tooltip('set','stateClass','tk-state-success');
 				}
 			}else{
@@ -189,22 +189,22 @@ $('#myForm').validable(formValidableOptions);
 					this._stateIconElmt.removeClass('ui-icon-check')
 						.addClass('ui-icon ui-icon-cancel');
 				}
-				if( this.msg.length>0){
+				if( this.options.help.length>0){
 					this.elmt.tooltip('set','stateClass','tk-state-error');
 				}
 			}
 			this._stateIconElmt.toggle((this.rule || this.required || this.minlength || this.maxlength)?true:false)
-			return state;
+			return state?true:false;
 		},
 
 		getState: function(event){
 			var self = this;
 			if(! self.elmt.is(':input')){
-				if(! self.elmt.is(':form'))
+				if(! self.elmt.is('form'))
 					return false;
-				var res = true;
+				var res = true,state;
 				self.elmt.find(':input.tk-validable').each(function(){
-					res = res && $(this).validable('getState')?true:false;
+					res = (res && $(this).validable('return1_getState'))?true:false;
 				});
 				if( event && false===res && $('.tk-notifybox').length && $.toolkit && $.tk.notifybox){ //@todo migrer le plugin vers jquery.toolkit et ici mettre un trigger sur un custom event
 					$('.tk-notifybox').notifybox('notify','<div class="ui-state-error" style="border:none;">Les données du formulaire ne sont pas valide, merci de vérifier votre saisie.</div>');
@@ -212,7 +212,7 @@ $('#myForm').validable(formValidableOptions);
 				return res;
 			}else{
 				if( event && event.type === 'keyup' && event.which == 27	)
-					self._tooltip.hide();
+					self.elmt.tooltip('hide');
 			}
 			var val   = self.elmt.val();
 			var maxlength = Math.max(0,self.elmt.attr('maxlength'));
@@ -230,7 +230,7 @@ $('#myForm').validable(formValidableOptions);
 				return self._setState(m===null?false:true);
 			}else if(self.options.rule){ //	if( typeof self.options.rule === 'function'){
 				try{
-					var res = self.options.rule.call(self._elmt.get(0),val);
+					var res = self.options.rule.call(self.elmt.get(0),val);
 				}catch(e){
 					throw(self.options.rule +'is not a valid validable rule.'+e);
 				}
@@ -254,7 +254,7 @@ $('#myForm').validable(formValidableOptions);
 		helpTrigger:null,
 		helpAfter:null,
 		helpOptions:{
-			position:'right'
+			position:'middle-right'
 		}
 	};
 

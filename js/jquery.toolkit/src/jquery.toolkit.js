@@ -19,7 +19,9 @@ was really missing to better stick to my way of doing things so i start this new
 
 (function($){
 
-	var _dbg_ = true;
+	var _dbg_ = true,
+		_throwOnBadCall=true;
+
 	window.dbg = function(){
 		if(! _dbg_ ){
 			return false;
@@ -121,6 +123,9 @@ $.toolkit = function(pluginName,prototype){
 			if(! $.isFunction($[nameSpace][pluginName].prototype[method]) ){
 				var match = method.match(/^([sg]et|return)(1)?(?:_+(.*))?$/);
 				if( null === match){
+					if(typeof(_throwOnBadCall)!=='undefined' && _throwOnBadCall){
+						throw('jquery.toolkit: '+method+'() unknown method call.')
+					}
 					return this;
 				}
 				propName = match[3]?match[3]:Array.prototype.shift.call(arguments,1);
