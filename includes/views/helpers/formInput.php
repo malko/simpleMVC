@@ -153,12 +153,13 @@ class formInput_viewHelper extends abstractViewHelper{
 					if( !empty($validableOpts) ){
 						if( !empty($validableOpts['help'])) // add help display on the iframe focus
 							$_rteValidableOpts['helpTrigger'] = "#RTE_FRAME_$options[id]";
+							$_rteValidableOpts['helpAfter'] = "#RTE_$options[id]";
 						if( (!empty($validableOpts['required'])) && ! isset($validableOpts['rule']))
 							$_rteValidableOpts['rule'] = 'requiredRteValidable';
 						if( isset($_rteValidableOpts))
 							$this->validable($name,$_rteValidableOpts,$validableForm);
 					}
-					$rteOptions = array('value' => $value,'rows'=>10,'cols'=>50);
+					$rteOptions = array('value' => $value,'rows'=>10,'cols'=>40);
 					foreach($options as $k=>$o){
 						if( in_array($k,array('rows','cols','disabled','style','rteOpts')) )
 							$rteOptions[$k] = $o;

@@ -1,12 +1,21 @@
 <?php
+/**
+*@changelog
+*           - 2010-02-18 - make use of jquerytoolkit version of the plugin
+*/
 class validable_viewHelper extends jsPlugin_viewHelper{
 	public $requiredFiles   = array(
-		'js/jqueryPlugins/jqueryValidable/jquery.validable.css',
-		'js/jqueryPlugins/jqueryValidable/jquery.validable.js'
+		#- 'js/jqueryPlugins/jqueryValidable/jquery.validable.css',
+		#- 'js/jqueryPlugins/jqueryValidable/jquery.validable.js'
 	);
-	public $requiredPlugins = array('jqueryui');
+	#- public $requiredPlugins = array('jqueryui');
+	public $requiredPlugins = array('jqueryToolkit');
 
 	private $rules = array();
+
+	function init(){
+		$this->_jqueryToolkit_loadPlugin('validable');
+	}
 
 	function validable($inputName,array $options,$parentForm='form'){
 		if( !empty($options['help']))
@@ -36,7 +45,8 @@ class validable_viewHelper extends jsPlugin_viewHelper{
 		if( empty($this->rules))
 			return;
 		foreach($this->rules as $parentForm=>$rules){
-			$this->_js_script("$('$parentForm').validable(".self::_optionString($rules,1).").validable('check');");
+			#- $this->_js_script("$('$parentForm').validable(".self::_optionString($rules,1).").validable('check');");
+			$this->_js_script("$('$parentForm').validable(".self::_optionString($rules,1).");");
 		}
 		$this->rules = array();
 	}
