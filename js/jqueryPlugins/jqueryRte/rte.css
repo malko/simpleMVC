@@ -2,6 +2,11 @@
 	border: solid silver 1px;
 	padding:0;
 	margin-bottom:10px;
+  zoom:1;
+  display:-moz-inline-stack;
+  display:inline-block;
+  *display:inline;
+  vertical-align:top;
 }
 .rte iframe{
 	margin:0.2em;

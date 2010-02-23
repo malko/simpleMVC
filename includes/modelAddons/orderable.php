@@ -22,6 +22,7 @@
 * @todo reflexion on the need to add set{OrderableField} to overloaded methods
 * @todo see if there's way to optimize SQL queries by directly working on the database field.
 * @todo make some more methods: moveToPosition, getLast, getFirst ...
+* @todo rewrite this addon to use static properties and make use of modelAddons::_initModelType
 * @example sample orderableModelClass
 class orderableModel extends BASE_orderableModel{
 	//** must be a real dataField not a relName (neither hasOne or hasMany)
