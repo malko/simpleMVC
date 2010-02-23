@@ -151,7 +151,7 @@ $.toolkit('tk.tooltip',{
 });
 
 $.tk.tooltip.defaults={
-	position:'top-center', // one of top[Left|Right]|right[Top|Bottom]|bottom[Left|Right]|left[Top|Bottom]
+	position:'top-center', // one of (top|bottom|middle)-(right|center|left)
 	stateClass:'tk-state-warning', //  one of warning|error|success|info
 	connector:true,
 	edgePolicy:'stick',

@@ -4,6 +4,7 @@
 	display:-moz-inline-stack;
 	display:inline-block;
 	*display:inline;
+	vertical-align:top;
 }
 .tk-inlineStack .tk-inlineStack, .tk-inlineStack .tk-icon,
 .tk-inlineStack .tk-icon-small, .tk-inlineStack .tk-icon-medium,
@@ -11,6 +12,7 @@
 	display:-moz-inline-box;
 	display:inline-block;
 	*display:inline;
+	vertical-align:top;
 }
 .tk-icon, .tk-icon-small, .tk-icon-medium, .tk-icon-big{
   overflow:hidden;color:rgba(255,255,255,0);font:0/0 Arial;
@@ -86,28 +88,71 @@
 	border-bottom-right-radius:7px;
 }
 
+/** shadows */
+
+.tk-boxShadow{
+	-moz-box-shadow: .1em .1em .25em #888;
+	-webkit-box-shadow: .1em .1em .25em #888;
+	box-shadow: .1em .1em .25em #888;
+}
+.tk-boxDarkShadow{
+	-moz-box-shadow: .1em .1em .25em #000;
+	-webkit-box-shadow: .1em .1em .25em #000;
+	box-shadow: .1em .1em .25em #000;
+}
+.tk-boxLightShadow{
+	-moz-box-shadow: .1em .1em .25em #fff;
+	-webkit-box-shadow: .1em .1em .25em #fff;
+	box-shadow: .1em .1em .25em #fff;
+}
+.tk-boxNeon{
+	-moz-box-shadow: .1em .1em .25em #888, -.1em -.1em .25em #888;
+	-webkit-box-shadow: .1em .1em .25em #888, -.1em -.1em .25em #888;
+	box-shadow: .1em .1em .25em #888, -.1em -.1em .25em #888;
+}
+.tk-boxOutline{
+	-moz-box-shadow:0 1px 0.05em #888,0 -1px 0.05em #888,1px 0 0.05em #888,-1px 0 0.05em #888,1px 1px 0.05em #888,-1px 1px  0.05em #888,1px -1px 0.05em #888,-1px -1px  0.05em #888;
+	-webkit-box-shadow:0 1px 0.05em #888,0 -1px 0.05em #888,1px 0 0.05em #888,-1px 0 0.05em #888,1px 1px 0.05em #888,-1px 1px  0.05em #888,1px -1px 0.05em #888,-1px -1px  0.05em #888;
+	box-shadow:0 1px 0.05em #888,0 -1px 0.05em #888,1px 0 0.05em #888,-1px 0 0.05em #888,1px 1px 0.05em #888,-1px 1px  0.05em #888,1px -1px 0.05em #888,-1px -1px  0.05em #888;
+}
+.tk-textShadow{
+	text-shadow: .1em .1em .25em #888;
+}
+.tk-textDarkShadow{
+	text-shadow: .1em .1em .25em #000;
+}
+.tk-textLightShadow{
+	text-shadow: .1em .1em .25em #fff;
+}
+.tk-textNeon{
+	text-shadow: .1em .1em .25em #888,  -.1em -.1em .25em #888;
+}
+.tk-textOutline{
+	text-shadow:0 1px 0.05em #888,0 -1px 0.05em #888,1px 0 0.05em #888,-1px 0 0.05em #888,1px 1px 0.05em #888,-1px 1px  0.05em #888,1px -1px 0.05em #888,-1px -1px  0.05em #888;}
+
+
+
 /** some status classes */
 .tk-state-warning, .tk-state-error, .tk-state-success, .tk-state-info{
-	padding:.4em .8em;
 	font-weight:bold;
 }
 .tk-state-warning {
   background:#ffb;
-  border-color: #fb4;
+  border-color:#fb4 !important;
   color:#950;
 }
 .tk-state-error{
 	background:#fee;
-	border-color:#b44;
+	border-color:#b44 !important;
 	color:#922;
 }
 .tk-state-success{
 	background:#efe;
-	border-color:#4b4;
+	border-color:#4b4 !important;
 	color:#292;
 }
 .tk-state-info{
 	background:#eef;
-	border-color:#33f;
+	border-color:#33f !important;
 	color:#229;
 }

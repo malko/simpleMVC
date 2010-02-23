@@ -4,7 +4,6 @@
 @borderStyle: solid;
 @radius:7px;
 /* statuses */
-@statePadding:.4em .8em;
 @warningColor:#950;
 @warningBgColor:#ffb;
 @warningBorderColor:#fb4;
@@ -109,7 +108,6 @@
 
 /** some status classes */
 .tk-state-warning, .tk-state-error, .tk-state-success, .tk-state-info{
-	padding:@statePadding;
 	font-weight:bold;
 }
 .tk-state-warning {

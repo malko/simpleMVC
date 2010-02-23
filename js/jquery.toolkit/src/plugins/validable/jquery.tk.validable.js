@@ -51,21 +51,23 @@ $('#myForm').validable(formValidableOptions);
 				});
 				self.elmt.bind('submit.validable',getStateCB);
 			}else{
-				self._applyOpts('labelElmt|rule|required|useIcon|help|helpTrigger');
+				self._applyOpts('labelElmt|rule|required|useIcon|help|helpTrigger|helpAfter');
 				//- check trigger
 				self.elmt.bind('change.validable',getStateCB);
 				self.elmt.bind('keyup.validable',getStateCB);
 			}
-			self.getState();
+			if(self.options.initCheck){
+				self.getState();
+			}
 		},
 		_set_labelElmt:function(label){
 			var self = this;
-			if( undefined !== label){
+			if( label ){
 				self._labelElmt = $(label);
 			}else{
 				label =$('label[for='+self.elmt.attr('id')+']');
 				if(! label.length){
-					label = self._elmt.parent('label');
+					label = self._elmt.parents('label');
 				}
 				self._labelElmt = label.length?label:null;
 			}
@@ -87,7 +89,7 @@ $('#myForm').validable(formValidableOptions);
 					}
 				}
 			}
-			self.options.rule = rule;
+			return rule;
 		},
 		_set_maxlength:function(l){ this.elmt.attr('maxlength',l?l:''); },
 		_set_minlength:function(l){ this.elmt.attr('minlength',l?l:''); },
@@ -103,8 +105,8 @@ $('#myForm').validable(formValidableOptions);
 				if(null===self._requiredElmt){
 					self._requiredElmt = $(self.options.requiredTemplate);
 				}
-				if( self.options.labelElmt){
-					self.options.labelElmt.prepend(self._requiredElmt);
+				if( self._labelElmt){
+					self._labelElmt.prepend(self._requiredElmt);
 				}else{
 					self.elmt.after(self._requiredElmt);
 				}
@@ -119,7 +121,7 @@ $('#myForm').validable(formValidableOptions);
 				}
 			}else{
 				if( this._stateIconElmt === null){
-					this._stateIconElmt=$('<span class="tk.validable-state-icon"></span>');
+					this._stateIconElmt=$('<span class="tk-validable-state-icon"><span class="ui-icon"></span></span>');
 					this._applyOpts('helpAfter');
 				}
 			}
@@ -129,7 +131,7 @@ $('#myForm').validable(formValidableOptions);
 				return '';
 			}
 			var o = $.extend({},this.options.helpOptions,{msg:msg});
-			this.elmt.tooltip(o);
+			this.elmt.tooltip('set',o);
 			return msg;
 		},
 		_set_helpTrigger:function(trigger){
@@ -140,11 +142,13 @@ $('#myForm').validable(formValidableOptions);
 			var self = this;
 			$(trigger).each(function(){
 				if( this.tagName==='IFRAME' && this.contentDocument){ // @todo check for aleternate method for IE
-					this.contentDocument.addEventListener('focus',function(){self.getState();self.elmt.tooltip('show');},false);
-					this.contentDocument.addEventListener('blur',function(){self.check();self.elmt.tooltip('hide');},false);
+					//- this.contentDocument.addEventListener('focus',function(){self.getState();self.elmt.tooltip('show');},false);
+					//- this.contentDocument.addEventListener('blur',function(){self.getState();self.elmt.tooltip('hide');},false);
+					$(this.contentDocument).bind('focus.validable mouseover.validable',function(){self.getState();self.elmt.tooltip('show');});
+					$(this.contentDocument).bind('blur.validable mouseout.validable',function(){self.getState();self.elmt.tooltip('hide');});
 				}else{
-					$(this).bind('focus.validable',function(){self.check();self.elmt.tooltip('show');})
-						.bind('blur.validable',function(){self.check();self.elmt.tooltip('hide');});
+					$(this).bind('focus.validable mouseover.validable',function(){self.getState();self.elmt.tooltip('show');})
+						.bind('blur.validable mouseout.validable',function(){self.getState();self.elmt.tooltip('hide');});
 					//- $(this).focus(function(){self.check();self.elmt.tooltip('show');})
 						//- .blur(function(){self.check();self.elmt.tooltip('hide');});
 				}
@@ -152,48 +156,49 @@ $('#myForm').validable(formValidableOptions);
 			return trigger;
 		},
 		_set_helpAfter:function(elmt){
-			if( ! this._stateIconElmt ){
-				return;
-			}
 			if( null===elmt){
 				elmt = this.elmt;
+			}
+			if( this.options.help.length){
+				this.elmt.tooltip('get1_pluginInstance')._wrapper.positionRelative('set_related',elmt);
+			}
+			if( ! this._stateIconElmt ){
+				return;
 			}
 			this._stateIconElmt.insertAfter(elmt);
 		},
 		_setState:function(state){
 			var stateElmt = this.elmt;
-			if( this.options.stateElmt==='label' ){
-				if( this._labelElmt){
-					stateElmt = this._labelElmt;
-				}
+			if( this.options.stateElmt==='label' && this._labelElmt ){
+				stateElmt = this._labelElmt;
 			}else if( this.stateElmt !== 'self'){
-				stateElmt = $(this.stateElmt);
+				stateElmt = $(this.options.stateElmt);
 				if( ! stateElmt.length){
 					stateElmt=this.elmt;
 				}
 			}
 			if(state){
-				stateElmt.removeClass('ui-state-error tk-state-error')
-					.addClass('ui-state-success tk-state-success');
+				stateElmt.removeClass('tk-state-error')
+					.addClass('tk-state-success');
 				if( this._stateIconElmt){
-					this._stateIconElmt.removeClass('ui-icon-cancel')
-						.addClass('ui-icon ui-icon-check');
+					this._stateIconElmt.removeClass('tk-state-error ui-state-error').addClass('tk-state-success ui-state-success')
+					.find('.ui-icon').removeClass('ui-icon-cancel').addClass('ui-icon-check');
 				}
 				if( this.options.help.length>0){
-					this.elmt.tooltip('set','stateClass','tk-state-success');
+					this.elmt.tooltip('set_stateClass','tk-state-success');
 				}
 			}else{
-				stateElmt.removeClass('ui-state-success tk-state-success')
-					.addClass('ui-state-error tk-state-error');
+				stateElmt.removeClass('tk-state-success')
+					.addClass('tk-state-error');
 				if( this._stateIconElmt){
-					this._stateIconElmt.removeClass('ui-icon-check')
-						.addClass('ui-icon ui-icon-cancel');
+					this._stateIconElmt.removeClass('tk-state-success ui-state-success').addClass('tk-state-error ui-state-error')
+					.find('.ui-icon').removeClass('ui-icon-check').addClass('ui-icon-cancel');
 				}
 				if( this.options.help.length>0){
 					this.elmt.tooltip('set','stateClass','tk-state-error');
 				}
 			}
-			this._stateIconElmt.toggle((this.rule || this.required || this.minlength || this.maxlength)?true:false)
+			this._stateIconElmt.toggle((this.options.rule || this.options.required || this.options.minlength || this.options.maxlength)?true:false)
 			return state?true:false;
 		},
 
@@ -207,7 +212,7 @@ $('#myForm').validable(formValidableOptions);
 					res = (res && $(this).validable('return1_getState'))?true:false;
 				});
 				if( event && false===res && $('.tk-notifybox').length && $.toolkit && $.tk.notifybox){ //@todo migrer le plugin vers jquery.toolkit et ici mettre un trigger sur un custom event
-					$('.tk-notifybox').notifybox('notify','<div class="ui-state-error" style="border:none;">Les données du formulaire ne sont pas valide, merci de vérifier votre saisie.</div>');
+					$('.tk-notifybox').notifybox('notify','<div class="tk-state-error" style="border:none;">Les données du formulaire ne sont pas valide, merci de vérifier votre saisie.</div>');
 				}
 				return res;
 			}else{
@@ -219,12 +224,15 @@ $('#myForm').validable(formValidableOptions);
 			var minlength = Math.max(0,self.elmt.attr('minlength'));
 			var length= val.length;
 
-			if( (! val) && ! self.required)
+			if( (! val) && ! self.options.required){
 				return self._setState(true);
-			if( maxlength && length > maxlength )
+			}
+			if( maxlength && length > maxlength ){
 				return self._setState(false);
-			if( minlength && length < minlength )
+			}
+			if( minlength && length < minlength ){
 				return self._setState(false);
+			}
 			if( self.options.rule instanceof RegExp){
 				var m = val.match(self.options.rule);
 				return self._setState(m===null?false:true);
@@ -232,12 +240,12 @@ $('#myForm').validable(formValidableOptions);
 				try{
 					var res = self.options.rule.call(self.elmt.get(0),val);
 				}catch(e){
-					throw(self.options.rule +'is not a valid validable rule.'+e);
+					throw(self.options.rule +' is not a valid validable rule.'+e);
 				}
 				if(! res )
 					return self._setState(false);
 			}
-			if( self.options.required && ! val )
+			if( self.options.required && val.length < 1 )
 				return self._setState(false);
 			return self._setState(true);
 		}
@@ -245,6 +253,7 @@ $('#myForm').validable(formValidableOptions);
 
 	$.tk.validable.defaults={
 		rule: null,
+		initCheck:true,
 		required:false,
 		stateElmt:'self', //-- may be self, label or any valid selector
 		useIcon:'auto',

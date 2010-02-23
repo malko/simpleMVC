@@ -12,6 +12,7 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
 
 @changelog
+ - 2010-02-16 - add get(1)_pluginInstance method
  - 2010-02-10 - add urlElementLevel to storableOptions
  - 2010-01-26 - add uniqueId method and use it for any element promoted to widget that haven't id already set
 
@@ -220,6 +221,9 @@ $.toolkit.prototype = {
 		var e = $.event.fix(originalEvent||{});
 		e.type = eventName;
 		return this.elmt.triggerHandler(e,params);
+	},
+	_get_pluginInstance:function(){
+		return this;
 	},
 	//-- Exposed methods --//
 	get:function(key){

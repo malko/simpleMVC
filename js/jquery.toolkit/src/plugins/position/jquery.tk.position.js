@@ -248,7 +248,7 @@ $.toolkit('tk.positionRelative',{
 			return vPos;
 		}
 		var offset = this._related.offset(),
-			inner = vPos.match(/^inner/),
+			inner = vPos.toString().match(/^inner/),
 			s = inner?-this.options.vSpace:this.options.vSpace,
 			borderPolicy=this.options.vBorderPolicy==='in'?true:false,
 			pos = { yRef:'top', y:0 };
@@ -295,7 +295,7 @@ $.toolkit('tk.positionRelative',{
 		}else if(this._tk.initialized && hPos===this.options.hPos){
 			return hPos;
 		}
-		var inner = hPos.match(/^inner/),
+		var inner = hPos.toString().match(/^inner/),
 			s = inner?-this.options.hSpace:this.options.hSpace,
 			borderPolicy=this.options.hBorderPolicy==='in'?true:false,
 			offset = this._related.offset(),

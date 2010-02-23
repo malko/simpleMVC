@@ -60,7 +60,7 @@ $.toolkit('tk.notifybox',{
 		return e.notify($.extend({notifybox:this.elmt,destroy:true},options||{})).get(0);
 	},
 	msg:function(msg,options){
-		return $('<div>'+msg+'</div>').notify($.extend({notifybox:this.elmt,destroy:true},options||{})).get(0);
+		return $('<div class="tk-notify-msg tk-corner">'+msg+'</div>').notify($.extend({notifybox:this.elmt,destroy:true},options||{})).get(0);
 	},
 	_set_vPos:function(pos){
 		var css={};
@@ -117,7 +117,7 @@ $.toolkit('tk.notify',{
 		if( (self.options.closeButton==='noclose' || !self.options.closeButton) || (self.options.closeButton==="auto" && self.options.ttl>0) ){
 			var closeButton = false;
 		}
-		self.wrapper = $('<div class="'+self.options.wrapperClassName+'">'+(closeButton?'<div class="tk-icon tk-icon-close" title="close">X</div>':'')+'</div>');
+		self.wrapper = $('<div class="'+self.options.wrapperClassName+'">'+(closeButton?'<div class="tk-icon-close" title="close"><span class="ui-icon ui-icon-close">X</span></div>':'')+'</div>');
 		if( self.options.notifybox.notifybox('get_vPos')[0] === 'bottom'){
 			self.wrapper.prependTo(self.options.notifybox);
 		}else{
@@ -125,7 +125,7 @@ $.toolkit('tk.notify',{
 		}
 		self.wrapper.hide()
 			.click(function(e){self.hide(e);})
-			.append(self.elmt.show())
+			.append(self.elmt.addClass('tk-notify-msg tk-corner').show())
 			.hover(function(){$(this).addClass('tk-notify-wrapper-hover');},function(){$(this).removeClass('tk-notify-wrapper-hover')});
 		self.show();
 		if( self.options.ttl > 0){
@@ -156,7 +156,7 @@ $.toolkit('tk.notify',{
 $.tk.notify.defaults={
 	notifybox:'default',
 	ttl:5000, // 0 mean no automaticly hide
-	wrapperClassName:'tk-notify-wrapper',
+	wrapperClassName:'tk-notify-wrapper tk-corner tk-boxShadow',
 	effectShow:'fadeIn',
 	effectHide:'slideUp',
 	closeButton:'auto',// one of true|false or auto (auto mean only when ttl 0)
