@@ -5,7 +5,7 @@
 	<title><?= FRONT_NAME .($this->pageTitle?" - $this->pageTitle":'')?></title>
 	<link rel="stylesheet" href="<?= ROOT_URL .'/'.FRONT_NAME.'.css' ?>" type="text/css" />
 	<?php
-		//$this->_jqueryToolkit_initPlugins('notifybox|notify');
+		$this->_jqueryToolkit_initPlugins('notifybox|notify');
 		echo $this->_js_getPending();
 	?>
 </head>
