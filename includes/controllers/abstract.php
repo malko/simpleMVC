@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-02-22 - add msgRedirect() method
 *            - 2010-02-08 - now redirectAction and forward only use the dispatch string as first parameter and so drop support for second controller parmeter (this will break backward compatibility so carrefull on updating older version)
 *            - 2009-12-16 - bug correction in forward with full dispatch string as action
 *            - 2009-11-24 - now redirect() method redirect to HTTP_REFERER or DEFAULT_DISPATCH if no URI given.
@@ -101,7 +102,7 @@ abstract class abstractController{
 	static protected $dispatchStack= array();
 
 	/** set the way appMsg are prepared %T and %M will be respectively replaced byt msgType and msgStr*/
-	static public  $appMsgModel = "<div class=\"ui-state-%T %T tk-state-%T tk-notify  tk-notify-7500\">%M</div>";
+	static public  $appMsgModel = "<div class=\"ui-state-%T %T tk-state-%T tk-notify  tk-notify-10000\">%M</div>";
 	/** set the way repeated appMsgs are treated
 	* - 0: won't perform any check and so will display all messages,
 	* - 1: avoid consecutive message repetition by checking that last message is different)
@@ -493,6 +494,13 @@ abstract class abstractController{
 	function redirectAction($dispatchString,$params=null,$withResponseCode=false,$keepGoing=false){
 		$url = $this->view->url($dispatchString,$params);
 		return $this->redirect($url,null,$withResponseCode,$keepGoing);
+	}
+
+	function msgRedirect($msg,$state='error',$dispatchString=null,$params=null){
+		self::appendAppMsg($msg,$state);
+		if( $dispatchString===null && $state==='error')
+			$dispatchString = ERROR_DISPATCH;
+		return $this->redirectAction($dispatchString,$params);
 	}
 
 	function clearCacheAction(){
