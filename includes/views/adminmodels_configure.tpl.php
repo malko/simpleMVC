@@ -206,7 +206,8 @@
 <form action="<?= $this->url('saveEditConfig',array('modelType'=>$this->modelType)) ?>" method="post" id="config">
 	<h3><a name="config">Edit Configuration File</a></h3>
 	<div id="config-pannel">
-		<?= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
+		<? /*= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) */?>
+		<?= $this->codemirror('smvcConfig',file_get_contents($this->configFile),array('language'=>'js')) ?>
 		<button type="submit" class="ui-button ui-button-small-disk">save</save>
 	</div>
 </form>
@@ -281,7 +282,8 @@
 				</li>
 			</ul>
 		</div>
-		<?= $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) ?>
+		<? /* = $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) */ ?>
+		<?= $this->codemirror('smvcModel',file_get_contents($this->modelFile),array('language'=>'php')) ?>
 		<button type="submit" class="ui-button ui-button-small-disk">save</save>
 	</div>
 </form>
@@ -420,4 +422,5 @@ $this->js('
 		}
 	});
 ','jqueryui');
+/** @todo add support for list filter configuration */
 ?>

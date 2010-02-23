@@ -49,7 +49,7 @@
 *                         - remove setLayout from formAction
 *                         - list without listFields setted will ask value from model instead of taking it directly from model->datas
 */
-class adminmodelsController extends abstractController{
+abstract class abstractAdminmodelsController extends abstractController{
 
 	public $modelType = null;
 	/**
@@ -75,10 +75,19 @@ class adminmodelsController extends abstractController{
 	protected $_modelConfig = array();
 	/** set one or multiple databases connection constants names to generate model from */
 	protected $dbConnectionsDefined = array('DB_CONNECTION');
-
+	/**
+	* method that extended class should override to check if user is allow or not to access to extended controller or not.
+	*/
+	function check_authorized(){
+		self::appendAppMsg("Don't forget to edit the ".get_class($this)."::check_authorized() method or anyone could be editing your datas","warning");
+		return true;
+	}
 	function init(){
 		parent::init();
-		self::appendAppMsg("Don't forget to edit the adminModelsController to check for user rights to access it or anyone could be editing your datas","error");
+		if(! $this->check_authorized()){
+			self::appendAppMsg('Unhautorized access.','error');
+			return $this->redirectAction(ERROR_DISPATCH);
+		}
 
 		if(! $this->modelType )
 			$this->modelType = isset($_POST['modelType'])?$_POST['modelType']:(isset($_GET['modelType'])?$_GET['modelType']:false);

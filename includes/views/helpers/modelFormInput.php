@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2010-02-xx - related model field  supporting orderableModelAddon will be sort by orderableField if no sort options is given
 *            - 2010-02-09 - add sort options for hasOne relations too
 *            - 2009-10-12 - add support for controller define input types
 *            - 2009-09-04 - boolean values are now selectbuttonset by defaults
@@ -28,6 +29,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 	*                           - values -> list of choice for select/checkbox/radio...
 	*                           - type   -> formInput type to use to render the input field
 	*                           - formatStr -> string to describe the output format %input and %label will be replaced by their corresponding values.
+	*                           - forceEmptyChoice allow to force an empty value in multiple choices on related hasOne
   *                           - @see formInput for other supported options depending the type of field to edit.
 	*
 	*/
@@ -52,13 +54,16 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				$value = $datasDefs[$relsDefs['hasOne'][$keyName]['localField']]['Default'];
 			}
 			if( empty($options['values']) ){
-				$choices = abstractModel::getAllModelInstances($relsDefs['hasOne'][$keyName]['modelName']);
+				$relModelName = $relsDefs['hasOne'][$keyName]['modelName'];
+				$choices = abstractModel::getAllModelInstances($relModelName);
 				if( !empty($options['sort'])){
 					$choices->{$options['sort']}();
 					unset($options['sort']);
+				}elseif($choices->count() &&  abstractModel::_modelSupportsAddon($relModelName,'orderable') ){
+					$choices->sort($choices->current()->_orderableField);
 				}
-				if( $relsDefs['hasOne'][$keyName]['relType'] !== 'dependOn' ){
-					$options['values'][0] = '--- '.langManager::msg($options['label']).' ---';
+				if( $relsDefs['hasOne'][$keyName]['relType'] !== 'dependOn' || !empty($options['forceEmptyChoice'])){
+					$options['values'][0] = '--- '.langManager::msg((empty($options['forceEmptyChoice'])||true===$options['forceEmptyChoice'])?$options['label']:$options['forceEmptyChoice']).' ---';
 				}
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();
@@ -77,12 +82,25 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				$value = $options['value'];
 
 			if( empty($options['values']) ){
-				$choices = abstractModel::getAllModelInstances($relsDefs['hasMany'][$keyName]['modelName']);
+				$relModelName = $relsDefs['hasMany'][$keyName]['modelName'];
+				$choices = abstractModel::getAllModelInstances($relModelName);
 				if( !empty($options['sort'])){
 					$choices->{$options['sort']}();
 					unset($options['sort']);
+				}elseif( $choices->count() && abstractModel::_modelSupportsAddon($relModelName,'orderable') ){
+					$choices->sort($choices->current()->_orderableField);
 				}
 				$options['values'][0] = langManager::msg('empty %s value',array(langManager::msg($keyName)));
+				if( isset($options['type']) && strpos($options['type'],'check') === 0){
+					$this->view->_js_script('
+					$("input[name^=\''.$keyName.'[\']").change(function(){
+						if( $(this).val() !== "0"){
+							$("#'.$keyName.'[value=0]").attr("checked",false);
+						}else if($(this).is(":checked")){
+							$("#'.$keyName.':checked").not(this).attr("checked",false);
+						}
+					})');
+				}
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();
 			}

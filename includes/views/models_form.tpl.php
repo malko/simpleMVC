@@ -9,10 +9,12 @@
 *            - add forgotten input hidden on primaryKey when using fieldsOrder
 */
 $encType=false;
-foreach($this->inputOpts as $o){
-	if( (!empty($o['type'])) && ($o['type']==='file' || $o['type']==='fileextended') ){
-		$encType=true;
-		break;
+if(! empty($this->inputOpts)){
+	foreach($this->inputOpts as $o){
+		if( (!empty($o['type'])) && ($o['type']==='file' || $o['type']==='fileextended') ){
+			$encType=true;
+			break;
+		}
 	}
 }
 ?>
