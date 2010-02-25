@@ -42,15 +42,26 @@ $('#myForm').validable(formValidableOptions);
 					stateElmt:self.options.stateElmt,
 					useIcon:self.options.useIcon
 				};
-				self.elmt.find(':input').each(function(){
+				self.elmt.find(':input:not(button,[type=submit],[type=reset])').each(function(){
 					var input=$(this);
 					var iname = input.attr('name');
 					if( self.options.rules[iname]){
 						input.validable($.extend({},self.dfltInputOptions,self.options.rules[iname]));
+					}else if(self.options.alwaysSetState){
+						input.validable($.extend({},self.dfltInputOptions));
 					}
 				});
 				self.elmt.bind('submit.validable',getStateCB);
 			}else{
+				if( ! self.options.maxlength ){
+					var maxl = self.elmt.attr('maxlength');
+					self.options.maxlength = ( typeof(maxl)===undefined || isNaN(maxl) || maxl<0 )? 0 : maxl;
+				}
+				if( ! self.options.minlength ){
+					var minl = self.elmt.attr('minlength');
+					self.options.minlength = ( typeof(minl)===undefined || isNaN(minl) || minl<0 )? 0 : minl;
+				}
+				self._applyOpts('minlength|maxlength',true);
 				self._applyOpts('labelElmt|rule|required|useIcon|help|helpTrigger|helpAfter');
 				//- check trigger
 				self.elmt.bind('change.validable',getStateCB);
@@ -67,7 +78,7 @@ $('#myForm').validable(formValidableOptions);
 			}else{
 				label =$('label[for='+self.elmt.attr('id')+']');
 				if(! label.length){
-					label = self._elmt.parents('label');
+					label = self.elmt.parents('label');
 				}
 				self._labelElmt = label.length?label:null;
 			}
@@ -91,8 +102,8 @@ $('#myForm').validable(formValidableOptions);
 			}
 			return rule;
 		},
-		_set_maxlength:function(l){ this.elmt.attr('maxlength',l?l:''); },
-		_set_minlength:function(l){ this.elmt.attr('minlength',l?l:''); },
+		_set_maxlength:function(l){ l=Math.max(0,l); this.elmt.attr('maxlength',l?l:''); },
+		_set_minlength:function(l){ l=Math.max(0,l); this.elmt.attr('minlength',l?l:''); },
 		_set_required:function(required){
 			var self = this;
 			required = required?true:false; // ensure boolean value
@@ -114,6 +125,9 @@ $('#myForm').validable(formValidableOptions);
 			return required;
 		},
 		_set_useIcon:function(useIcon){ //@todo manage "auto" value
+			if( useIcon==='auto' ){
+				useIcon = this._hasRule()?true:false;
+			}
 			if(! useIcon){
 				if( this._stateIconElmt !== null){
 					this._stateIconElmt.remove();
@@ -159,14 +173,17 @@ $('#myForm').validable(formValidableOptions);
 			if( null===elmt){
 				elmt = this.elmt;
 			}
-			if( this.options.help.length){
-				this.elmt.tooltip('get1_pluginInstance')._wrapper.positionRelative('set_related',elmt);
+			if( this.options.help.length && ! this.elmt.tooltip('get1_stickyMouse') ){
+				$.toolkit._getInstance(this.elmt,'tk.tooltip')._wrapper.positionRelative('set_related',elmt);
 			}
 			if( ! this._stateIconElmt ){
 				return;
 			}
 			this._stateIconElmt.insertAfter(elmt);
 		},
+		/**
+		internal method to visually set the state of the stateElement, the stateIcon and tooltip
+		*/
 		_setState:function(state){
 			var stateElmt = this.elmt;
 			if( this.options.stateElmt==='label' && this._labelElmt ){
@@ -184,7 +201,7 @@ $('#myForm').validable(formValidableOptions);
 					this._stateIconElmt.removeClass('tk-state-error ui-state-error').addClass('tk-state-success ui-state-success')
 					.find('.ui-icon').removeClass('ui-icon-cancel').addClass('ui-icon-check');
 				}
-				if( this.options.help.length>0){
+				if( this.options.help.length>0 && this._hasRule()){
 					this.elmt.tooltip('set_stateClass','tk-state-success');
 				}
 			}else{
@@ -194,12 +211,20 @@ $('#myForm').validable(formValidableOptions);
 					this._stateIconElmt.removeClass('tk-state-success ui-state-success').addClass('tk-state-error ui-state-error')
 					.find('.ui-icon').removeClass('ui-icon-check').addClass('ui-icon-cancel');
 				}
-				if( this.options.help.length>0){
+				if( this.options.help.length>0 && this._hasRule()){
 					this.elmt.tooltip('set','stateClass','tk-state-error');
 				}
 			}
-			this._stateIconElmt.toggle((this.options.rule || this.options.required || this.options.minlength || this.options.maxlength)?true:false)
+			if( this.stateIconElmt){
+				this._stateIconElmt.toggle((this.options.rule || this.options.required || this.options.minlength || this.options.maxlength)?true:false)
+			}
 			return state?true:false;
+		},
+		/*
+		internal method to test if there's any kind of rules to apply (length/rule/required)
+		*/
+		_hasRule:function(){
+			return (this.options.maxlength || this.options.minlength || this.options.required || this.options.rule)?true:false;
 		},
 
 		getState: function(event){
@@ -219,18 +244,19 @@ $('#myForm').validable(formValidableOptions);
 				if( event && event.type === 'keyup' && event.which == 27	)
 					self.elmt.tooltip('hide');
 			}
+			if(! self._hasRule() ){
+				return self.options.alwaysSetState?self._setState(true):true;
+			}
 			var val   = self.elmt.val();
-			var maxlength = Math.max(0,self.elmt.attr('maxlength'));
-			var minlength = Math.max(0,self.elmt.attr('minlength'));
 			var length= val.length;
 
 			if( (! val) && ! self.options.required){
 				return self._setState(true);
 			}
-			if( maxlength && length > maxlength ){
+			if( self.options.maxlength && length > self.options.maxlength ){
 				return self._setState(false);
 			}
-			if( minlength && length < minlength ){
+			if( self.options.minlength && length < self.options.minlength ){
 				return self._setState(false);
 			}
 			if( self.options.rule instanceof RegExp){
@@ -245,8 +271,9 @@ $('#myForm').validable(formValidableOptions);
 				if(! res )
 					return self._setState(false);
 			}
-			if( self.options.required && val.length < 1 )
+			if( self.options.required && val.length < 1 ){
 				return self._setState(false);
+			}
 			return self._setState(true);
 		}
 	});
@@ -254,7 +281,10 @@ $('#myForm').validable(formValidableOptions);
 	$.tk.validable.defaults={
 		rule: null,
 		initCheck:true,
+		alwaysSetState:true,
 		required:false,
+		minlength:0,
+		maxlength:0,
 		stateElmt:'self', //-- may be self, label or any valid selector
 		useIcon:'auto',
 		labelElmt:null,
@@ -263,7 +293,8 @@ $('#myForm').validable(formValidableOptions);
 		helpTrigger:null,
 		helpAfter:null,
 		helpOptions:{
-			position:'middle-right'
+			position:'middle-right',
+			stickyMouse:false
 		}
 	};
 
@@ -281,5 +312,4 @@ $('#myForm').validable(formValidableOptions);
 		video:/\.(mpe?g|avi|flv|mov)$/i,
 		flashEmbeddable:/\.(jpe?g|flv|gif|png|swf|mp3)$/i
 	};
-
 })(jQuery);

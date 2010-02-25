@@ -12,6 +12,9 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
 
 @changelog
+ - 2010-02-24 - add ensureId jquery method and rename uniqueId toolkit method to requestUniqueId as it's more meeningfull
+							- make use of ensureId method at widet construction time.
+							- $.toolkit._getInstance() now accept jQuery element as first parameter (in which case it will work on the first element of the collection)
  - 2010-02-16 - add get(1)_pluginInstance method
  - 2010-02-10 - add urlElementLevel to storableOptions
  - 2010-01-26 - add uniqueId method and use it for any element promoted to widget that haven't id already set
@@ -27,7 +30,7 @@ was really missing to better stick to my way of doing things so i start this new
 		if(! _dbg_ ){
 			return false;
 		}
-		if( console && console.debug){
+		if( typeof(console)!=='undefined' && console.debug){
 			console.debug(dbg.caller,arguments);
 		}
 	};
@@ -52,7 +55,7 @@ $.toolkit = function(pluginName,prototype){
 			baseClass : nameSpace+'-'+pluginName,
 			initialized:false
 		};
-		self.elmt = $(elmt);
+		self.elmt = $(elmt).ensureId();
 		self.elmt.data(pluginName,self);
 		//-- merge options
 		var inlineOptions = self._classNameOptions?$.toolkit._readClassNameOpts(self.elmt,self._tk.baseClass,self._classNameOptions):{};
@@ -76,10 +79,6 @@ $.toolkit = function(pluginName,prototype){
 			}
 			var id = self.elmt.attr('id'),
 			v ='',eStored='',encodedUri=escape(window.location.href);
-			if( id.length < 1){
-				id = $.toolkit.uniqueId();
-				self.elmt.attr(id);
-			}
 			if( id && self._storableOptions.elementLevel){
 				eStored=self._storableOptions.elementLevel.split(/[,\|]/);
 				for(var i=0;i<eStored.length;i++ ){
@@ -282,7 +281,7 @@ $.toolkit.initPlugins = function(pluginNames){
 */
 $.toolkit._getInstance = function(elmt,pluginName,defaultToNew){
 	var nameSpace = 'tk';
-	if( pluginName.indexOf('.') ){
+	if( pluginName.indexOf('.') > -1){
 		pluginName = pluginName.split('.');
 		nameSpace = pluginName[0];
 		pluginName= pluginName[1];
@@ -290,6 +289,8 @@ $.toolkit._getInstance = function(elmt,pluginName,defaultToNew){
 	if( elmt instanceof $[nameSpace][pluginName]){
 		return elmt;
 	}
+	if( elmt instanceof jQuery)
+		elmt = elmt.get(0);
 	var instance = $.data(elmt,pluginName);
 	if( instance ){
 		//dbg('living '+pluginName+' Instance found for',elmt,instance);
@@ -361,12 +362,19 @@ $.toolkit._removeClassExp = function(elmt,exp,add){
 /**
 * return a unique id for element
 */
-$.toolkit.uniqueId = function(){
-	if( window.top.$ && window.top.$.toolkit && window.top.$.toolkit._uniqueId )
-		return 'tkUID'+(++window.top.$.toolkit._uniqueId);
-	window.top.$.toolkit._uniqueId=0;
-	return 'tkUID'+window.top.$.toolkit._uniqueId;
+$.toolkit.requestUniqueId = function(){
+	if( window.top.jQuery && window.top.jQuery.toolkit && window.top.jQuery.toolkit._uniqueId )
+		return 'tkUID'+(++window.top.jQuery.toolkit._uniqueId);
+	window.top.jQuery.toolkit._uniqueId=1;
+	return 'tkUID'+window.top.jQuery.toolkit._uniqueId;
 }
-
+$.fn.ensureId = function(){
+	return this.each(function(){
+		var e = $(this);
+		if( e.attr('id').length < 1){
+			e.attr('id',$.toolkit.requestUniqueId());
+		}
+	});
+}
 
 })(jQuery);

@@ -18,7 +18,6 @@ $.toolkit('tk.tooltip',{
 		self._pointerBg=self._wrapper.find('.tk-pointer-bg');
 		self._wrapper.appendTo('body')
 			.positionRelative({related:this.elmt,edgePolicy:self.options.edgePolicy,borderPolicy:'out'})
-		//- .mouseRelative({edgePolicy:self.options.edgePolicy,borderPolicy:'out',tracking:true})
 			.bind('updatehpos updatevpos',function(){self._setPointerColor(true)});
 
 		// inline options standardisation
@@ -27,34 +26,32 @@ $.toolkit('tk.tooltip',{
 		}
 
 		self._applyOpts('stateClass|position|connector|msg|width|height|showTrigger|hideTrigger');
+		self._applyOpts('stickyMouse',true);
 		this._setPointerColor(true);
 
+	},
+	_set_stickyMouse:function(sticky){
+		var self = this;
+		if( sticky ){
+			self._wrapper.mouseRelative('set','tracking',true);
+			self._wrapper.bind('positionRelative_changerelated.'+self._tk.pluginName,function(e,elmt,related){
+				if(related!==$.toolkit.mouseRelative.elmt){
+					self._set_stickyMouse(false);
+				}
+			});
+		}else{
+			self._wrapper.unbind('positionRelative_changerelated.'+self._tk.pluginName);
+			self._wrapper.positionRelative('set',{related:self.elmt});
+		}
 	},
 	_set_position:function(pos){
 		if( typeof pos==='string' )
 			pos = pos.split('-');
 		this._wrapper.positionRelative('set',{vPos:pos[0],hPos:pos[1]})
-		this._setPointerColor(this._tk.initialized);
 		this.options.position = pos;
 		this._applyOpts('spacing');
 		return pos;
 	},
-	/*_set_position:function(pos){
-		if( typeof pos==='string' )
-			pos = pos.split('-');
-		this._wrapper.positionRelative('set',{vPos:pos[0],hPos:pos[1]})
-		this._setPointerColor(this._tk.initialized);
-		return;
-		pos = pos.replace(/[TBRL]/,function(match){return '-'+match.toLowerCase()});
-		//- $.toolkit._removeClassExp(this._wrapper,'tk-tooltip-pos-*','tk-tooltip-pos-'+pos);
-		this._wrapper.removeClass('tk-tooltip-pos-'+this.options.position).addClass('tk-tooltip-pos-'+pos);
-		this.options.position = pos;
-		this._setPointerColor(this._tk.initialized);
-		if( this._wrapper.is(':visible')){
-			this._setDisplayPosition();
-		}
-		return pos;
-	},*/
 	_set_edgePolicy:function(p){
 		this._wrapper.positionRelative('set_edgePolicy',p);
 	},
@@ -74,7 +71,7 @@ $.toolkit('tk.tooltip',{
 	},
 	_set_stateClass:function(stateClass){
 		this._wrapper.removeClass(this.options.stateClass).addClass(stateClass);
-		this._setPointerColor(this._tk.initialized);
+		this._setPointerColor();
 	},
 	_set_connector:function(c){
 		this._pointer.toggle(c);
@@ -109,8 +106,8 @@ $.toolkit('tk.tooltip',{
 		self.elmt.bind(eventName+'.'+self._tk.pluginName,function(){self.hide()});
 	},
 	/** correctly set pointer colors */
-	_setPointerColor:function(doIt){
-		if( ! doIt){ //-- prevent setting colors multiple times at init time
+	_setPointerColor:function(force){
+		if(! (this._tk.initialized || force )){
 			return false;
 		}
 		var pos=this._wrapper.positionRelative('return1_realpos'),
@@ -154,7 +151,7 @@ $.tk.tooltip.defaults={
 	position:'top-center', // one of (top|bottom|middle)-(right|center|left)
 	stateClass:'tk-state-warning', //  one of warning|error|success|info
 	connector:true,
-	edgePolicy:'stick',
+	edgePolicy:'opposite',
 	stickyMouse:false,
 	spacing:10,
 	width:'auto',

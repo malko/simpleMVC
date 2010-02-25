@@ -116,7 +116,7 @@ $.toolkit('tk.positionRelative',{
 	_classNameOptions:{
 		edgePolicy:'|(opposite|stick|none)?(opposite|stick|none)',
 		borderPolicy:'|in(out)?|out(in)?',
-		vPos: '|(middle|inner)?([tT]op|[bB]bottom)|(upper|lower)?([mM]iddle)',
+		vPos: '|(middle|inner)?([tT]op|[bB]ottom)|(upper|lower)?([mM]iddle)',
 		hPos: '|(middle|inner)?([lL]eft|[rR]ight)|(right|left)?([cC]enter)',
 		space:'|[0-9]+' // set hSpace and vSpace all at once
 	},
@@ -140,6 +140,7 @@ $.toolkit('tk.positionRelative',{
 		this._related=$(elmt).filter(':first');
 		if( this._tk.initialized ){
 			this.update();
+			this._trigger('changerelated',null,[this.elmt,elmt]);
 		}
 	},
 	_set_borderPolicy:function(p){
@@ -448,7 +449,7 @@ $.tk.positionRelative.defaults={
 };
 
 
-var mouseRelative={
+$.toolkit.mouseRelative={
 	_traking:{ },
 	ids:0,
 	elmt:null,
@@ -459,7 +460,6 @@ var mouseRelative={
 		$('body').mousemove(function(e){
 			self.update(e);
 		});
-
 	},
 	trackStart:function(mouseRelative){
 		if(! this.elmt){
@@ -484,22 +484,33 @@ var mouseRelative={
 $.toolkit('tk.mouseRelative',{
 	_mouseRelativeId:0,
 	_init:function(){
-		if(null===mouseRelative.elmt){
-			mouseRelative.init();
+		var self = this;
+		if(null===$.toolkit.mouseRelative.elmt){
+			$.toolkit.mouseRelative.init();
 		}
-		this._mouseRelativeId = mouseRelative.ids++;
-		this.elmt.positionRelative($.extend({},this.options,{related:mouseRelative.elmt}));
-		this._applyOpts('tracking');
+		self._mouseRelativeId = $.toolkit.mouseRelative.ids++;
+		self.elmt.positionRelative('set',$.extend({},self.options,{related:$.toolkit.mouseRelative.elmt}));
+		self._applyOpts('tracking');
+		self.elmt.bind('positionRelative_changerelated',function(e,elmt,related){
+			if( related !== $.toolkit.mouseRelative.elmt ){
+				self._set_tracking(false);
+			}
+		})
 	},
 	_set_tracking:function(v){
 		v = v?true:false;
 		if( v ){
-			mouseRelative.trackStart(this);
+			if( this.elmt.positionRelative('get1_related') !== $.toolkit.mouseRelative.elmt){ // need to reset related element of positionRelative
+				this.elmt.positionRelative('set_related',$.toolkit.mouseRelative.elmt);
+			}
+			$.toolkit.mouseRelative.trackStart(this);
 		}else{
-			mouseRelative.trackEnd(this);
+			$.toolkit.mouseRelative.trackEnd(this);
 		}
 		return v;
 	}
 });
+
+$.tk.mouseRelative.defaults = { tracking:true};
 
 })(jQuery);
