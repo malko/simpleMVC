@@ -14,19 +14,12 @@
 class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 	/** path relative to jQuery_viewHelper::$pluginPath/$pluginName */
 	public $requiredFiles = array(
-		'js/jqueryPlugins/jqueryDynCss/jquery.DynCss.js',
 		'js/simpleMVC_develBar.js'
 	);
 	public $requiredPlugins = array(
 		'jquery'
 	);
-	function simpleMVCdevelBar($dynCss=null){
-		if( null!==$dynCss){
-			if( is_string($dynCss) )
-				$dynCss = explode('|',$dynCss);
-			foreach($dynCss as $css)
-				$this->js('$.DynCss("'.$css.'","simpleMVCDynCssAppend");');
-		}
+	function simpleMVCdevelBar(){
 		return '<style>#sMVCpannels .sMVCpannel,#sMVCmodelsList {display:none}</style><div id="sMVCtoolBar" class="ui-buttonset ui-buttonset-small"><button id="sMVCtoolBarToggle" class="ui-button ui-button-circle-triangle-w"></button>'
 		.'<button id="sMVCmodels" class="ui-button ui-button-gear">Models</button><button id="sMVCshow" class="ui-button ui-button-info">Show </button>'
 		.'<button id="sMVCphperr" class="ui-button ui-button-alert">PHP Errors </button><button id="sMVCdb" class="ui-button ui-button-clock">Db::profiler</button>'
