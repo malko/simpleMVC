@@ -5,6 +5,7 @@
 * @since 2005-08-29
 * @licence General Public Licence
 * @changelog
+*            - 2010-03-25 - add dontSend parameter to mailTpl() method
 *            - 2009-01-28 - better automated html to plain-text conversion
 *            - 2008-09-15 - clean_header() now replace words instead of whole string (was problematic with string that contains '?')
 *            - 2008-08-26 - add static property $xmailer
@@ -461,14 +462,16 @@ class easymail{
 
 	/**
 	* send a template email after a replacement inside the mail
-	* @param string $to      a single mail adress
-	* @param string $subject mail subject
-	* @param string $doc     the path to the mail template or the template as a string itself
-	* @param string $from    mail adress to use as sender adress
-	* @param array  $datas   list of keys/values pair of replacement to make inside the template.
-	* @param string $type    one of html|plain|both
+	* @param string $to        a single mail adress
+	* @param string $subject   mail subject
+	* @param string $doc       the path to the mail template or the template as a string itself
+	* @param string $from      mail adress to use as sender adress
+	* @param array  $datas     list of keys/values pair of replacement to make inside the template.
+	* @param string $type      one of html|plain|both
+	* @param bool   $dontSend  if true then mail won't be send and easymail object will be returned
+	* @return bool or easymail if $dontSend is true and all is ok
 	*/
-	static public function mailTpl($to,$subject,$doc,$from,$datas,$type='html'){
+	static public function mailTpl($to,$subject,$doc,$from,$datas,$type='html',$dontSend=false){
 		static $prepareKeys;
 		if(! isset($prepareKeys))
 			$prepareKeys = create_function('$e','return "---$e---";');
@@ -491,8 +494,11 @@ class easymail{
 			($type==='both'?true:false),
 			self::$dfltHeaderCharset
 		);
-
-		return $easymail->send($subject,$to);
+		if(! $dontSend )
+			return $easymail->send($subject,$to);
+		$easymail->subject($subject);
+		$easymail->to($to);
+		return $easymail;
 	}
 
 }
