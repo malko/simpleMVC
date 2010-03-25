@@ -3,8 +3,13 @@
 * @since 2009-11-19
 * @package cacheManager
 * @changelog
+*            - 2010-03-22 - add fileCacheBackend
+*                         - new methods removeMatchingItem()
 *            - 2010-02-10 - add methods cacheManager::(set|get)Backend()
 */
+
+if(! defined('CACHE_MANAGER_DEFAULT_BACKEND'))
+	define('CACHE_MANAGER_DEFAULT_BACKEND','fileCacheBackend');
 
 if(! defined('CACHE_MANAGER_ENABLE') )
 	define('CACHE_MANAGER_ENABLE',true);
@@ -12,14 +17,22 @@ if(! defined('CACHE_MANAGER_AUTOCLEAR') )
 	define('CACHE_MANAGER_AUTOCLEAR',true);
 if(! defined('CACHE_MANAGER_TTL') )
 	define('CACHE_MANAGER_TTL','30 minutes');
+if(! defined('CACHE_DB_CONNECTION') ){
+	$dbCacheBackendConnection = defined('DB_CONNECTION')?DB_CONNECTION:null;
+	define('CACHE_DB_CONNECTION',$dbCacheBackendConnection);
+}
 if(! defined('CACHE_DB_AUTOCREATE')){
 	$dbCacheBackendAutoCreate	= constant('DEVEL_MODE')?true:false;
 	define('CACHE_DB_AUTOCREATE',$dbCacheBackendAutoCreate);
 }
-
+if(! defined('CACHE_FILE_ROOT_DIR'))
+	define('CACHE_FILE_ROOT_DIR','/tmp/cacheManager');
+if(! defined('CACHE_FILE_USE_SUBDIRS') ){
+	define('CACHE_FILE_USE_SUBDIRS',false);
+}
 class cacheManager{
 	/** storage backend to use */
-	static public $useBackend='dbCacheBackend';
+	static public $useBackend=CACHE_MANAGER_DEFAULT_BACKEND;
 	/** default time to live settings */
 	static public $ttl=CACHE_MANAGER_TTL;
 	/** boolean value does the cache try to clear too old items from storage */
@@ -41,6 +54,7 @@ class cacheManager{
 	static function init(){
 		if( ! self::$backend instanceof self::$useBackend){
 			$backend = new self::$useBackend();
+			self::setBackend($backend);
 			if(! $backend instanceof cacheBackend)
 				throw new RuntimeException(__class__.'::init() invalid cacheBackend');
 			if( self::$autoClear )
@@ -64,7 +78,7 @@ class cacheManager{
 	* set the previously started item and stop buffering the output.
 	* as thoose methods use output buffering they must be ended in the reverse order they was started
 	* so the first started must be the last ended.
-	* In the same way you really should avoid to use output buffering inside the portion of code you try to cache.
+	* In the same way you really should avoid (at least be carefull) to use output buffering inside the portion of code you try to cache.
 	*/
 	static function setEnd($name){
 		return self::set($name,ob_get_clean());
@@ -120,6 +134,15 @@ class cacheManager{
 		self::$backend->removeItem($item);
 		cacheItem::dropInstance($item);
 	}
+	/*
+	* remove all cacheItems which name matching the given expression
+	* @param string $exp posixRegex the name must match to be dropped
+	* @return void
+	*/
+	static function removeMatchingItem($exp){
+		self::init();
+		self::$backend->removeMatchingItem($exp);
+	}
 	static function clear($olderThan=null){
 		self::init();
 		return self::$backend->clear(self::_ttl($olderThan));
@@ -145,17 +168,129 @@ interface cacheBackend{
 	function clear($olderThan=null);
 	function saveItem(cacheItem $item);
 	function removeItem($item);
+	function removeMatchingItem($exp);
 	function getItem($name);
 }
+
+class fileCacheBackend implements cacheBackend{
+	static public $cacheRootDir = CACHE_FILE_ROOT_DIR;
+	static public $useSubDirs = CACHE_FILE_USE_SUBDIRS;
+
+
+	function __construct(){
+		if(! is_dir(self::$cacheRootDir)){
+			$umask = umask(0);
+			mkdir(self::$cacheRootDir,0755,true);
+			umask($umask);
+		}
+	}
+	function getItem($name){
+		$i = cacheItem::getInstance($name);
+		if(empty($i->cacheTime) && empty($i->content) ){
+			$path = $this->getItemPath($name);
+			if( file_exists($path) && $tmp = file_get_contents($path) ){
+				$i->content = $tmp;
+				$i->cacheTime = $this->getFileTime($path);
+			}
+		}
+		return $i;
+	}
+	function saveItem(cacheItem $item){
+		$item->cacheTime = date('Y-m-d H:i:s');
+		$tmp = $this->getItemPath($item);
+		if( is_file($tmp) )
+			unlink($tmp);
+		$tmp = $this->getItemPath($item,false).'/'.$item->name.'_'.preg_replace('!\D!','',$item->cacheTime);
+		$umask = umask(0);
+		if(! is_dir(dirname($tmp))){
+			mkdir(dirname($tmp),0775,true);
+		}
+		if(false===file_put_contents($tmp,$item->content,LOCK_EX) ){
+			umask($umask);
+			return false;
+		}
+		chmod($tmp,0664);
+		umask($umask);
+		return true;
+	}
+	function removeItem($item){
+		if( $item instanceof cacheItem)
+			$tmp = $this->getItemPath($item,false).'/'.$item->name.'_'.preg_replace('!\D!','',$item->cacheTime);
+		else
+			$tmp = $this->getItemPath($item);
+		cacheItem::dropInstance($item);
+		if( is_file($tmp) ){
+			unlink($tmp);
+			if( self::$useSubDirs ){
+				$res = glob($tmp=dirname($tmp).'/*');
+				if( empty($res) )
+					rmdir(dirname($tmp));
+				$res = glob($tmp=dirname($tmp).'/*');
+				if( empty($res) )
+					rmdir(dirname($tmp));
+			}
+		}
+	}
+	function removeMatchingItem($exp){
+		$files = glob(self::$cacheRootDir.'/*'.(self::$useSubDirs?'/*/*':''));
+		cacheItem::clearMemory(null,$exp);
+		foreach($files as $f){
+			if( preg_match($exp,basename($f)))
+				unlink($f);
+		}
+		return true;
+	}
+	function clear($olderThan=null){
+		$files = glob(self::$cacheRootDir.'/*'.(self::$useSubDirs?'/*/*':''));
+		$olderThan=date('Y-m-d H:i:s',time()-$olderThan);
+		cacheItem::clearMemory($olderThan);
+		foreach($files as $f){
+			if( null===$olderThan || $this->getFileTime($f) < $olderThan)
+				unlink($f);
+		}
+		return true;
+	}
+
+	protected function getFileTime($filePath){
+		preg_match('!^.*_(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$!',$filePath,$m);
+		return "$m[1]-$m[2]-$m[3] $m[4]:$m[5]:$m[6]";
+	}
+
+	protected function checkPath($path){
+		if(! is_dir($path)){
+			$umask = umask(0);
+			mkdir($path,0775,true);
+			umask($umask);
+		}
+	}
+
+	protected function getItemPath($item,$full=true){
+		if( $item instanceof $item)
+			$item = $item->name;
+		if(! self::$useSubDirs ){
+			$path = preg_replace('!/$!','',self::$cacheRootDir);
+		}else{
+			list(,$subPath1,$subPath2) = array_pad(preg_split('//',substr(preg_replace('![^a-zA-Z0-9_]!','_',$item),0,2),3),3,'_');
+			$path  = preg_replace('!/$!','',self::$cacheRootDir)."/$subPath1/$subPath2";
+		}
+		if(! $full)
+			return $path;
+		$tmp = glob("$path/$item*");
+		if( empty($tmp) )
+			return $path;
+		return $tmp[0];
+	}
+}
+
 
 /**
 * cache backend to store items in database.
 * @require class-db
 * @class dbCacheBackend
 */
-class dbCacheBackend implements cacheBackend {
+class dbCacheBackend implements cacheBackend{
 	/** database connection string to use for the backend @see class-db::getInstance() */
-	static public $connectionStr = DB_CONNECTION;
+	static public $connectionStr = CACHE_DB_CONNECTION;
 	/** in database table name to store the cached items */
 	static public $tableName = '_cache';
 	/** does the table need to be created automaticly if not already existing in database */
@@ -213,9 +348,26 @@ class dbCacheBackend implements cacheBackend {
 		cacheItem::dropInstance($item);
 		return $this->db->delete(self::$tableName,array('WHERE name=?',$item));
 	}
+
+	function removeMatchingItem($exp){
+		#- first lookup item in memories
+		cacheItem::clearMemory(null,$exp);
+		$names = $this->db->select_col(self::$tableName,'name');
+		if( ! empty($names)){
+			$rem = array();
+			foreach( $names as $name ){
+				if( preg_match($exp,$name) )
+					$rem[] = $name;
+			}
+			if( ! empty($rem) )
+				return $this->db->delete(self::$tableName,array('WHERE name IN (?)',$rem));
+		}
+		return true;
+	}
+
 	/**
 	* remove all cache items
-	* @param int $olderThan if given only items olde than the time given will be remove
+	* @param int $olderThan if given only items older than the time given will be remove
 	* @return bool
 	*/
 	function clear($olderThan=null){
@@ -265,16 +417,18 @@ class cacheItem{
 	}
 	/**
 	* remove all cacheItem instance from memory
-	* @param dateTime $olderThan if given then only cacheItem instance olderThan the time given will be removed from memory.
+	* @param dateTime $olderThan    if given then only cacheItem instance olderThan the time given will be removed from memory.
+	* @param string   $matchingExp  if given then only item matching with name matching the given PCRE RegExp will be removed from memory
 	* @return true
 	*/
-	static function clearMemory($olderThan=null){
-		if( null === $olderThan ){
+	static function clearMemory($olderThan=null,$matchingExp=null){
+		if( null === $olderThan && null===$matchingExp){
 			self::$_instances = array();
 			return true;
 		}
+
 		foreach(self::$_instances as $i){
-			if( $i->cacheTime < $olderThan )
+			if( (null===$olderThan || $i->cacheTime < $olderThan) && (null==$matchingExp || preg_match($matchingExp,$i->name)) )
 				self::dropInstance($i->name);
 		}
 		return true;
