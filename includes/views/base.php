@@ -18,6 +18,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-03-29 - add viewInterface::getLayout() method
+*            - 2010-03-22 - add cacheManager support to renderScript() method ( little impact on lookUpScript() too)
 *            - 2009-12-09 - cacheName now take currentLang into account when langManager is used
 *            - 2009-11-20 - add support for cacheManager on helpers calls
 *            - 2009-10-23 - add viewException
@@ -76,6 +78,7 @@ interface viewInterface{
 
 	function setController(abstractController $controller);
 	function setLayout(array $layout=null);
+	function getLayout();
 	function addViewDir($viewDir);
 	function lookUpScriptByAction($action=null,$controller=null,$scriptPathModel=null);
 	function lookUpScript($scriptFileName);
@@ -293,6 +296,13 @@ class baseView implements viewInterface{
 		$this->_layout = (null===$layout?self::$defaultLayout:$layout);
 		return $this; #- for chaining
 	}
+	/**
+	* get currently applyed layout for this view
+	* @return array
+	*/
+	public function getLayout(array $layout=null){
+		return $this->_layout;
+	}
 
 	/**
 	* append a directory for view script lookup.
@@ -342,11 +352,17 @@ class baseView implements viewInterface{
 	* @return str script path or false if not found
 	*/
 	public function lookUpScript($scriptFile){
+		$prefix = '';
+		if( strpos($scriptFile,'_cached_')===0){
+			$prefix = '_cached_';
+			$scriptFile = substr($scriptFile,8);
+
+		}
 		foreach(array_reverse($this->_viewDirs) as $d){
 			if(is_file("$d/$scriptFile"))
-				return "$d/$scriptFile";
+				return "$prefix$d/$scriptFile";
 		}
-		return is_file($scriptFile)?$scriptFile:false;
+		return is_file($scriptFile)?"$prefix$scriptFile":false;
 	}
 
 	/**
@@ -377,6 +393,19 @@ class baseView implements viewInterface{
 	* @return bool scriptFile included or not.
 	*/
 	public function renderScript($scriptFile,$useLookUp=true){
+		$cached = false;
+		if( strpos($scriptFile,'_cached_')===0 ){
+			$cached = true;
+			$scriptFile = substr($scriptFile,8);
+			$cacheName = preg_replace('!.tpl.php$!','',basename($scriptFile)).'_'.FRONT_NAME.(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').'_'.md5(serialize(array($_GET,$_POST)));
+			$res = cacheManager::get($cacheName);
+			if( null !== $res ){
+				echo $res;
+				return true;
+			}
+		}
+		if( $cached )
+			cacheManager::setStart($cacheName);
 		if($useLookUp){
 			$scriptFile = $this->lookUpScript($scriptFile);
 			if($scriptFile === false)
@@ -385,6 +414,8 @@ class baseView implements viewInterface{
 				return false;
 		}
 		include($scriptFile);
+		if( $cached )
+			echo cacheManager::setEnd($cacheName);
 		return true;
 	}
 	/**

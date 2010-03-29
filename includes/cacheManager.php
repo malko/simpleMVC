@@ -7,7 +7,6 @@
 *                         - new methods removeMatchingItem()
 *            - 2010-02-10 - add methods cacheManager::(set|get)Backend()
 */
-
 if(! defined('CACHE_MANAGER_DEFAULT_BACKEND'))
 	define('CACHE_MANAGER_DEFAULT_BACKEND','fileCacheBackend');
 
@@ -84,10 +83,10 @@ class cacheManager{
 		return self::set($name,ob_get_clean());
 	}
 	/**
-	* return a cacheItem from used storage backend
+	* return a cacheItem content from used storage backend
 	* @param string $name the cacheItem name
 	* @param string $maxAge the max age of the item to be return
-	* @return cacheItem or null
+	* @return string or null
 	*/
 	static function get($name,$maxAge=null){
 		if(! self::$enable )
