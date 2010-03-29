@@ -76,12 +76,16 @@ function smvcAutoload($className){
 			}
 			$className = str_replace($m[0],'',$className);
 		}elseif( preg_match('!(?:_m|M)odelAddon(?:Interface)?$!',$className,$m) ){#- look for modelAddons and their interface
+			if( defined('MODELADDONS_DIR') )
+				$dirs = array_merge($dirs,explode(',',MODELADDONS_DIR));
 			$dirs[] = LIB_DIR.'/modelAddons';
 			$dirs[] = ROOT_DIR.'/modelAddons';
 			$className = str_replace($m[0],'',$className);
 		}else{ #- default look for models
 			if( preg_match('!Collection$!',$className) ) #- modelCollection must be looked in models files
 				$className = preg_replace('!Collection$!','',$className);
+			if( defined('MODELS_DIR') )
+				$dirs = array_merge($dirs,explode(',',MODELS_DIR));
 			$dirs[] = LIB_DIR.'/models';
 			$dirs[] = ROOT_DIR.'/models';
 		}
