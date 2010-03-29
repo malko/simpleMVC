@@ -63,19 +63,18 @@ class formInput_viewHelper extends abstractViewHelper{
 			'formatStr' => '<div class="formInput">'.((in_array($type,array('radio','check','checkbox')) && empty($options['values']))?'%input %label':'%label %input').'</div>',
 		);
 		$options = array_merge($dfltOpts,$options);
-
 		$value = null!==$value?$value:(isset($options['default'])?$options['default']:'');
 		$labelStr = (isset($options['label'])?"<label for=\"$options[id]\">$options[label]</label>":'');
 
 		#- check for some validable options.
-		$validableOptsNames = array('required','help','minlength','maxlength','rule');
+		$validableOptsNames = array('required','help','minlength','maxlength','rule','useIcon');
 		$supportMaxlength = array('txt','text','pass','password','txtConfirm','passwordConfirm');
 		$validableOpts = array();
 		$validableForm = $this->view->getController() instanceof modelsController?'form.adminForm':'form';
 		foreach($validableOptsNames as $key){
 			if( $key==="maxlength" && in_array($type,$supportMaxlength) )
 				continue;
-			if( ! empty($options[$key])){
+			if( isset($options[$key])){
 				$validableOpts[$key] = $options[$key];
 				unset($options[$key]);
 			}
@@ -83,7 +82,6 @@ class formInput_viewHelper extends abstractViewHelper{
 		if( !empty($validableOpts)){
 			$this->validable($name,$validableOpts,$validableForm);
 		}
-
 		switch($type){
 			case 'skip':
 				return '';
@@ -152,14 +150,14 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'rte':
 					if( !empty($validableOpts) ){
 						if( !empty($validableOpts['help'])) // add help display on the iframe focus
-							$_rteValidableOpts['helpTrigger'] = "#RTE_FRAME_$options[id]";
+							$_rteValidableOpts['helpTrigger'] = "#RTE_$options[id]";
 							$_rteValidableOpts['helpAfter'] = "#RTE_$options[id]";
 						if( (!empty($validableOpts['required'])) && ! isset($validableOpts['rule']))
 							$_rteValidableOpts['rule'] = 'requiredRteValidable';
 						if( isset($_rteValidableOpts))
 							$this->validable($name,$_rteValidableOpts,$validableForm);
 					}
-					$rteOptions = array('value' => $value,'rows'=>10,'cols'=>40);
+					$rteOptions = array('value' => $value);
 					foreach($options as $k=>$o){
 						if( in_array($k,array('rows','cols','disabled','style','rteOpts')) )
 							$rteOptions[$k] = $o;
@@ -186,7 +184,7 @@ class formInput_viewHelper extends abstractViewHelper{
 						if( is_array($value) )
 							$selected = in_array($k,$value)?' selected="selected"':'';
 						else
-							$selected = $k==$value?' selected="selected"':'';
+							$selected = ($k==$value && ($value!=='' || ''===$k))?' selected="selected"':'';
 						$opts .= "<option value=\"$k\"$selected>$v</option>";
 					}
 				}
@@ -211,7 +209,7 @@ class formInput_viewHelper extends abstractViewHelper{
 						if( is_array($value) )
 							$checked = in_array($ok,$value)?' checked="checked"':'';
 						else
-							$checked = $ok==$value?' checked="checked"':'';
+							$checked = ($ok==$value && ($value!=='' || ''===$ok))?' checked="checked"':'';
 						#- ~ $labelStr = "<label for=\"\">$ov</label>";
 						$opts .= "<label><input type=\"$type\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"$ok\"".$this->getAttrStr($options)."$checked />$ov</label>";
 					}

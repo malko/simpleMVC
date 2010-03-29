@@ -51,6 +51,7 @@ if(! empty($this->inputOpts)){
 				$groupName = langManager::msg(empty($group->name)?$this->modelType:$group->name,null,$this->_langManagerDicName);
 				switch($fieldGroupMethod){
 					case 'tabs':
+					case 'tabbed':
 						$tabs = (isset($tabs)?$tabs:'')."<li><a href=\"#tabs-$k\">$groupName</a></li>";
 						$formStr .= "\n<div id=\"tabs-$k\">$groupStr\n</div>\n";
 						break;
@@ -64,7 +65,11 @@ if(! empty($this->inputOpts)){
 			$tabs = isset($tabs)?"<ul>$tabs</ul>":'';
 			echo "<div id=\"fieldsGroups\">\n$tabs$formStr\n</div>\n";
 			if( !empty($fieldGroupMethod) && 'fieldset' !== $fieldGroupMethod){
-				$this->js("$('form #fieldsGroups').$fieldGroupMethod();",'jqueryui');
+				if( $fieldGroupMethod === 'tabbed' ){
+					$this->_jqueryToolkit_tabbed('form #fieldsGroups');
+				}else{
+					$this->js("$('form #fieldsGroups').$fieldGroupMethod();",'jqueryui');
+				}
 			}
 		}else{
 			$formFields = empty($this->fieldsOrder)?array_keys($this->datasDefs):$this->fieldsOrder;

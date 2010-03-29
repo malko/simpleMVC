@@ -2,6 +2,7 @@
 /**
 * helper for administration lists
 * @changelog
+*            - 2010-03-16 - supress the lastest column when not editable and not deletable
 *            - 2009-05-28 - ncancel: added $editable and $deletable parameters.
 */
 class adminSortableList_viewHelper extends jsPlugin_viewHelper{
@@ -27,7 +28,7 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 				continue;
 			$_headers[] = "'".str_replace("'","\'",ucfirst($h))."'";
 		}
-		$_headers = 'var headers = ['.implode(', ',$_headers).",{label:'&nbsp;',unsortable:true,width:'55px'}];";
+		$_headers = 'var headers = ['.implode(', ',$_headers).(($editable||$deletable)?",{label:'&nbsp;',unsortable:true,width:'55px'}":'').'];';
 
 		$tableId = 'sortTable'.($this->view->modelType?$this->view->modelType:(++self::$lastTableId));
 		foreach($datas as $row){
@@ -41,30 +42,33 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		$msgEdit = htmlentities(langManager::msg('Edit'),ENT_COMPAT,'utf-8');
 		$msgDel  = htmlentities(langManager::msg('Delete'),ENT_COMPAT,'utf-8');
 		$this->js("
-			var options = { rowRendering: function(row,data){
-				$(row).addClass(data.rowid%2?'row':'altrow');
-				var bcell  = row.cells[row.cells.length-1];
-				var itemId = data.data[data.data.length-1];
-				$(bcell).html('<div class=\"ui-buttonset ui-buttonset-tiny-i\">"
-				.($editable?"<button class=\"ui-button ui-button-pencil editButton\" title=\"$msgEdit\">$msgEdit</button>":'')
-				.($deletable?"<button class=\"ui-button ui-button-trash delButton\" title=\"$msgDel\">$msgDel</button>":'')
-				."</div>');"
-				.($editable?"
-				$('.editButton',bcell).click(function(){
-					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr)."';
-				});":'')
-				.($deletable?"
-				$('.delButton',bcell).click(function(){
-					if(! confirm('".str_replace("'","\'",langManager::msg("Are you sure you want to delete this item?"))."')){
-						return false;
-					}
-					window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
-					return true;
-				});":'')."
-			},
-			bodyRendering:function(body,data){
-				$('.ui-button',body).button({checkButtonset:true});
-			}};
+			var options = {
+				".(($editable||$deletable)?"
+				rowRendering: function(row,data){
+					$(row).addClass(data.rowid%2?'row':'altrow');
+					var bcell  = row.cells[row.cells.length-1];
+					var itemId = data.data[data.data.length-1];
+					$(bcell).html('<div class=\"ui-buttonset ui-buttonset-tiny-i\">"
+					.($editable?"<button class=\"ui-button ui-button-pencil editButton\" title=\"$msgEdit\">$msgEdit</button>":'')
+					.($deletable?"<button class=\"ui-button ui-button-trash delButton\" title=\"$msgDel\">$msgDel</button>":'')
+					."</div>');"
+					.($editable?"
+					$('.editButton',bcell).click(function(){
+						window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array($controller,"edit","'+itemId+'"),self::$actionStr)."';
+					});":'')
+					.($deletable?"
+					$('.delButton',bcell).click(function(){
+						if(! confirm('".str_replace("'","\'",langManager::msg("Are you sure you want to delete this item?"))."')){
+							return false;
+						}
+						window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
+						return true;
+					});":'')."
+				},":'')."
+				bodyRendering:function(body,data){
+					$('.ui-button',body).button({checkButtonset:true});
+				}
+			};
 			sortTable.init('$tableId',headers,options);
 		");
 		return "

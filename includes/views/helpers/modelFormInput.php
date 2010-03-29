@@ -63,7 +63,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 					$choices->sort($choices->current()->_orderableField);
 				}
 				if( $relsDefs['hasOne'][$keyName]['relType'] !== 'dependOn' || !empty($options['forceEmptyChoice'])){
-					$options['values'][0] = '--- '.langManager::msg((empty($options['forceEmptyChoice'])||true===$options['forceEmptyChoice'])?$options['label']:$options['forceEmptyChoice']).' ---';
+					$options['values'][''] = '--- '.langManager::msg((empty($options['forceEmptyChoice'])||true===$options['forceEmptyChoice'])?$options['label']:$options['forceEmptyChoice']).' ---';
 				}
 				foreach($choices as $ck=>$cv)
 					$options['values'][$ck]=$cv->__toString();
@@ -127,7 +127,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			if(isset($options['value']) )
 				$value = $options['value'];
 			else
-				$value = ( $modelName instanceof abstractModel )?$modelName->{$keyName}:$datasDefs[$keyName]['Default'];
+				$value = isset($options['default'])?$options['default']:(( $modelName instanceof abstractModel )?$modelName->{$keyName}:$datasDefs[$keyName]['Default']);
 			$datasDefs[$keyName]['Type'] = trim(strtolower($datasDefs[$keyName]['Type']));
 			#- check for enum types
 			if( preg_match('!^enum!',$datasDefs[$keyName]['Type'])){
@@ -159,10 +159,12 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			}
 			if( empty($options['values']) && in_array($datasDefs[$keyName]['Type'],array('tinyint(1)','tinyint(1) unsigned','bool'),'true') ){
 				$options['values'] =  array(0=>langManager::msg('no'),1=>langManager::msg('yes'));
-				if( empty($options['type']) )
+				if( empty($options['type']) ){
 					$options['type']='selectbuttonset';
+				}
+				if( isset($options['maxlength']) && preg_match('!select|check|radio!i',$options['type']) )
+					unset($options['maxlength']);
 			}
-
 			#- then textareas
 			if( preg_match('!^\s*(text|blob)!',$datasDefs[$keyName]['Type'])){
 				return $this->formInput($keyName,$value,empty($options['type'])?'textarea':$options['type'],$options);
