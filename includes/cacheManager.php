@@ -244,8 +244,9 @@ class fileCacheBackend implements cacheBackend{
 		$olderThan=date('Y-m-d H:i:s',time()-$olderThan);
 		cacheItem::clearMemory($olderThan);
 		foreach($files as $f){
-			if( null===$olderThan || $this->getFileTime($f) < $olderThan)
+			if( null===$olderThan || $this->getFileTime($f) < $olderThan){
 				unlink($f);
+			}
 		}
 		return true;
 	}

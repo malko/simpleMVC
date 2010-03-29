@@ -11,7 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
-*            - 2010-03-29 - cacheManager integration 
+*            - 2010-03-29 - cacheManager integration
 *            - 2010-02-22 - add msgRedirect() method
 *            - 2010-02-08 - now redirectAction and forward only use the dispatch string as first parameter and so drop support for second controller parmeter (this will break backward compatibility so carrefull on updating older version)
 *            - 2009-12-16 - bug correction in forward with full dispatch string as action
@@ -371,16 +371,17 @@ abstract class abstractController{
 			#- appelle l'action
 			if( defined('CACHE_MANAGER_ENABLE') && CACHE_MANAGER_ENABLE ){
 				#- check for a cached view before going further
-				$useCache = true;
+				$useCache = 0;
 				foreach($this->view->getLayout() as $tpl){
 					if( preg_match('!(^|\|)_cached_[^|]*:(controller|action)!',$tpl) ){
 						#- check for cached tpl for this action
 						$scriptFile = substr($this->view->lookUpScriptByAction($method,$this->getName(),$tpl),8);
 						$cacheName = preg_replace('!.tpl.php$!','',basename($scriptFile)).'_'.FRONT_NAME.(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').'_'.md5(serialize(array($_GET,$_POST)));
 						if( null === cacheManager::get($cacheName) ){
-							$useCache = false;
+							$useCache = 0;
 							break;
 						}
+						$useCache++;
 					}
 				}
 			}
