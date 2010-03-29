@@ -5,6 +5,6 @@ class adminmodelsController extends abstractAdminmodelsController{
 	*/
 	function check_authorized(){
 		self::appendAppMsg("Don't forget to edit the ".get_class($this)."::check_authorized() method or anyone could be editing your datas","warning");
-		return true;
+		return DEVEL_MODE?true:false;
 	}
 }
