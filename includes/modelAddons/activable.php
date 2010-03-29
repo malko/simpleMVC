@@ -10,6 +10,8 @@
 * @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
 * @author jonathan gotti <jgotti at jgotti dot org>
 * @since 2009-04
+*	@changelog
+*            - 2010-03-16 - make setter return modelInstance to conform with default setters methods behaviours
 * @svnInfos:
 *            - $LastChangedDate$
 *            - $LastChangedRevision: 99 $
@@ -62,13 +64,14 @@ class activableModelAddon extends modelAddon{
 					if( ! isset($a[0]))
 						$a[0] = 1;
 					$val = $a[0]?1:0;
-					if( $val === $this->modelInstance->datas[$field])
-						return $val?1:0;
-					return $this->modelInstance->_setData($field,$val?1:0,true);
+					if( $val !== $this->modelInstance->datas[$field])
+						$this->modelInstance->_setData($field,$val?1:0,true);
+					return $this->modelInstance;
 				case 'get':
 					return $this->modelInstance->datas[$field]?1:0;
 				case 'toggle':
-					return $this->{"set$field"}($this->modelInstance->datas[$field]?0:1);
+					$this->{"set$field"}($this->modelInstance->datas[$field]?0:1);
+					return $this->modelInstance;
 			}
 		}
 	}

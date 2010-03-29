@@ -23,7 +23,7 @@
 */
 class withCreateDateModelAddon extends modelAddon{
 	public $createDateField = 'createDate';
-	public $createDateStr   = 'Y-m-d';
+	public $createDateStr   = 'Y-m-d H:i:s';
 	public function __construct(abstractModel $modelInstance,$PK=null){
 		parent::__construct($modelInstance,$PK);
 		#- set creation date on newly created elements

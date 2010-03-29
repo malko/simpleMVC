@@ -19,6 +19,7 @@
 *            - $LastChangedBy: malko $
 *            - $HeadURL$
 * @changelog
+*            - 2010-03-23 - make use of _initModelType() method
 *            - 2010-01-22 - error correction in datefr2us when used with dateTime format
 *            - 2009-04-09 - add strftime[dateField] and date[dateField] methods
 *                         - import datefr2us and dateus2fr methods as internals to skip dependencies on fx-common
@@ -37,24 +38,25 @@ class frDateModelAddon extends modelAddon{
 	*/
 	public function __construct(abstractModel $modelInstance,$PK=null){
 		parent::__construct($modelInstance,$PK);
-		#- get all sql date fields
-		if(! isset(self::$_internals[$this->modelName]) ){
-			$datasDefs = abstractModel::_getModelStaticProp($this->modelName,'datasDefs');
-			self::$_internals[$this->modelName] = array();
-			foreach( $datasDefs as $k=>$v){
-				if( preg_match('!^date(time)?$!',$v['Type'])){
-					#- ~ check that there's no fr key already set
-					if( isset($datasDefs["fr$k"]) || $this->modelInstance->_methodExists("setFr$k") || $this->modelInstance->_methodExists("getFr$k") )
-						continue;
-					self::$_internals[$this->modelName][] = 'setFr'.ucFirst($k);
-					self::$_internals[$this->modelName][] = 'strftime'.ucFirst($k);
-					self::$_internals[$this->modelName][] = 'strftimeFr'.ucFirst($k);
-					self::$_internals[$this->modelName][] = 'date'.ucFirst($k);
-					self::$_internals[$this->modelName][] = 'getFr'.ucFirst($k);
-				}
+		$this->overloadedModelMethods = self::$_internals[$this->modelName];
+	}
+
+	/** called only once by modelType */
+	protected function _initModelType(){
+		$datasDefs = abstractModel::_getModelStaticProp($this->modelName,'datasDefs');
+		self::$_internals[$this->modelName] = array();
+		foreach( $datasDefs as $k=>$v){
+			if( preg_match('!^date(time)?$!',$v['Type'])){
+				#- ~ check that there's no fr key already set
+				if( isset($datasDefs["fr$k"]) || $this->modelInstance->_methodExists("setFr$k") || $this->modelInstance->_methodExists("getFr$k") )
+					continue;
+				self::$_internals[$this->modelName][] = 'setFr'.ucFirst($k);
+				self::$_internals[$this->modelName][] = 'strftime'.ucFirst($k);
+				self::$_internals[$this->modelName][] = 'strftimeFr'.ucFirst($k);
+				self::$_internals[$this->modelName][] = 'date'.ucFirst($k);
+				self::$_internals[$this->modelName][] = 'getFr'.ucFirst($k);
 			}
 		}
-		$this->overloadedModelMethods = self::$_internals[$this->modelName];
 	}
 
 	public function __call($m,$a){
