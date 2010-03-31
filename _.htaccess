@@ -20,3 +20,11 @@ RewriteRule ^([^/]+)/(index\.php)?(.*)$ $1/index.php?/$3 [NC,QSA,L]
 # add a R to the options list in case of 'No input file specified.' php error
 # but in this case index.php won't be hide and another side effect is that
 # you will loose POST datas so be carrefull in this case with your form action to not use rewrite url
+
+
+<Files cssEditor.php>
+	<Limit POST>
+		Allow from 127.0.0.1
+		Deny from all
+	</Limit>
+</Files>
