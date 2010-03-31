@@ -9,7 +9,7 @@ was really missing to better stick to my way of doing things so i start this new
 ( Don't misandurstood me jquery-ui is great library and the base of Tk is largely taken from it. )
 
 @author jonathan gotti <jgotti at jgotti dot net>
-@licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
+@licence Dual licensed under the MIT / GPL licenses.
 
 @changelog
  - 2010-02-24 - add ensureId jquery method and rename uniqueId toolkit method to requestUniqueId as it's more meeningfull
@@ -289,8 +289,9 @@ $.toolkit._getInstance = function(elmt,pluginName,defaultToNew){
 	if( elmt instanceof $[nameSpace][pluginName]){
 		return elmt;
 	}
-	if( elmt instanceof jQuery)
+	if( elmt instanceof jQuery){
 		elmt = elmt.get(0);
+	}
 	var instance = $.data(elmt,pluginName);
 	if( instance ){
 		//dbg('living '+pluginName+' Instance found for',elmt,instance);

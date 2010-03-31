@@ -9,6 +9,7 @@
 }
 .tk-tooltip-msg{
 	margin:.8em;
+	white-space:nowrap;
 }
 .tk-pointer, .tk-pointer-bg{
 	position:absolute;

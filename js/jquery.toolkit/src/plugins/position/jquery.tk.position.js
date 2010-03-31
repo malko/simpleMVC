@@ -451,30 +451,44 @@ $.tk.positionRelative.defaults={
 
 $.toolkit.mouseRelative={
 	_traking:{ },
+	_binded:false,
 	ids:0,
 	elmt:null,
 	init:function(elmt,options){
 		var self = this;
-		self.elmt = $('<div id="tk-mouse" style="position:absolute;top:0;left:O;width:0px;height:0px;visibility:hidden;display:block;"></div>')
+		self.elmt = $('<div id="tk-mouse" style="position:absolute;top:0;left:O;width:10px;height:10px;visibility:visible;background:red;display:block;"></div>')
 			.appendTo('body');
-		$('body').mousemove(function(e){
-			self.update(e);
-		});
+	},
+	/**
+	bind/unbind mousemove event as needed
+	*/
+	_checkBinding:function(){
+		var self=this,needed = false,id='';
+		for( id in self._traking){ needed = true;break; }
+		if( self._binded && ! needed){
+			$(window).unbind('mousemove.mouseRelative');
+			self._binded = false;
+		}else if( needed && ! self._binded ){
+			$(window).bind('mousemove.mouseRelative',(function(e){self.update(e);	}));
+			self._binded = true;
+		}
 	},
 	trackStart:function(mouseRelative){
 		if(! this.elmt){
 			this.init();
 		}
 		this._traking[mouseRelative._mouseRelativeId] = mouseRelative;
+		this._checkBinding();
 	},
 	trackEnd:function(mouseRelative){
 		if(! this.elmt){
 			this.init();
 		}
 		delete this._traking[mouseRelative._mouseRelativeId];
+		this._checkBinding();
 	},
 	update:function(e){
-		this.elmt.css({top:1+e.clientY+$(window).scrollTop(),left:0+e.clientX+$(window).scrollLeft()});
+		this.elmt.css({top:1+e.pageY,left:0+e.pageX});
 		for(var i in this._traking ){
 			this._traking[i].elmt.positionRelative('update');
 		}

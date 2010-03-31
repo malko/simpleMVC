@@ -25,6 +25,8 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-03-30 - check radio/checkbox are checked when required
+					              - add event validable_formGetState(event,elmt,state) emitted on form checking state; (stop submission if return false)
            - 2009-10-22 - add options helpTrigger and helpAfter
            - 2009-10-20 - add support for string callbacks
 */
@@ -38,17 +40,15 @@ $('#myForm').validable(formValidableOptions);
 				id = self.elmt.attr('id'),
 				getStateCB=function(e){return self.getState(e)};
 			if( self.elmt.is('form')){
-				var dfltInputOptions={
-					stateElmt:self.options.stateElmt,
-					useIcon:self.options.useIcon
-				};
-				self.elmt.find(':input:not(button,[type=submit],[type=reset])').each(function(){
+				var dfltInputOptions= $.extend({},self.options);
+				delete dfltInputOptions.rules;
+				self.elmt.find(':input:not(button,[type=submit],[type=reset],[type=hidden])').each(function(){
 					var input=$(this);
 					var iname = input.attr('name');
 					if( self.options.rules[iname]){
-						input.validable($.extend({},self.dfltInputOptions,self.options.rules[iname]));
+						input.validable($.extend({},dfltInputOptions,self.options.rules[iname]));
 					}else if(self.options.alwaysSetState){
-						input.validable($.extend({},self.dfltInputOptions));
+						input.validable($.extend({},dfltInputOptions));
 					}
 				});
 				self.elmt.bind('submit.validable',getStateCB);
@@ -117,9 +117,11 @@ $('#myForm').validable(formValidableOptions);
 					self._requiredElmt = $(self.options.requiredTemplate);
 				}
 				if( self._labelElmt){
-					self._labelElmt.prepend(self._requiredElmt);
+					if( !self._labelElmt.is('.tk-required') ){
+						self._labelElmt.prepend(self._requiredElmt).addClass('tk-required');
+					}
 				}else{
-					self.elmt.after(self._requiredElmt);
+					self.elmt.after(self._requiredElmt).addClass('tk-required');
 				}
 			}
 			return required;
@@ -236,8 +238,8 @@ $('#myForm').validable(formValidableOptions);
 				self.elmt.find(':input.tk-validable').each(function(){
 					res = (res && $(this).validable('return1_getState'))?true:false;
 				});
-				if( event && false===res && $('.tk-notifybox').length && $.toolkit && $.tk.notifybox){ //@todo migrer le plugin vers jquery.toolkit et ici mettre un trigger sur un custom event
-					$('.tk-notifybox').notifybox('notify','<div class="tk-state-error" style="border:none;">Les données du formulaire ne sont pas valide, merci de vérifier votre saisie.</div>');
+				if( false === self._trigger('formGetState', event,[self.elmt,res]) ){
+					return false;
 				}
 				return res;
 			}else{
@@ -271,17 +273,28 @@ $('#myForm').validable(formValidableOptions);
 				if(! res )
 					return self._setState(false);
 			}
-			if( self.options.required && val.length < 1 ){
-				return self._setState(false);
+			if( self.options.required ){
+				switch( self.elmt.attr('type').toLowerCase()){
+					case 'radio':
+					case 'checkbox':
+						// check one at least is checked
+						if($('input[name='+self.elmt.attr('name')+']:checked').length > 0)
+							return true;
+						return false;
+						break;
+					default:
+						return self._setState(val.length > 0?true:false);
+				}
 			}
 			return self._setState(true);
+
 		}
 	});
 
 	$.tk.validable.defaults={
 		rule: null,
 		initCheck:true,
-		alwaysSetState:true,
+		alwaysSetState:false,
 		required:false,
 		minlength:0,
 		maxlength:0,
@@ -294,9 +307,37 @@ $('#myForm').validable(formValidableOptions);
 		helpAfter:null,
 		helpOptions:{
 			position:'middle-right',
-			stickyMouse:false
+			stickyMouse:false,
+			edgePolicy:'opposite'
 		}
 	};
+
+	var accentTable = {
+		'µ':'u',
+		'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A', 'Å':'A', 'Æ':'AE',
+		'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E',
+		'Ì':'I', 'Í':'I', 'Î':'I', 'Ï':'I', 'Ð':'D', 'Ñ':'N',
+		'Ò':'O', 'Œ':'OE', 'Ó':'O','Ô':'O', 'Õ':'O', 'Ö':'O', 'Ø':'O',
+		'Ù':'U', 'Ú':'U', 'Û':'U', 'Ü':'U', 'Ý':'Y', 'ß':'s',
+		'à':'a', 'á':'a', 'â':'a', 'ã':'a', 'ä':'a', 'å':'a', 'æ':'ae',
+		'ç':'c', 'è':'e', 'é':'e', 'ê':'e', 'ë':'e',
+		'ì':'i', 'í':'i', 'î':'i', 'ï':'i', 'ñ':'n',
+		'ð':'o', 'œ':'oe', 'ò':'o','ó':'o', 'ô':'o', 'õ':'o', 'ö':'o', 'ø':'o',
+		'ù':'u', 'ú':'u', 'û':'u', 'ü':'u', 'ý':'y', 'ÿ':'y',
+		'’':'\'','`':'\''
+	},
+	accentExp=[];
+	var removeAccents = function(str){
+		if( accentExp instanceof Array){
+			for(var c in accentTable){
+				accentExp.push(c);
+			}
+			accentExp = new RegExp('('+accentExp.join('|')+')','g');
+		}
+		return str.replace(accentExp,function(m,c){
+			return accentTable[c];
+		});
+	}
 
 	$.tk.validable.defaultRules={
 		email:/^[^@\s]+@[^@\s]+\.[a-z]{2,5}$/i,
@@ -304,10 +345,10 @@ $('#myForm').validable(formValidableOptions);
 		'float':/^\d+((\.|,)\d+)?$/,
 		zipcode:/^\d{2,5}$/,
 		phone:/^\d{10}$/,
-		alpha:/^[a-z_\s-]+$/i,
-		Alpha:/^[a-z]+$/i,
-		alphanum:/^[0-9a-z_\s-]+$/i,
-		Alphanum:/^[0-9a-z]+$/i,
+		alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-]+$/)?true:false },
+		Alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-]+$/i)?true:false },
+		alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-]+$/)?true:false },
+		Alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-]+$/i)?true:false },
 		img:/\.(jpe?g|gif|png)$/i,
 		video:/\.(mpe?g|avi|flv|mov)$/i,
 		flashEmbeddable:/\.(jpe?g|flv|gif|png|swf|mp3)$/i

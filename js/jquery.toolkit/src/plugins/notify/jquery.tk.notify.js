@@ -60,7 +60,8 @@ $.toolkit('tk.notifybox',{
 		return e.notify($.extend({notifybox:this.elmt,destroy:true},options||{})).get(0);
 	},
 	msg:function(msg,options){
-		return $('<div class="tk-notify-msg tk-corner">'+msg+'</div>').notify($.extend({notifybox:this.elmt,destroy:true},options||{})).get(0);
+		options = $.extend({notifybox:this.elmt,destroy:true},options||{});
+		return $('<div class="tk-notify-msg'+(typeof(options.state)!=='undefined'?' tk-state-'+options.state:'')+' tk-corner">'+msg+'</div>').appendTo('body').notify(options).get(0);
 	},
 	_set_vPos:function(pos){
 		var css={};

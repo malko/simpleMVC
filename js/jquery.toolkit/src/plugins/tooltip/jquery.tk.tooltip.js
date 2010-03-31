@@ -1,3 +1,11 @@
+/**
+* jquery toolkit plugin for handling tooltips
+* @author Jonathan Gotti < jgotti at jgotti dot net >
+* @licence Dual licensed under the MIT / LGPL licenses.
+* @require tk.position
+* @changelog
+*            - 2010-03-23 - add some aria attrs
+*/
 (function($){
 $.toolkit('tk.tooltip',{
 	msg:'',
@@ -11,13 +19,16 @@ $.toolkit('tk.tooltip',{
 		stickyMouse:'|sticky'
 	},
 	_init:function(){
-		var self = this;
-		self._wrapper = $('<div class="tk-tooltip-wrapper tk-border tk-corner" ><div class="tk-tooltip-msg"></div><div class="tk-pointer"><div class="tk-pointer-bg"><span/></div></div></div>');
+		var self = this,
+			ttipId = "tooltip_"+self.elmt.attr('id');
+		self._wrapper = $('<div class="tk-tooltip-wrapper tk-border tk-corner" role="tooltip" id="'+ttipId+'"><div class="tk-tooltip-msg"></div><div class="tk-pointer"><div class="tk-pointer-bg"><span/></div></div></div>');
+		self.elmt.attr("aria-describedby", ttipId);
 		self._msg = self._wrapper.find('.tk-tooltip-msg');
 		self._pointer=self._wrapper.find('.tk-pointer');
 		self._pointerBg=self._wrapper.find('.tk-pointer-bg');
 		self._wrapper.appendTo('body')
 			.positionRelative({related:this.elmt,edgePolicy:self.options.edgePolicy,borderPolicy:'out'})
+		//- .mouseRelative({edgePolicy:self.options.edgePolicy,borderPolicy:'out',tracking:true})
 			.bind('updatehpos updatevpos',function(){self._setPointerColor(true)});
 
 		// inline options standardisation
@@ -26,14 +37,14 @@ $.toolkit('tk.tooltip',{
 		}
 
 		self._applyOpts('stateClass|position|connector|msg|width|height|showTrigger|hideTrigger');
-		self._applyOpts('stickyMouse',true);
+		self._applyOpts('stickyMouse');
 		this._setPointerColor(true);
 
 	},
 	_set_stickyMouse:function(sticky){
 		var self = this;
 		if( sticky ){
-			self._wrapper.mouseRelative('set','tracking',true);
+			self._wrapper.mouseRelative('set','tracking',false);
 			self._wrapper.bind('positionRelative_changerelated.'+self._tk.pluginName,function(e,elmt,related){
 				if(related!==$.toolkit.mouseRelative.elmt){
 					self._set_stickyMouse(false);
@@ -48,10 +59,27 @@ $.toolkit('tk.tooltip',{
 		if( typeof pos==='string' )
 			pos = pos.split('-');
 		this._wrapper.positionRelative('set',{vPos:pos[0],hPos:pos[1]})
+		this._setPointerColor(this._tk.initialized);
 		this.options.position = pos;
 		this._applyOpts('spacing');
 		return pos;
 	},
+	/*_set_position:function(pos){
+		if( typeof pos==='string' )
+			pos = pos.split('-');
+		this._wrapper.positionRelative('set',{vPos:pos[0],hPos:pos[1]})
+		this._setPointerColor(this._tk.initialized);
+		return;
+		pos = pos.replace(/[TBRL]/,function(match){return '-'+match.toLowerCase()});
+		//- $.toolkit._removeClassExp(this._wrapper,'tk-tooltip-pos-*','tk-tooltip-pos-'+pos);
+		this._wrapper.removeClass('tk-tooltip-pos-'+this.options.position).addClass('tk-tooltip-pos-'+pos);
+		this.options.position = pos;
+		this._setPointerColor(this._tk.initialized);
+		if( this._wrapper.is(':visible')){
+			this._setDisplayPosition();
+		}
+		return pos;
+	},*/
 	_set_edgePolicy:function(p){
 		this._wrapper.positionRelative('set_edgePolicy',p);
 	},
@@ -71,7 +99,7 @@ $.toolkit('tk.tooltip',{
 	},
 	_set_stateClass:function(stateClass){
 		this._wrapper.removeClass(this.options.stateClass).addClass(stateClass);
-		this._setPointerColor();
+		this._setPointerColor(this._tk.initialized);
 	},
 	_set_connector:function(c){
 		this._pointer.toggle(c);
@@ -106,8 +134,8 @@ $.toolkit('tk.tooltip',{
 		self.elmt.bind(eventName+'.'+self._tk.pluginName,function(){self.hide()});
 	},
 	/** correctly set pointer colors */
-	_setPointerColor:function(force){
-		if(! (this._tk.initialized || force )){
+	_setPointerColor:function(doIt){
+		if( ! doIt){ //-- prevent setting colors multiple times at init time
 			return false;
 		}
 		var pos=this._wrapper.positionRelative('return1_realpos'),
@@ -138,11 +166,34 @@ $.toolkit('tk.tooltip',{
 		}
 	},
 	show:function(){
-		this._wrapper.show();
+		$('.tk-tooltip-wrapper').hide();
+		this._wrapper.stop(true,true);
+		if( ! this.options.msg ){
+			return false;
+		}
+		this._wrapper.positionRelative('update');
+		if( this.options.stickyMouse ){
+			this._wrapper.mouseRelative('set_tracking',true);
+		}
+		if( typeof(this.options.showMethod) === 'string'){
+			this._wrapper[this.options.showMethod]();
+		}else{
+			this._wrapper[this.options.showMethod[0]](this.options.showMethod[1]);
+		}
+		this._wrapper.attr("aria-hidden", false);
 		this._wrapper.positionRelative('update');
 	},
 	hide:function(){
-		this._wrapper.hide();
+		this._wrapper.stop(true,true);
+		if( this.options.stickyMouse ){
+			this._wrapper.mouseRelative('set_tracking',false);
+		}
+		if( typeof(this.options.hideMethod) === 'string'){
+			this._wrapper[this.options.hideMethod]();
+		}else{
+			this._wrapper[this.options.hideMethod[0]](this.options.hideMethod[1]);
+		}
+		this._wrapper.attr("aria-hidden", true);
 	}
 
 });
@@ -157,8 +208,10 @@ $.tk.tooltip.defaults={
 	width:'auto',
 	height:'auto',
 	msg:'',
-	showTrigger:['focus','mouseover'],
-	hideTrigger:['blur','mouseout']
+	showTrigger:['focus','mouseenter'],
+	hideTrigger:['blur','mouseleave'],
+	showMethod:'show',//['fadeIn','fast'], //may be string or array methodName + duration
+	hideMethod:'hide' // ['hide',0]
 }
 
 })(jQuery);
