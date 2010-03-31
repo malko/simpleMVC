@@ -1,0 +1,34 @@
+.tk-tabbed-nav{
+	margin:0;
+	text-align:left;
+	padding:0;
+}
+.tk-tabbed-nav li{
+	list-style-type:none;
+	list-style-image:none;
+	display:inline;
+}
+.tk-tabbed-nav-item{
+	padding:.4em .8em;
+	font-weight:bold;
+	vertical-align:bottom;
+	text-align:center;
+	outline:none;
+}
+
+.tk-tabbed-pannels{
+	padding:.4em .8em;
+	overflow:auto;
+}
+
+.tk-tabbed-pannels-item{
+	display:none;
+}
+
+.tk-tabbed-pannels-item .tk-tabbed-selected{
+	display:block;
+}
+
+.tk-tabbed-active{
+	font-weight:bolder;
+}
