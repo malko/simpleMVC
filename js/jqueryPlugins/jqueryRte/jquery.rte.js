@@ -134,6 +134,10 @@
 					case 'toggleEditMode':
 						instance.toggleEditMode();
 						break;
+					default:
+						if( options.indexOf('_') !== 0 && $.isFunction(RTE.prototype[options]) ){
+							return RTE.prototype[options].call(instance,methodParams);
+						}
 				}
 				return instance;
 			}
@@ -157,18 +161,44 @@
 			}
 
 			// data synchronisation between textarea/iframe */
-			$(this.editable).bind('mouseup',{rte:this},function(e){e.data.rte.syncFromEditor();});
-			$(this.editable).bind('keyup',{rte:this},function(e){e.data.rte.syncFromEditor();});
-			this.textarea.bind('keyup',{rte:this},function(e){e.data.rte.syncFromTextarea();});
+			this.rebindEditable();
+			$(this.editable).bind('mouseup.rte',{rte:this},function(e){e.data.rte.syncFromEditor();});
+			$(this.editable).bind('keyup.rte',{rte:this},function(e){e.data.rte.syncFromEditor();});
+			this.textarea.bind('keyup.rte',{rte:this},function(e){e.data.rte.syncFromTextarea();});
+			// this one is to ensure to have the correct editable binded when moved around the dom
+			this.container.bind('mouseenter', function(){ self.rebindEditable();});
 			/*/ set to use paragraph on return to behave same on firefox as on ie. (doesn't work)
 			this.formatText("insertbronreturn",false);
 			this.formatText("enableinlinetableediting",false);*/
 		},
+
+		rebindEditable: function(){
+			var contentDoc = this.iframe.contentDocument, editable; //-- IE won't get a contentDoc
+			if(contentDoc)
+				editable = contentDoc;
+			else
+				editable = this.iframe.contentWindow.document;
+			// if we've loosed the editable (may happen when reparent the rte )
+			if( editable !== this.editable){
+				editable.contentEditable = 'true';
+				editable.designMode = 'on';
+				if( ! contentDoc)
+					editable = this.iframe.contentWindow.document;
+				$(this.editable).unbind('.rte');
+				this.editable = editable;
+				this.syncFromTextarea();
+				$(this.editable).bind('mouseup.rte',{rte:this},function(e){e.data.rte.syncFromEditor();});
+				$(this.editable).bind('keyup.rte',{rte:this},function(e){e.data.rte.syncFromEditor();});
+			}
+			return this.editable;
+		},
+
 		_initIframe: function(){
 			if(! this.iframe){
 				this.iframe = document.createElement("iframe");
 				this.iframe.frameBorder = this.iframe.frameMargin = this.iframe.framePadding=0;
 				this.iframe.id = 'RTE_FRAME_'+this.id;
+				this.iframe.tabIndex=0;
 				//$(this.iframe).width(this.textarea.width()).height(this.textarea.height());
 			}else{
 				var css = this.opts.css_url?"<link type='text/css' rel='stylesheet' href='"+this.opts.css_url+"' />":'';
@@ -489,7 +519,7 @@
 			['H6','Title 6']
 		],
 		/**
-		* classOptions si a list of format tags with specified class like this
+		* classOptions is a list of format tags with specified class like this
 		* array[ 'tagName:className','display label']
 		* but can also be used to call your own callback function like this:
 		* ['func:jsfunctionName','display label']
