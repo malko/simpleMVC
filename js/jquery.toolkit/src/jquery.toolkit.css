@@ -130,7 +130,10 @@
 .tk-textOutline{
 	text-shadow:0 1px 0.05em #888,0 -1px 0.05em #888,1px 0 0.05em #888,-1px 0 0.05em #888,1px 1px 0.05em #888,-1px 1px  0.05em #888,1px -1px 0.05em #888,-1px -1px  0.05em #888;}
 
-
+.tk-content{
+	padding:.4em .8em;
+	display:block;
+}
 
 /** some status classes */
 .tk-state-warning, .tk-state-error, .tk-state-success, .tk-state-info{

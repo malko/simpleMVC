@@ -54,6 +54,7 @@ when nested:
 	<script src="../jquery.toolkit/src/jquery.toolkit.storage.js" type="text/javascript"></script>
 	<script src="../jquery.toolkit/src/plugins/notify/jquery.tk.notify.js" type="text/javascript"></script>
 	<script src="js/codemirror.js" type="text/javascript"></script>
+	<script src="dryCss.js" type="text/javascript"></script>
 	<title>cssEditor</title>
 	<link rel="stylesheet" type="text/css" href="../jquery.toolkit/src/jquery.toolkit.css"/>
 	<link rel="stylesheet" type="text/css" href="../jquery.toolkit/src/plugins/notify/jquery.tk.notify.css"/>
@@ -96,7 +97,7 @@ when nested:
 	}
 	$.toolkit('tk.cssEditor',{
 		_storableOptions:{
-			urlElementLevel:'content|rawFilePath|compFilePath'
+			urlElementLevel:'content|rawFilePath|compFilePath|compactOutput'
 		},
 
 		_init:function(){
@@ -120,11 +121,14 @@ when nested:
 				['save raw',function(){self.saveRawContent();}],
 				['save computed',function(){self.saveComputedContent();}],
 				['export',function(){self.computeStyle('export');}],
-				['render',function(){self.computeStyle('inject');}]
+				['render',function(){self.computeStyle('inject');}],
+				['defined',function(){self.toggleDefinedList();}]
 			],l=bts.length,i,bt;
 			for( i=0;i<l;i++){
 				$('<button type="button">'+(bts[i][0])+'</button>').click(bts[i][1]).appendTo(self._toolbar);
 			}
+			$('<label><input type="checkbox" value="1"'+(self.options.compactOutput?' checked="checked"':'')+' style="vertical-align:middle;"/>Compact</label>').appendTo(self._toolbar)
+			.find('input').change(function(){self.set('compactOutput',$(this).is(':checked')?true:false);});
 
 			// self.editor = $.tk.cssEditor.editorApis[self.options.editorApi].init.call(self,self._area);
 			$.tk.cssEditor.editorApis[self.options.editorApi].init.call(self,self._area);
@@ -140,6 +144,10 @@ when nested:
 					if( self.notify){
 						$('<div class="tk-state-info">raw content loaded</div>').notify();
 					}
+				}else{
+					if( self.notify){
+						$('<div class="tk-state-error">Can\'t load row content</div>').notify();
+					}
 				}
 			};
 			self._saveRawContentResponse= function(data,status){
@@ -153,6 +161,41 @@ when nested:
 					self.notify.notifybox('msg',data);
 				}
 			};
+			self.toggleDefinedList = function(){
+				if( typeof self._definedList === 'undefined'){
+					self._definedList = $('<ul class="tk-border tk-state-warning" id="definedList"></ul>').appendTo(self.elmt);
+					self._definedList.css({
+						overflow:'auto',
+						position:'absolute',
+						top:self._toolbar.innerHeight(),
+						left:0,
+						display:'none',
+						zIndex:1,
+						margin:0,
+						padding:0,
+					});
+				}
+				if( self._definedList.is(':visible')){
+					return self._definedList.hide();
+				}
+				self._definedList.empty().height(self.elmt.height()-self._toolbar.height()).width(self.elmt.width());
+				//recup des defined
+				var defined = new dryCss(this._get_content(),{baseImportUrl:self.options.rawFilePath}).getDefined(),
+				i,y,l,tmp;
+				for(i in defined){
+					tmp = $('<ul><li class="group">'+i+'<ul></ul></li></ul>').appendTo(self._definedList).find('li ul');
+					for(y=0,l=defined[i].length;y<l;y++){
+						$('<li>'+(i=="rules"?'@:':'')+defined[i][y]+'</li>').appendTo(tmp)
+					}
+				}
+				self._definedList.find('li li').css({cursor:'pointer'}).click(function(){
+					self._definedList.hide();
+					self.editor.focus();
+					var p = self.editor.cursorPosition();
+					self.editor.insertIntoLine(p.line,p.character,$(this).text());
+				});
+				self._definedList.show();
+			}
 		},
 
 		_get_content:function(c){
@@ -171,174 +214,18 @@ when nested:
 			}
 			return c;
 		},
-		_parseRawString: function(str,compact,baseImportUrl){
-			//-- remove commentaries and extra lines/spaces
-			str = str.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*\n/mg,'').replace(/^\s*/mg,'').replace(/\n\n+/g,'\n');
-			compact=compact?true:false;
-			var parseStr='',
-				parseKey='',
-				fullKey='',
-				stackKey = [],
-				stackStr = [],
-				rules = {},
-				ruleOrder = {},
-				defined={},
-				delayed={},
-				funcs={},
-				imports=[],
-				i,match,endPos;
-			//make real imports first
-			i= 0;
-			while(match = str.match(/@!import\s+(.*?)\s*(;|$)/m)){
-				str = str.replace(/@!import\s+(.*?)\s*(;|$)/mg,function(m,uri){
-					var resp='';
-					$.ajax({
-						async:false,
-						global:false,
-						dataType:'text',
-						url:match[1].match(/^http:\/\//)?match[1]:baseImportUrl+match[1],
-						error:function(XHR,status){
-							if( $.tk.notify ){
-								$('<div class="tk-state-error">can\'t import '+match[1]+'<br />'+status+'</div>').notify();
-							}else{
-								alert('error while importing '+match[1]+'\n'+status);
-							}
-						},
-						success:function(data){
-							resp = data;
-						}
-					});
-					return resp.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*\n/mg,'').replace(/^\s*/mg,'').replace(/\n\n+/g,'\n');
-				});
-				if( i++ > 50 ){
-					break;
-				}
-			}
-			//-- read func and var defined:
-			/*str.replace(/\s*@([a-z_][a-z0-9_]*):([^,;]*|"([^"]+\\")*"|'([^']+\\'))[,;]/ig,function(m,k,v){
-				defined[k]=v;
-			})*/
-			//-- defined reading
-			str = str.replace(/\s*(@[a-z_][a-z0-9_]*)\s*:\s*(?:([^;"']*)|("([^"]+|\\")*"|'([^']+|\\')'));|@import\s+.*?;/ig,function(m,k,v1,v2){
-				if( k===''){
-					imports.push(m);
-				}else if( v1 !== '' ){
-					defined[k]=v1;
-				}else if( v2 != '' ){
-					eval('defined[k]='+v2+';');
-				}
-				return '';
-			});
-			var lines = str.split('\n'),
-				l=lines.length;
-
-			for(i=0;i<l;i++){
-				parseStr += lines[i]+'\n';
-				if( parseStr.indexOf('{') > -1){ // look up for an identifier
-					match = parseStr.match(/^(\s*|[\s\S*]+?[;\}]\s*)([^;\{\}]+)\s*\{([\s\S]*)$/);
-					parseKey=match[2].trim();
-					parseStr = match[3].trim();
-					fullKey = parseKey.replace(/^([:!])?([\s\S]+)$/,function(m,v1,v2){if( v1 ){return v1===':'?m:v2;} return (stackKey.length?' ':'')+m;});
-					fullKey = (stackKey.length?stackKey.join(' '):'') + fullKey;
-					ruleOrder[fullKey]=true;
-					stackKey.push(parseKey);
-					stackStr.push(match[1].trim());
-				}
-				endPos = parseStr.indexOf('}');
-				if(endPos > -1){ // close current value
-					parseKey = stackKey.pop();
-					fullKey = parseKey.replace(/^([:!])?([\s\S]+)$/,function(m,v1,v2){if( v1 ){return v1===':'?m:v2;} return (stackKey.length?' ':'')+m;});
-					fullKey = (stackKey.length?stackKey.join(' '):'') + fullKey;
-					rules[fullKey] = (undefined!==rules[fullKey]?rules[fullKey]+'\n':'')+parseStr.substr(0,endPos).trim();
-					parseStr = (stackStr.length?stackStr.pop():'')+parseStr.substr(endPos+1);
-					continue;
-				}
-			}
-			//-- no that we have correctly un-nested all that mess we can execute the rules
-			str = imports.length?imports.join('\n')+'\n':'';
-
-			var replaceCbs = {
-				'import':[ // rule import
-					/@!?:\s*([^;\n\{\}]+)/g,
-					function(m,p){
-						p = p.trim();
-						if( p.indexOf('[') > -1){ // replace @:rules[rule]
-							match = p.match(/^(.*)?\s*\[\s*([^\]]+?)\s*\]$/);
-							if(null === match){
-								if( $.tk.notify ){
-									$('<div class="tk-state-error">can\'t import inexistant rule '+p+'</div>').notify();
-								}
-								return m;
-							}else if( undefined===rules[match[1]]){
-								if( $.tk.notify ){
-									$('<div class="tk-state-error">can\'t import inexistant rule property from inexistant rule '+match[1]+'</div>').notify();
-								}
-								return m;
-							}
-							match = rules[match[1]].match(new RegExp(match[2]+'\\s*:\\s*([^\\{\\};]+?)\\s*;'));
-							if( null === match){
-								if( $.tk.notify ){
-									$('<div class="tk-state-error">can\'t import inexistant rule property'+p+'</div>').notify();
-								}
-								return m;
-							}
-							return match[1]?match[1]:m;
-						}
-						if(m.substr(1,1)==='!'){ //- repace @:@mixin
-							var id,_id;
-							for( id in ruleOrder){
-								if( id.match(new RegExp('^'+p+'(?![a-zA-Z0-9_])(.+)$'))){
-									_id = id.replace(p,parseKey);
-									delayed[_id] = (delayed[_id] ?delayed[_id]:' ')+rules[id];
-								}
-							}
-						}
-						return rules[p]?rules[p]:m;
-					}
-				],
-				'vars':[ // var replacement
-					/@[a-z_][a-z0-9_]*/ig,
-					function(m){
-						return defined[m]?defined[m]:m;
-					}
-				],
-				'clean':[
-					/([{;])\s*(?!$)/g,
-					compact?'$1':'$1\n\t'
-				]
-			},cb;
-//dbg(defined,rules);
-			for(parseKey in ruleOrder){
-				if(undefined===rules[parseKey]){
-					if( $.tk.notify ){
-						$('<div class="tk-state-error">Undefined rule '+parseKey+'</div>').notify();
-					}
-					continue;
-				}
-				for(cb in replaceCbs ){
-					rules[parseKey] = rules[parseKey].replace(replaceCbs[cb][0],replaceCbs[cb][1]);
-				}
-				if( parseKey.match(/^\s*@/)){
-					continue;
-				}
-				str += parseKey+(compact?'{':'{\n\t')+rules[parseKey]+(compact?'}\n':'\n}\n');
-				for(i in delayed){
-					str += i+(compact?'{':'{\n\t')+delayed[i]+(compact?'}\n':'\n}\n');
-				}
-				delayed = {};
-			}
-			return str.replace(/;(\s*;)+/g,';');
-		},
 		computeStyle: function(action){
 			if( typeof(action)!=='string')
 				action = 'inject';
 			var self = this,
 				c = this._saveContent();
-			out = self._parseRawString(c,self.options.compactOutput,self.options.rawFilePath);
+			out = new dryCss(c,{compact:self.options.compactOutput,baseImportUrl:self.options.rawFilePath}).toString();
+
+			//self._parseRawString(c,self.options.compactOutput,self.options.rawFilePath);
 			switch(action){
 				case 'export':
 					var w = window.open('','cssEditorComputedStyleExport','toolbar=no,statusbar=no,scrollbars=yes');
-					w.document.write('<pre>'+out+'</pre>');
+					$('body',w.document).find('pre').remove().end().html('<pre>'+out+'</pre>');
 					break;
 				case 'inject':
 					// check for a computed style element in parent if none create it
@@ -496,7 +383,7 @@ when nested:
 			init: function(elmt){
 				var tkWidget = this;
 				tkWidget.editor = CodeMirror.fromTextArea(elmt.get(0), {
-						parserfile: "parsecss.js",
+						parserfile: "parsedrycss.js",
 						stylesheet: "css/csscolors.css",
 						path: "js/",
 						lineNumbers:true,
@@ -531,6 +418,16 @@ jQuery(function(){
 		$('.tk-cssEditor').width($(window).width()-$('.CodeMirror-line-numbers').outerWidth()-2);
 	});
 	setTimeout(function(){$(window).resize();},250);
+	var loadingMsg=$('<div class="tk-state-info tk-corner"><div class="tk-corner" style="background:url(loading.gif);width:100%;height:16px;border:solid black 1px;text-align:center;"> Loading... </div></div>');
+	$('.tk-notifybox').ajaxStart(function(){
+		loadingMsg.notify('set',{ttl:0,closeButton:false,state:"info",destroy:false} ).notify('show');
+	})
+	$('.tk-notifybox').ajaxComplete(function(event,XHR){
+		loadingMsg.notify('hide');
+		if( XHR.status != 200 )
+			$(this).notifybox('msg','<div>'+XHR.status+' '+XHR.statusText+'</div>',{ttl:2500,state:XHR.status==200?'success':'error'});
+	})
+
 });
 </script>
 </body>

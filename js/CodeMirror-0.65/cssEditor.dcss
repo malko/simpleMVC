@@ -7,7 +7,7 @@
 @borderColor: #333;
 @borderSize: 1px;
 @borderStyle: solid;
-@radius:7px;
+@radius:.5em;
 @shadowTop:.1em;
 @shadowLeft:.1em;
 @shadowFuzz:.25em;
@@ -33,8 +33,25 @@
 @infoBgColor:#eef;
 @infoBorderColor:#33f;
 
-
-@dfltOpacity = 80;
+@=opacity(o=80){
+  opacity:.@o;
+  -moz-opacity:.@o;
+  -webkit-opacity:.@o;
+  filter:alpha(opacity=@o);
+}
+@=boxShadow(shadowTop=.1em,shadowLeft=.1em,shadowFuzz=.25em,shadowColor=#888888){
+	-moz-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
+	-webkit-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
+	box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
+}
+@=boxNeon(shadowTop=.1em,shadowLeft=.1em,shadowFuzz=.25em,shadowColor=#888888){
+	-moz-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor, -@shadowTop -@shadowLeft @shadowFuzz @shadowColor;
+	-webkit-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor, -@shadowTop -@shadowLeft @shadowFuzz @shadowColor;
+	box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor, -@shadowTop -@shadowLeft @shadowFuzz @shadowColor;
+}
+@=textShadow(shadowTop=.1em,shadowLeft=.1em,shadowFuzz=.25em,shadowColor=#888888){
+	text-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
+}
 
 @inlineStack{
   zoom:1;
@@ -52,22 +69,15 @@
   vertical-align:top;
 }
 @fixList{
-    zoom:1;
-    margin:0;
-    padding:0;
-    list-style-type:none;
-    list-style-image:none;
-    li{
-      @:@fixList;
-    }
+	zoom:1;
+	margin:0;
+	padding:0;
+	list-style-type:none;
+	list-style-image:none;
+	li{
+		@:@fixList;
+	}
 }
-@opacity{
-  opacity:.@dfltOpacity;
-  -moz-opacity:.@dfltOpacity;
-  -webkit-opacity:.@dfltOpacity;
-  filter:alpha(opacity=@dfltOpacity);
-}
-
 
 /** theming stuffs */
 
@@ -80,24 +90,22 @@
 
 
 @boxShadow{
-	-moz-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
-	-webkit-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
-	box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
+	@=boxShadow(@shadowTop @shadowLeft @shadowFuzz @shadowColor);
 }
 @boxDarkShadow{
-	-moz-box-shadow: @shadowTop @shadowLeft @shadowFuzz @darkShadowColor;
-	-webkit-box-shadow: @shadowTop @shadowLeft @shadowFuzz @darkShadowColor;
-	box-shadow: @shadowTop @shadowLeft @shadowFuzz @darkShadowColor;
+	@=boxShadow(@shadowTop @shadowLeft @shadowFuzz @darkShadowColor);
 }
 @boxLightShadow{
-	-moz-box-shadow: @shadowTop @shadowLeft @shadowFuzz @lightShadowColor;
-	-webkit-box-shadow: @shadowTop @shadowLeft @shadowFuzz @lightShadowColor;
-	box-shadow: @shadowTop @shadowLeft @shadowFuzz @lightShadowColor;
+	@=boxShadow(@shadowTop @shadowLeft @shadowFuzz @lightShadowColor);
 }
 @boxNeon{
-	-moz-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor, -@shadowTop -@shadowLeft @shadowFuzz @shadowColor;
-	-webkit-box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor, -@shadowTop -@shadowLeft @shadowFuzz @shadowColor;
-	box-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor, -@shadowTop -@shadowLeft @shadowFuzz @shadowColor;
+	@=boxNeon();
+}
+@boxDarkNeon{
+	@=boxNeon(@shadowTop @shadowLeft @shadowFuzz @darkShadowColor);
+}
+@boxLightNeon{
+	@=boxNeon(@shadowTop @shadowLeft @shadowFuzz @lightShadowColor);
 }
 @boxOutline{
 	-moz-box-shadow:
@@ -129,7 +137,7 @@
 		-@outlineSize -@outlineSize  @outlineFuzz @outlineColor;
 }
 @textShadow{
-	text-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
+	@=textShadow();
 }
 @textDarkShadow{
 	text-shadow: @shadowTop @shadowLeft @shadowFuzz @darkShadowColor;
@@ -151,63 +159,25 @@
 		@outlineSize -@outlineSize @outlineFuzz @outlineColor,
 		-@outlineSize -@outlineSize  @outlineFuzz @outlineColor;
 }
+
+@=cornerRadius(radius=@radius,cornerV,cornerH){
+	-moz-border-radius-@cornerV@cornerH:@radius;
+	-webkit-border-@cornerV-@cornerH-radius:@radius;
+	border-@cornerV-@cornerH-radius:@radius;
+}
 @corner{
 	-moz-border-radius:@radius;
 	-webkit-border-radius:@radius;
 	border-radius:@radius;
 }
-@cornerTop{
-	-moz-border-radius-topleft:@radius;
-	-moz-border-radius-topright:@radius;
-	-webkit-border-top-left-radius:@radius;
-	-webkit-border-top-right-radius:@radius;
-	border-top-left-radius:@radius;
-	border-top-right-radius:@radius;
-}
-@cornerBottom{
-	-moz-border-radius-bottomleft:@radius;
-	-moz-border-radius-bottomright:@radius;
-	-webkit-border-bottom-left-radius:@radius;
-	-webkit-border-bottom-right-radius:@radius;
-	border-bottom-left-radius:@radius;
-	border-bottom-right-radius:@radius;
-}
-@cornerLeft{
-	-moz-border-radius-topleft:@radius;
-	-moz-border-radius-bottomleft:@radius;
-	-webkit-border-top-left-radius:@radius;
-	-webkit-border-bottom-left-radius:@radius;
-	border-top-left-radius:@radius;
-	border-bottom-left-radius:@radius;
-}
-@cornerRight{
-	-moz-border-radius-topright:@radius;
-	-moz-border-radius-bottomright:@radius;
-	-webkit-border-top-right-radius:@radius;
-	-webkit-border-bottom-right-radius:@radius;
-	border-top-right-radius:@radius;
-	border-bottom-right-radius:@radius;
-}
-@cornerTopLeft{
-	-moz-border-radius-topleft:@radius;
-	-webkit-border-top-left-radius:@radius;
-	border-top-left-radius:@radius;
-}
-@cornerTopRight{
-	-moz-border-radius-topright:@radius;
-	-webkit-border-top-right-radius:@radius;
-	border-top-right-radius:@radius;
-}
-@cornerBottomLeft{
-	-moz-border-radius-bottomleft:@radius;
-	-webkit-border-bottom-left-radius:@radius;
-	border-bottom-left-radius:@radius;
-}
-@cornerBottomRight{
-	-moz-border-radius-bottomright:@radius;
-	-webkit-border-bottom-right-radius:@radius;
-	border-bottom-right-radius:@radius;
-}
+@cornerTopLeft{ @=cornerRadius(,top,left); }
+@cornerTopRight{ @=cornerRadius(,top,right); }
+@cornerBottomLeft{ @=cornerRadius(,bottom,left); }
+@cornerBottomRight{ @=cornerRadius(,bottom,right); }
+@cornerTop{ @:@cornerTopLeft; @:@cornerBottomLeft; }
+@cornerBottom{ @:@cornerBottomLeft; @:@cornerBottomRight; }
+@cornerLeft{ @:@cornerTopLeft; @:@cornerBottomLeft; }
+@cornerRight{ @:@cornerTopRight; @:@cornerBottomRight; }
 
 /** some status classes */
 @state{
