@@ -25,6 +25,10 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-04-01 - add _classNameOptions
+					              - add @title support and make it default value for help option
+												- some bug correction
+           - 2010-03-31 - add required:-1 option and correctly remove tk-required class when set to false
            - 2010-03-30 - check radio/checkbox are checked when required
 					              - add event validable_formGetState(event,elmt,state) emitted on form checking state; (stop submission if return false)
            - 2009-10-22 - add options helpTrigger and helpAfter
@@ -32,6 +36,14 @@ $('#myForm').validable(formValidableOptions);
 */
 (function($) {
 	$.toolkit('tk.validable',{
+		_classNameOptions: {
+			alwaysSetState:'|all',
+			required:'|req|opt',
+			useIcon:'|noIcon|withIcon',
+			initCheck:'|noInitCheck',
+			stateElmt:'|self|label',
+			rule:'|.*'
+		},
 		_requiredElmt:null,
 		_stateIconElmt:null,
 		_labelElmt:null,
@@ -42,13 +54,19 @@ $('#myForm').validable(formValidableOptions);
 			if( self.elmt.is('form')){
 				var dfltInputOptions= $.extend({},self.options);
 				delete dfltInputOptions.rules;
+				if(! self.options.rules){
+					self.options.rules = {};
+				}
 				self.elmt.find(':input:not(button,[type=submit],[type=reset],[type=hidden])').each(function(){
-					var input=$(this);
-					var iname = input.attr('name');
+					var input=$(this),
+						iname = input.attr('name'),
+						inlineOpts = $.extend({},dfltInputOptions,$.toolkit._readClassNameOpts(input,'tk-validable',self._classNameOptions));
+
 					if( self.options.rules[iname]){
-						input.validable($.extend({},dfltInputOptions,self.options.rules[iname]));
+						input.validable($.extend({},inlineOpts,self.options.rules[iname]));
 					}else if(self.options.alwaysSetState){
-						input.validable($.extend({},dfltInputOptions));
+						self.options.alwaysSetState = true;
+						input.validable($.extend({},inlineOpts));
 					}
 				});
 				self.elmt.bind('submit.validable',getStateCB);
@@ -64,8 +82,10 @@ $('#myForm').validable(formValidableOptions);
 				self._applyOpts('minlength|maxlength',true);
 				self._applyOpts('labelElmt|rule|required|useIcon|help|helpTrigger|helpAfter');
 				//- check trigger
-				self.elmt.bind('change.validable',getStateCB);
-				self.elmt.bind('keyup.validable',getStateCB);
+				self.elmt.bind('change.validable, keyup.validable, focus.validable',getStateCB);
+			}
+			if( self.options.initCheck ==="noInitCheck"){
+				self.options.initCheck=false;
 			}
 			if(self.options.initCheck){
 				self.getState();
@@ -106,10 +126,20 @@ $('#myForm').validable(formValidableOptions);
 		_set_minlength:function(l){ l=Math.max(0,l); this.elmt.attr('minlength',l?l:''); },
 		_set_required:function(required){
 			var self = this;
-			required = required?true:false; // ensure boolean value
-			if(! required){
+			if( required === 'req'){
+				required = true;
+			}else if( required === 'opt'){
+				required = false;
+			}
+			required = required==-1?-1:(required?true:false); // ensure boolean value or -1
+			if( required !== true){
 				if(null!==self._requiredElmt){
 					self._requiredElmt.remove();
+					if( self._labelElmt ){
+						self._labelElmt.removeClass('tk-required');
+					}else{
+						self.elmt.removeClass('tk-required');
+					}
 				}
 				self._requiredElmt=null;
 			}else{
@@ -130,24 +160,33 @@ $('#myForm').validable(formValidableOptions);
 			if( useIcon==='auto' ){
 				useIcon = this._hasRule()?true:false;
 			}
-			if(! useIcon){
+			if( useIcon==='noIcon' || ! useIcon){
 				if( this._stateIconElmt !== null){
 					this._stateIconElmt.remove();
 					this._stateIconElmt=null;
 				}
+				return false;
 			}else{
 				if( this._stateIconElmt === null){
 					this._stateIconElmt=$('<span class="tk-validable-state-icon"><span class="ui-icon"></span></span>');
 					this._applyOpts('helpAfter');
 				}
+				return true;
 			}
 		},
 		_set_help:function(msg){
-			if(! msg.length){
-				return '';
+			if( msg==='@title' && this.elmt.is('[title]')){
+				msg = this.elmt.attr('title');//.replace(/\\n/,'<br />');
+			}
+			if( msg==='@title' || ! msg.length){
+				return msg;
 			}
 			var o = $.extend({},this.options.helpOptions,{msg:msg});
 			this.elmt.tooltip('set',o);
+			if( this._tk.initialized ){
+				this.options.help = msg;
+				this.getState();
+			}
 			return msg;
 		},
 		_set_helpTrigger:function(trigger){
@@ -190,7 +229,7 @@ $('#myForm').validable(formValidableOptions);
 			var stateElmt = this.elmt;
 			if( this.options.stateElmt==='label' && this._labelElmt ){
 				stateElmt = this._labelElmt;
-			}else if( this.stateElmt !== 'self'){
+			}else if( this.options.stateElmt !== 'self' && this.options.stateElmt!=='label'){
 				stateElmt = $(this.options.stateElmt);
 				if( ! stateElmt.length){
 					stateElmt=this.elmt;
@@ -246,19 +285,19 @@ $('#myForm').validable(formValidableOptions);
 				if( event && event.type === 'keyup' && event.which == 27	)
 					self.elmt.tooltip('hide');
 			}
+
 			if(! self._hasRule() ){
 				return self.options.alwaysSetState?self._setState(true):true;
 			}
-			var val   = self.elmt.val();
-			var length= val.length;
-
-			if( (! val) && ! self.options.required){
+			var val   = self.elmt.val(),
+				len= val.length;
+			if( len < 1 && self.options.required===false){
 				return self._setState(true);
 			}
-			if( self.options.maxlength && length > self.options.maxlength ){
+			if( self.options.maxlength && len > self.options.maxlength ){
 				return self._setState(false);
 			}
-			if( self.options.minlength && length < self.options.minlength ){
+			if( self.options.minlength && len < self.options.minlength ){
 				return self._setState(false);
 			}
 			if( self.options.rule instanceof RegExp){
@@ -273,14 +312,14 @@ $('#myForm').validable(formValidableOptions);
 				if(! res )
 					return self._setState(false);
 			}
-			if( self.options.required ){
+			if( self.options.required === true){
 				switch( self.elmt.attr('type').toLowerCase()){
 					case 'radio':
 					case 'checkbox':
 						// check one at least is checked
 						if($('input[name='+self.elmt.attr('name')+']:checked').length > 0)
-							return true;
-						return false;
+							return self._setState(true);
+						return self._setState(false);
 						break;
 					default:
 						return self._setState(val.length > 0?true:false);
@@ -295,14 +334,14 @@ $('#myForm').validable(formValidableOptions);
 		rule: null,
 		initCheck:true,
 		alwaysSetState:false,
-		required:false,
+		required:false, // true or false, special value -1 may be applyed to leave the rule do the job even on empty values
 		minlength:0,
 		maxlength:0,
 		stateElmt:'self', //-- may be self, label or any valid selector
 		useIcon:'auto',
 		labelElmt:null,
 		requiredTemplate:'<span class="tk-validable-required"> * </span>',
-		help:'',
+		help:'@title', //-- by default will check for title attr value
 		helpTrigger:null,
 		helpAfter:null,
 		helpOptions:{
@@ -345,12 +384,16 @@ $('#myForm').validable(formValidableOptions);
 		'float':/^\d+((\.|,)\d+)?$/,
 		zipcode:/^\d{2,5}$/,
 		phone:/^\d{10}$/,
-		alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-]+$/)?true:false },
-		Alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-]+$/i)?true:false },
-		alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-]+$/)?true:false },
-		Alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-]+$/i)?true:false },
+		alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-']+$/)?true:false },
+		Alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-']+$/i)?true:false },
+		ALPHA:function(str){ return removeAccents(str).match(/^[A-Z_\s-']+$/)?true:false },
+		alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/)?true:false },
+		Alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/i)?true:false },
+		ALPHANUM:function(str){ return removeAccents(str).match(/^[0-9A-Z_\s-']+$/)?true:false },
 		img:/\.(jpe?g|gif|png)$/i,
 		video:/\.(mpe?g|avi|flv|mov)$/i,
 		flashEmbeddable:/\.(jpe?g|flv|gif|png|swf|mp3)$/i
 	};
+	//add defaults validable rules to classNameOptions
+	//$.tk.validable.prototype._classNameOptions.rule=(function(){var r,res=[];for(r in $.tk.validable.defaultRules){res.push(r);} return '|'+res.join('|');})()
 })(jQuery);

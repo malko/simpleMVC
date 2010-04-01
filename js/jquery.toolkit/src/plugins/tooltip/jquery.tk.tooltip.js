@@ -4,6 +4,7 @@
 * @licence Dual licensed under the MIT / LGPL licenses.
 * @require tk.position
 * @changelog
+*            - 2010-03-30 - bug correction on connector display under ie8
 *            - 2010-03-23 - add some aria attrs
 */
 (function($){
@@ -140,8 +141,9 @@ $.toolkit('tk.tooltip',{
 		}
 		var pos=this._wrapper.positionRelative('return1_realpos'),
 			bgColor = this._wrapper.css('backgroundColor');
-		this._pointer.attr('style','');
-		this._pointerBg.attr('style','');
+		//-- reset inlineStyle (put something in it to get it work on ie8)
+		this._pointer.attr('style','position:absolute;');
+		this._pointerBg.attr('style','position:absolute;');
 		switch(pos.v){
 			case 'top':
 				this._pointer.css('borderTopColor',this._wrapper.css('borderTopColor'));
