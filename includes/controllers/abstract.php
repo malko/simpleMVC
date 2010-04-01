@@ -109,7 +109,7 @@ abstract class abstractController{
 	* - 1: avoid consecutive message repetition by checking that last message is different)
 	* - 2: will drop any messages that were previously appended to appMsgs nevermind the position.
 	*/
-	static public  $appMsgIgnoreRepeated = 1;
+	static public  $appMsgIgnoreRepeated = 2;
 	/** sets whether yes or not to use langManager for appMsgs */
 	static public  $appMsgUseLangManager = false;
 
