@@ -14,43 +14,43 @@ html {
   margin: 0;
 }
 
-span.sql-keyword {
+span.plsql-keyword {
   color: blue;
 }
 
-span.sql-var {
+span.plsql-var {
   color: red;
 }
 
-span.sql-comment {
+span.plsql-comment {
   color: #AA7700;
 }
 
-span.sql-literal {
+span.plsql-literal {
   color: green;
 }
 
-span.sql-operator {
+span.plsql-operator {
   color: blue;
 }
 
-span.sql-word {
+span.plsql-word {
   color: black;
 }
 
-span.sql-function {
+span.plsql-function {
   color: darkorange;
 }
 
-span.sql-type {
+span.plsql-type {
   color: purple;
 }
 
-span.sql-separator {
+span.plsql-separator {
   color: #666666;
 }
 
-span.sql-number {
+span.plsql-number {
   color: darkcyan;
 }
 

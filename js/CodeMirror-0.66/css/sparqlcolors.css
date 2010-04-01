@@ -1,11 +1,19 @@
+html {
+  cursor: text;
+}
+
 .editbox {
   margin: .4em;
-  padding: 0; font-family: monospace;  font-size: 10pt;
+  padding: 0;
+  font-family: monospace;
+  font-size: 10pt;
   color: black;
 }
+
 .editbox p {
   margin: 0;
 }
+
 span.sp-keyword {
   color: #708;
 }

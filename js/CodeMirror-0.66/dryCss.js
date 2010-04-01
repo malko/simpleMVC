@@ -1,6 +1,8 @@
 /**
 DryCss parser
-* @changelog - 2010-03-30 - add getDefined method.
+* @changelog
+*            - 2010-03-31 - make deep rule import work from includes
+*            - 2010-03-30 - add getDefined method.
 */
 dryCss = function(str,options){
 	var self = this,
@@ -68,10 +70,10 @@ dryCss.prototype = {
 					}
 					if(m.substr(1,1)==='!'){ //- repace @:@mixin
 						var id,_id;
-						for( id in self._rulesOrder){
-							if( id.match(new RegExp('^'+p+'(?![a-zA-Z0-9_])(.+)$'))){
+						for( id in fullRulesOrder){
+							if( id.match(new RegExp('^'+p.replace('.','\\.')+'(?![a-zA-Z0-9_])(.+)$'))){
 								_id = id.replace(p,parseKey);
-								delayed[_id] = applyCallbacks((delayed[_id] ?delayed[_id]:' ')+self.lookupRule(id));
+								delayed[_id] = (delayed[_id] ?delayed[_id]:'')+applyCallbacks(self.lookupRule(id));
 							}
 						}
 					}
@@ -123,6 +125,7 @@ dryCss.prototype = {
 		},
 		delayed={},
 		cb,r,i,
+		fullRulesOrder=self._getFullRulesOrder(),
 		applyCallbacks = function(str){
 			if( str.indexOf('@')<0)
 				return str.replace(replaceCbs.clean[0],replaceCbs.clean[1]);
@@ -160,6 +163,18 @@ dryCss.prototype = {
 		}
 		//-- last cleanup
 		self.computedCSS = str.replace(/;(\s*(;))+|\s*^\s*$/mg,'$2');//.replace(/\s*^\s*$/mg,'');
+	},
+	_getFullRulesOrder:function(){
+		var i,id,l=this.imported.length,rulesOrder={};
+		for( i=0;i<l;i++){
+			for(id in this.imported[i]._rulesOrder){
+				rulesOrder[id] = this.imported[i]._rulesOrder[id];
+			}
+		}
+		for(id in this._rulesOrder){
+			rulesOrder[id] = this._rulesOrder[id];
+		}
+		return rulesOrder;
 	},
 	getDefined:function(){
 		var self = this;
