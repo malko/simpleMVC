@@ -16,6 +16,10 @@
 @infoColor:#229;
 @infoBgColor:#eef;
 @infoBorderColor:#33f;
+@disabledColor:#999;
+@disabledBgColor:#eee;
+@disabledBorderColor:#bbb;
+
 
 /** fixing some stuff across browsers */
 .tk-inlineStack, .tk-icon, .tk-icon-small, .tk-icon-medium, .tk-icon-big{
@@ -134,4 +138,9 @@
 	background:@infoBgColor;
 	border-color:@infoBorderColor;
 	color:@infoColor;
+}
+.tk-state-disabled{
+  background:@disabledBgColor !important;
+  border-color:@disabledBorderColor !important;
+  color:@disabledColor !important;
 }

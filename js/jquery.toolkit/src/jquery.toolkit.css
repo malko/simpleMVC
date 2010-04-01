@@ -159,3 +159,8 @@
 	border-color:#33f !important;
 	color:#229;
 }
+.tk-state-disabled{
+  background:#eee !important;
+  border-color:#bbb !important;
+  color:#999 !important;
+}
