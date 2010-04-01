@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-02-26 - little rewrite of list filters support
 *            - 2010-02-12 - bug correction for list configuration in configure action
 *            - 2010-02-08 - make it compatible with url,redirectAction and forward that dropped support for controllerName as second argument
 *            - 2010-01-19 - configure: add possibility to use groupMethod with only one fieldSet
@@ -17,29 +18,24 @@
 *            - 2010-01-15 - bug correction on save
 *            - 2010-01-13 - add differents pageTitles for add and edit actions.
 *            - 2009-09-xx - first attempt for validation integration.
+*            - 2009-08-24 - add filters to moveUp/Down and [de]activate links
 *            - 2009-07-06 - now load config for each action
 *            - 2009-07-02 - add LIST_FILTER configuration
+*            - 2009-06-22 - add support for given modelCollection in extended listAction must be set as $this->_models_
 *            - 2009-06-04 - add model and config file edition
 *                         - all configuration methods are disabled when not in devel mode
 *            - 2009-06-02 - add configuration for allowedActions
-*            - 2009-05-28 - ncancel:loading of config file for ACTION allowed
+*                         - add support for confirmation fields and sprintFatas to langMsg methods
+*            - 2009-05-28 - ncancel:loading of config file for ACTION allowed and add allowed action property $allowedActions
 *            - 2009-05-05 - better admin forms generation (grouping/ordering inputs fields)
-*            - 2009-03-13 - made some change to list configuration to support ordering and formatStr
-*                         - put configFile as protected instead of private to permitt extended class to access it
-*            - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
-*                         - better handling of editing langMessage from empty dictionnaries
-
-
-* @import from modelsController (dropped abstract controller)
-* @changelog
-*            - 2009-08-24 - add filters to moveUp/Down and [de]activate links
-*            - 2009-06-22 - add support for given modelCollection in extended listAction must be set as $this->_models_
-*            - 2009-06-02 - add support for confirmation fields and sprintFatas to langMsg methods
-*            - 2009-05-28 - ncancel: add allowed action property $allowedActions
 *            - 2009-04-06 - add support for activable models
 *            - 2009-03-31 - autodetection of field that need to be loaded when loadDatas is empty
 *            - 2009-03-19 - rewrite support for orderable models
 *                         - set_layout now consider for adminmodelsModelType templates
+*            - 2009-03-13 - made some change to list configuration to support ordering and formatStr
+*                         - put configFile as protected instead of private to permitt extended class to access it
+*            - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
+*                         - better handling of editing langMessage from empty dictionnaries
 *            - 2009-03-08 - little modif in setDictName to check dictionnaries from generated with adminmodelsController
 *            - 2009-02-08 - add some automated support for orderable models
 *            - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
@@ -125,7 +121,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 			return false;
 		$this->_config = parse_conf_file($this->configFile,true);
 		foreach($this->_config as $k => $v){
-			if( preg_match('!^(LIST(?:_FILTERS)?|VALIDATION|ACTION|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
+			if( preg_match('!^(LIST(?:_FILTERS)?|ACTION|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
 				if( $m[1] === 'ACTION' )
 					$this->_allowedActions = 	json_decode($v,true);
 				$this->_modelConfig[$m[1]] = json_decode($v,$m[1]==='FORM_ORDER'?false:true);
@@ -140,6 +136,17 @@ abstract class abstractAdminmodelsController extends abstractController{
 	function indexAction(){
 		return $this->forward('list');
 	}
+
+	function filteredListAction(){
+		$_filters = array();
+		foreach($_POST as $k=>$v){
+			if(strlen($v))
+				$_filters[] = "$k,$v";
+		}
+		$_GET['_filters'] = implode(',',$_filters);
+		$this->forward('list');
+	}
+
 	function listAction(){
 
 		$this->_isAllowedAction_('list');
@@ -152,37 +159,52 @@ abstract class abstractAdminmodelsController extends abstractController{
 				$this->listFormats=$listFields;
 			}
 			if( ( !empty($this->_modelConfig['LIST_FILTERS']) ) && ! empty($_GET['_filters']) ){
+				$dbAdapter = abstractModel::getModelDbAdapter($this->modelType);
 				$filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
 				if( ! empty($filters[0])){
-					$datasDefs = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
-					$_dynamicFilters = array();
+					$datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
+					#- $_dynamicFilters = array();
+					$conds = array();
 					foreach($filters[0] as $k=>$fields ){
-						if(! in_array($fields,$this->_modelConfig['LIST_FILTERS'],true) ){
+						if( empty($this->_modelConfig['LIST_FILTERS'][$fields]) ){ #- unauthorized filter just ignore it
 							unset($filters[0][$k],$filters[1][$k]);
 							continue;
 						}
-						if( !isset($datasDefs[$fields])){
+						/* not sure there's a real interest for this
+						if( empty($datasDefs[$fields])){
 							$_dynamicFilters[$fields] = $filters[1][$k];
 							unset($filters[0][$k],$filters[1][$k]);
+							continue;
 						}
+						*/
+						switch($this->_modelConfig['LIST_FILTERS'][$fields]){
+							case 'like':
+								$conds[0] = (empty($conds)?'WHERE ':"$conds[0] AND ").$dbAdapter->protect_field_names($fields).' LIKE ?';
+								$conds[] = '%'.$filters[1][$k].'%';
+								break;
+							default:
+								$conds[0] = (empty($conds)?'WHERE ':"$conds[0] AND ").$dbAdapter->protect_field_names($fields)."=?";
+								$conds[] = $filters[1][$k];
+								break;
+						}
+
 					}
-					if( count($filters[0])){
-						$conds[0] = 'WHERE '.implode('=? AND ',$filters[0]).'=?';
-						array_splice($conds,1,0,$filters[1]);
+					if( !empty($conds)){
 						$this->_models_ = abstractModel::getFilteredModelInstances($this->modelType,$conds);
-						$this->fieldFilters = array_merge($_dynamicFilters,array_combine($filters[0],$filters[1]));
+						$this->fieldFilters = array_combine($filters[0],$filters[1]);
+						#- $this->fieldFilters = array_merge($_dynamicFilters,array_combine($filters[0],$filters[1]));
 					}
+					/* not sure there's a real interest for this
 					if( count($_dynamicFilters) ){
 						$this->_models_ = abstractModel::getAllModelInstances($this->modelType);
 						foreach($_dynamicFilters as $k=>$v)
 							$this->_models_ = $this->_models_->filterBy($k,$v,'==');
 						if( empty($this->fieldFilters))
 							$this->fieldFilters = $_dynamicFilters;
-					}
+					}*/
 				}
 			}
 		}
-
 		$this->view->assign('_smvcAllowedAction',$this->_allowedActions);
 		$this->setDictName();
 		$supportedAddons = abstractModel::_getModelStaticProp($this->modelType,'modelAddons');
@@ -557,22 +579,20 @@ abstract class abstractAdminmodelsController extends abstractController{
 		write_conf_file($this->configFile,$config,true);
 		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'list'));
 	}
-	function setValidationsAction(){
+	function setFiltersAction(){
+		$filters = array_filter($_POST['filters']);
 		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
 			return $this->forward(ERROR_DISPATCH);
-		if(empty($_POST['validableRules']) ){
-			$config["VALIDATION_$this->modelType"] = '--UNSET--';
+		if( empty($_POST['filters'])){
+			$config['LIST_FILTERS_'.$this->modelType] = '--UNSET--';
 		}else{
-			if( false !== eval('$rules = '.str_replace("\r\n","\n",$_POST['validableRules']).';')){
-				$config["VALIDATION_$this->modelType"] = json_encode($rules);
-			}else{
-				self::appendAppMsg("Please check the syntax of your validations rules.",'error');
-				return $this->forward('configure');
-			}
+			$config['LIST_FILTERS_'.$this->modelType] = json_encode($filters);
 		}
+		#- write config
 		write_conf_file($this->configFile,$config,true);
-		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'validations'));
+		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'filters'));
 	}
+
 	/**
 	* set how to render administrations forms for the given model
 	*/
@@ -648,12 +668,13 @@ abstract class abstractAdminmodelsController extends abstractController{
 	function generationAction(){
 		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
 			return $this->forward(ERROR_DISPATCH);
+		$modelDir = defined('MODELS_DIR')?MODELS_DIR:LIB_DIR.'/models';
 		#- check for read/write rights
-		if(! is_dir(LIB_DIR.'/models')){
-			mkdir(LIB_DIR.'/models');
-			chmod(LIB_DIR.'/models',0777);
+		if(! is_dir($modelDir)){
+			mkdir($modelDir);
+			chmod($modelDir,0777);
 		}
-		if(! is_writable(LIB_DIR.'/models') ){
+		if(! is_writable($modelDir) ){
 			self::appendAppMsg("Model directory must be writable.",'error');
 			return $this->redirect();
 		}
@@ -661,13 +682,13 @@ abstract class abstractAdminmodelsController extends abstractController{
 		modelgenerator::$excludePrefixedTables=true;
 		modelgenerator::$tablePrefixes='_';
 		foreach($this->dbConnectionsDefined as $dbConn){
-			eval('$g = new modelgenerator('.$dbConn.',LIB_DIR."/models",1);');
+			eval('$g = new modelgenerator('.$dbConn.',$modelDir,1);');
 			$g->onExist = 'o';
 			$g->doGeneration($dbConn,'');
 		}
 
 		#- then ensure correct rights for files
-		$modelFiles = glob(LIB_DIR.'/models/*.php');
+		$modelFiles = glob("$modelDir/*.php");
 		foreach($modelFiles as $f){
 			chmod($f,0666);
 		}
@@ -693,7 +714,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	}
 	private function getModelFilePath($modelType){
 		$modelType = preg_replace('![^a-z0-9_]!i','',$modelType);
-		$modelFile = LIB_DIR.'/models/'.$modelType.'.php';
+		$modelFile = (defined('MODELS_DIR')?MODELS_DIR:LIB_DIR.'/models')."/$modelType.php";
 		return file_exists($modelFile)?$modelFile:false;
 	}
 	private function getModelfile($modelType){

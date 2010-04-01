@@ -15,32 +15,42 @@ if( empty($this->fieldFilters) ){
 }else{
 	$filters = array() ;
 	foreach($this->fieldFilters as $name=>$value){
-		$filters[]= "$name,$value" ;
+		$filters[]= "$name,$value";
 	}
 	$filters = implode(',',$filters);
 }
 
-if( ! empty($this->_modelConfig['LIST_FILTERS']) ){
-	echo '<div  class="adminListFilters"><h2>Filters</h2>
-	<input type="hidden" id="filterBasePath" name="filterBasePath" value="'.$this->url('list',array('modelType'=>$this->modelType)).'"/>';
-	foreach($this->_modelConfig['LIST_FILTERS'] as $f){
+if( ! empty($this->_modelConfig['LIST_FILTERS']) && count(array_diff($this->_modelConfig['LIST_FILTERS'],array('hidden'))) ){
+	$datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
+	echo '<form  class="adminListFilters" method="post" action="'.$this->url('filteredList',array('modelType'=>$this->modelType)).'"><h2>Filters</h2>';
+	foreach($this->_modelConfig['LIST_FILTERS'] as $f=>$type){
 		$options=array(
 			'id' => "_modelFilter_$f",
 			'formatStr' => '<div class="adminListFiltersItem">%label %input</div>',
 			'forceEmptyChoice'=>true,
-			'multiple'=>false
-
+			'multiple'=>false,
+			'maxlength'=>0
 		);
+		if( $type !== 'default'){
+			$options['type'] = ($type==='like')?'text':$type;
+		}
 		if( isset($this->fieldFilters,$this->fieldFilters[$f]))
 			$options['value'] = $this->fieldFilters[$f];
-
+		#- in case of boolean values force an empty value
+		if( preg_match('!^(bool|tinyint(\(1\))?)$!i',$datasDefs[$f]['Type'])){
+			$options['values'] = array(''=>langManager::msg('all'),0=>langManager::msg('no'),1=>langManager::msg('yes'));
+			$options['default'] ='';
+			if( $type==='default')
+				$options['type'] = 'selectbuttonset';
+		}
 		echo $this->modelFormInput($this->modelType,$f,$options);
 	}
 
-	echo '<button class="ui-button ui-button-search" id="adminListFiltersDo">Filter</button></div>';
+	echo '<button class="ui-button ui-button-search" id="adminListFiltersDo" type="submit">Filter</button></form>';
+/*
 	$jsSelector = '#_modelFilter_'.implode(', #_modelFilter_',$this->_modelConfig['LIST_FILTERS']);
 	$this->_js_script('
-		$("'.$jsSelector.'").change(function(){ $("#adminListFiltersDo").click(); });
+		//$("'.$jsSelector.'").change(function(){ $("#adminListFiltersDo").click(); });
 		$("#adminListFiltersDo").click(function(){
 			var params=[];
 			$("'.$jsSelector.'").each(function(){
@@ -50,7 +60,7 @@ if( ! empty($this->_modelConfig['LIST_FILTERS']) ){
 			});
 			window.location = $("#filterBasePath").val()+"/_filters/"+params.join(",");
 		});
-	');
+	');*/
 }
 
 

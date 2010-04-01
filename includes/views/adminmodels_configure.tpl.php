@@ -12,6 +12,7 @@
 </style>
 <h1><?=$this->modelType?> settings </h1>
 <div id="settings">
+
 <form action="<?= $this->url('setToString',array('modelType'=>$this->modelType)) ?>" method="post" id="string">
 	<h3><a name="string"><?= $this->modelType ?>::$__toString</a></h3>
 	<div id="string-pannel">
@@ -27,6 +28,23 @@
 		<?= $this->modelType ?>::$__toString
 		<input type="text" name="_toStr" value="<?=htmlentities($this->_toStr,ENT_COMPAT,'UTF-8')?>" />
 	</label>
+	<br />
+	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
+	</div>
+</form>
+
+<form action="<?= $this->url('setActions',array('modelType'=>$this->modelType)) ?>" method="post" id="actions">
+	<h3><a name="actions">Allowed Actions</a></h3>
+	<div id="actions-pannel">
+	Choose allowed actions to manage this model
+	<?php
+		$tmp = $this->_allowedActions;
+		extract($tmp);
+		echo $this->formInput('actions[edit]',empty($edit)?0:1,'selectbuttonset',array('label'=>'Can be edited','values'=>array('no','yes')));
+		echo $this->formInput('actions[add]',empty($add)?0:1,'selectbuttonset',array('label'=>'Can be added','values'=>array('no','yes')));
+		echo $this->formInput('actions[del]',empty($del)?0:1,'selectbuttonset',array('label'=>'Can be deleted','values'=>array('no','yes')));
+		echo $this->formInput('actions[list]',empty($list)?0:1,'selectbuttonset',array('label'=>'Can be listed','values'=>array('no','yes')));
+	?>
 	<br />
 	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
 	</div>
@@ -59,6 +77,45 @@
 		</div>
 	</div>
 </form>
+
+
+<form action="<?= $this->url('setFilters',array('modelType'=>$this->modelType)) ?>" method="post" id="filters">
+	<h3><a name="filters">List filters</a></h3>
+	<div id="filters-pannel">
+	<div class="selectors">
+		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
+			Here you can set fields that may be used for adminModels list actions filtering.
+			<br />
+			Unauthorized is the default values and mean that such fields will just be ignored as filters field.
+		</div>
+	<ul id="listFilterItems" class="sortable">
+	<?php
+		$filterDisplayOptions = array(
+			''       => 'unauthorized',
+			'hidden' => 'allowed but hidden',
+			'default'=> 'default (let simpleMVC decide the filter display)',
+			'select' => 'comboBox',
+			'selectbuttonset' => 'set of buttons (like radio buttons)',
+			'like' => 'LIKE text ( will be filterd using a LIKE "%text%" SQL clause',
+			'text' => 'EQUAL text ( will be filterd using a  = "text" SQL clause',
+		);
+		$filterFields = array_flip(array_merge(empty($this->_modelConfig['LIST_FILTERS'])?array():array_keys($this->_modelConfig['LIST_FILTERS']),$this->datasDefs,array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne'))));
+		foreach($filterFields as $fld=>$val){
+			$filterDisplay = isset($this->_modelConfig['LIST_FILTERS'][$fld])?$this->_modelConfig['LIST_FILTERS'][$fld]:null;
+			echo $this->formInput("filters[$fld]",$filterDisplay,'select',array('label'=>$fld,"values"=>$filterDisplayOptions,'formatStr'=>'<li>%label %input</li>'))."\n";
+			//echo $this->formInput("filters[$fld]",$fld,'checkbox',array('checked'=>$filterDisplay?true:false,'label'=>$fld,'formatStr'=>'<li>%input %label'.$filterDisplayInput.'</li>'))."\n";
+		}
+	?>
+	</ul>
+	</div>
+	<label>
+
+	</label>
+	<br />
+	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
+	</div>
+</form>
+
 
 <form action="<?= $this->url('setFormInputs',array('modelType'=>$this->modelType)) ?>" method="post" id="forms">
 	<h3><a name="forms">Forms</a></h3>
@@ -187,22 +244,6 @@
 	</div>
 </form>
 
-<form action="<?= $this->url('setActions',array('modelType'=>$this->modelType)) ?>" method="post" id="actions">
-	<h3><a name="actions">Allowed Actions</a></h3>
-	<div id="actions-pannel">
-	Choose allowed actions to manage this model
-	<?php
-		extract($this->_allowedActions);
-		echo $this->formInput('actions[edit]',empty($edit)?0:1,'radio',array('label'=>'Can be edited','values'=>array('no','yes')));
-		echo $this->formInput('actions[add]',empty($add)?0:1,'radio',array('label'=>'Can be added','values'=>array('no','yes')));
-		echo $this->formInput('actions[del]',empty($del)?0:1,'radio',array('label'=>'Can be deleted','values'=>array('no','yes')));
-		echo $this->formInput('actions[list]',empty($list)?0:1,'radio',array('label'=>'Can be listed','values'=>array('no','yes')));
-	?>
-	<br />
-	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
-	</div>
-</form>
-
 <form action="<?= $this->url('saveEditConfig',array('modelType'=>$this->modelType)) ?>" method="post" id="config">
 	<h3><a name="config">Edit Configuration File</a></h3>
 	<div id="config-pannel">
@@ -293,134 +334,12 @@
 
 
 <?php
-$this->js('
-	var styleClass = "ui-widget-content ui-corner-all";
-
-	//-- make this an accordion
-	var formsIds = {"string":0,"list":1,"forms":2,"messages":3,"actions":4,"config":5,"model":6};
-	var activeForm =  window.location.href.match(/#\/?(\w+)/);
-	activeForm = (null!==activeForm && activeForm.length)?formsIds[activeForm[1]]:1;
-	$("#settings").accordion({header:"h3",autoHeight:false,animated:false,active:activeForm,collapsible:true});
-
-	// make fieldname clickable to ease _toStr setting
-	$(".sMVC_dataField").click(function(){
-		var v = $("input[name=_toStr]").val();
-		$("input[name=_toStr]").val((v?v+" ":"")+this.innerHTML).focus();
-	}).css({cursor:"pointer"});
-
-	//-- make list fields sortable
-	$("ul.sortable").sortable({
-		placeholder: "ui-state-highlight placeholder ui-corner-all",
-		forcePlaceholderSize:true
-	}).find("li").addClass(styleClass);
-	//-- add items to list of fields
-	function listAddItem(fieldName,format){
-		var item = $(\'<li><input id="fields[\'+fieldName+\']" name="fields[\'+fieldName+\']" class="checkbox" type="checkbox" checked="checked" value="\'+fieldName+\'"/>\\
-		<label for="fields[\'+fieldName+\']">\'+fieldName+\'</label> \\
-		<div class="formInput"><label for="formatStr[\'+fieldName+\']">format string</label><input id="formatStr[\'+fieldName+\']" class="text" type="text" size="50" value="" name="formatStr[\'+fieldName+\']"/> \\
-		</div>\').appendTo("#listItems").addClass(styleClass);
-		item.find(".ui-button").button().css({float:"right"}).click(function(){$(this).parent("li").remove();});
-	}
-	$("#listAddField").click(function(){
-		var fieldName = prompt("'.addslashes(langManager::msg('list field name')).'");
-		if(! fieldName)
-			return;
-		listAddItem(fieldName,"");
-	});
-
-	//-- manage ordering and grouping of forms inputs
-	function updateFieldSets(){
-		$("#fieldList .fieldSet").each(function(){
-			var val = new Array();
-			var labs = $(this).find(".formInput label:first-child");
-			labs.each(function(){val.push(this.innerHTML);});
-			$(this).find("input[type=hidden][name^=fieldsOrder]").val(val.join(","));
-		});
-	}
-	$.fn.connectInputSortList = function(){
-		$(this).addClass(styleClass).sortable({
-				placeholder: "ui-state-highlight placeholder ui-corner-all",
-				forcePlaceholderSize:true,
-				dropOnEmpty:true,
-				items:".formInput",
-				scrollSensitivity: 40,
-				update:updateFieldSets
-			}).find(".formInput").addClass(styleClass);
-			var header = $(".ui-widget-header",this);
-			$(\'<span class="ui-icon ui-icon-close"></span>\').prependTo(header).click(function(){
-				if( $(this).parents(".fieldSet").children(".formInput").length < 1)
-					$(this).parents(".fieldSet").remove();
-				else
-					alert("Can\'t remove a not empty group");
-			});
-		$("#fieldList .fieldSet").sortable("option", "connectWith", "#fieldList .fieldSet");
+echo '<script type="text/javascript">
+var ADMIN_MODEL_URL = "'.$this->url('resetFieldsOrder',array('modelType'=>$this->modelType)).'",
+	langMessages = {
+		"listFldName": "'.addslashes(langManager::msg('list field name')).'",
+		"translationMsgId": "'.addslashes(langManager::msg('message id')).'"
 	};
-	$("#fieldList").sortable({
-		placeholder: "ui-state-highlight placeholder ui-corner-all",
-		forcePlaceholderSize:true,
-		items:".fieldSet",
-		handle:".ui-widget-header"
-	}).find(".fieldSet").connectInputSortList();
-	$("#addFieldSet").click(function(){
-		$(\'<div class="fieldSet" id="fieldSet_\'+($("#forms .fieldSet").length+1)+\'">\
-			<label class="ui-widget-header">Group Name: <input type="text" name="fieldSet[]" value="" /></label>\
-			<input type="hidden" name="fieldsOrder[]" value="" />\
-		</div>\').appendTo("#fieldList").connectInputSortList();
-		$("#forms #fieldGroupMethod").show();
-	});
-	updateFieldSets();
-	//- manage fields order reset button
-	$("#resetFieldsOrder").click(function(){
-		if( confirm("Are You sure you want to reset form fields order?") ){
-			window.location="'.$this->url('resetFieldsOrder',array('modelType'=>$this->modelType,'#'=>'forms')).'";
-		}
-	});
-
-	//-- manage lang pannel
-	$("select#setLang").change(function(){
-		var l = this.options[this.selectedIndex].innerHTML;
-		$("div.langMessages").hide();
-		$("div#langMessages_"+l).show();
-	}).change();
-	$("#addTranslationField").click(function(){
-		var fName = prompt("'.addslashes(langManager::msg('message id:')).'");
-		if(! fName)
-			return;
-		// detection des langues possibles
-		$("select#setLang option").each(function(i){
-			var l = this.innerHTML;
-			$("#langMessages_"+l).append("<div class=\"formInput\">"+fName+": <input type=\"text\" name=\"msgs["+l+"]["+fName+"]\" value=\"\" /></div>");
-		});
-	});
-
-	//-- add toggle on modelAddons list
-	$("#modelAddonList li").each(function(){
-		var e = $(this),
-			code = e.find("code");
-		if( code.length < 1){
-			return;
-		}
-		code.hide().css("cursor","text").click(function(){return false;});
-		e.css("cursor","pointer").click(function(){code.toggle()});
-	});
-
-	//-- add form option client side validation
-
-	//--- test options are valid json
-	$("#forms input[id^=inputOptions]").keyup(function(){
-		var val = $(this).val();
-		if( val.length<1)
-			return $(this).removeClass("ui-state-error");
-		if( (/[^,:\\{\\}\\[\\]0-9.\\-+Eaeflnr-u \\n\\r\\t]/.test(val.replace(/"(\\\\.|[^"\\\\])*"/g, ""))) )
-			return $(this).addClass("ui-state-error");
-		var  e;
-		try{
-			var test =  eval("(" + $(this).val() + ")");
-			$(this).removeClass("ui-state-error");
-		}catch(e){
-			$(this).addClass("ui-state-error");
-		}
-	});
-','jqueryui');
-/** @todo add support for list filter configuration */
+</script>';
+$this->js("js/simpleMVC_adminConfig.js",'jqueryui');
 ?>
