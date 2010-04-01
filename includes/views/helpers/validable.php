@@ -1,6 +1,7 @@
 <?php
 /**
 *@changelog
+*           - 2010-03-30 - use new validable formGetState event to generate a notification
 *           - 2010-02-18 - make use of jquerytoolkit version of the plugin
 */
 class validable_viewHelper extends jsPlugin_viewHelper{
@@ -46,7 +47,18 @@ class validable_viewHelper extends jsPlugin_viewHelper{
 			return;
 		foreach($this->rules as $parentForm=>$rules){
 			#- $this->_js_script("$('$parentForm').validable(".self::_optionString($rules,1).").validable('check');");
-			$this->_js_script("$('$parentForm').validable(".self::_optionString($rules,1).");");
+			$errorMsg = preg_replace("/(?<!\\\\)'/","\'",langManager::msg("Les données du formulaire ne sont pas valides, merci de vérifier votre saisie."));
+			$this->_js_script("
+$('$parentForm').validable(".self::_optionString($rules,1).")
+	.bind('validable_formGetState',function(event,form,state){
+		if( false===state ){
+			if( $('.tk-notifybox').length && $.tk.notifybox){
+				$('.tk-notifybox').notifybox('notify','<div class=\"tk-state-error\" style=\"border:none;\">$errorMsg</div>');
+			}else{
+				alert('$errorMsg');
+			}
+		}
+	});");
 		}
 		$this->rules = array();
 	}
