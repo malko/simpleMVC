@@ -4,7 +4,7 @@
 class codemirror_viewHelper extends jsPlugin_viewHelper{
 
 	public $requiredFiles   = array(
-		'js/CodeMirror-0.65/js/codemirror.js',
+		'js/CodeMirror-0.66/js/codemirror.js',
 		#- 'js/CodeMirror-0.65/css/docs.css'
 	);
 
@@ -49,13 +49,13 @@ class codemirror_viewHelper extends jsPlugin_viewHelper{
 	);
 
 	function init(){
-		self::$defaultOptions['path'] = ROOT_URL.'/js/CodeMirror-0.65/js/';
+		self::$defaultOptions['path'] = ROOT_URL.'/js/CodeMirror-0.66/js/';
 		foreach(self::$languagueOpts as &$lopts){
 			if(! is_array($lopts['stylesheet'])){
-				$lopts['stylesheet'] = 	ROOT_URL.'/js/CodeMirror-0.65/'.$lopts['stylesheet'];
+				$lopts['stylesheet'] = 	ROOT_URL.'/js/CodeMirror-0.66/'.$lopts['stylesheet'];
 			}else{
 				foreach($lopts['stylesheet'] as &$s){
-					$s = ROOT_URL.'/js/CodeMirror-0.65/'.$s;
+					$s = ROOT_URL.'/js/CodeMirror-0.66/'.$s;
 				}
 			}
 		}
