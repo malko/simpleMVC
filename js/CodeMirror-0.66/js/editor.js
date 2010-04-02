@@ -701,7 +701,7 @@ var Editor = (function(){
     // Intercept enter and tab, and assign their new functions.
     keyDown: function(event) {
       if (this.frozen == "leave") this.frozen = null;
-      if (this.frozen && (!this.keyFilter || this.keyFilter(event.keyCode))) {
+      if (this.frozen && (!this.keyFilter || this.keyFilter(event.keyCode, event))) {
         event.stop();
         this.frozen(event);
         return;
@@ -784,7 +784,7 @@ var Editor = (function(){
       // keydown event does not prevent the associated keypress event
       // from happening, so we have to cancel enter and tab again
       // here.
-      if ((this.frozen && (!this.keyFilter || this.keyFilter(event.keyCode))) ||
+      if ((this.frozen && (!this.keyFilter || this.keyFilter(event.keyCode, event))) ||
           event.code == 13 || (event.code == 9 && this.options.tabMode != "default") ||
           (event.keyCode == 32 && event.shiftKey && this.options.tabMode == "default"))
         event.stop();
@@ -858,7 +858,6 @@ var Editor = (function(){
         if (firstText) select.snapshotMove(firstText.firstChild, whiteSpace.firstChild, curIndent, false, true);
       }
       if (indentDiff != 0) this.addDirtyNode(start);
-      return whiteSpace;
     },
 
     // Re-highlight the selected part of the document.
@@ -1036,13 +1035,9 @@ var Editor = (function(){
       // there's nothing to indent.
       if (cursor === false)
         return;
-      var lineStart = startOfLine(cursor);
-      var whiteSpace = this.indentLineAfter(lineStart, direction);
-      if (cursor == lineStart && whiteSpace)
-          cursor = whiteSpace;
-      // This means the indentation has probably messed up the cursor.
-      if (cursor == whiteSpace)
-        select.focusAfterNode(cursor, this.container);
+      select.markSelection(this.win);
+      this.indentLineAfter(startOfLine(cursor), direction);
+      select.selectMarked();
     },
 
     // Indent all lines whose start falls inside of the current
