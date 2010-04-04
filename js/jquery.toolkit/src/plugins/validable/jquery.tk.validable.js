@@ -25,6 +25,7 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-04-02 - form.validable will force any :input with a tk-validable* class to be promotted to validable widget nevermind the alwaysSetState option
            - 2010-04-01 - add _classNameOptions
 					              - add @title support and make it default value for help option
 												- some bug correction
@@ -42,7 +43,7 @@ $('#myForm').validable(formValidableOptions);
 			useIcon:'|noIcon|withIcon',
 			initCheck:'|noInitCheck',
 			stateElmt:'|self|label',
-			rule:'|.*'
+			rule:'|[^-\s]+?'
 		},
 		_requiredElmt:null,
 		_stateIconElmt:null,
@@ -51,6 +52,9 @@ $('#myForm').validable(formValidableOptions);
 			var self = this,
 				id = self.elmt.attr('id'),
 				getStateCB=function(e){return self.getState(e)};
+			if(self.options.alwaysSetState==='all'){
+				self.options.alwaysSetState = true;
+			}
 			if( self.elmt.is('form')){
 				var dfltInputOptions= $.extend({},self.options);
 				delete dfltInputOptions.rules;
@@ -61,16 +65,15 @@ $('#myForm').validable(formValidableOptions);
 					var input=$(this),
 						iname = input.attr('name'),
 						inlineOpts = $.extend({},dfltInputOptions,$.toolkit._readClassNameOpts(input,'tk-validable',self._classNameOptions));
-
 					if( self.options.rules[iname]){
 						input.validable($.extend({},inlineOpts,self.options.rules[iname]));
-					}else if(self.options.alwaysSetState){
-						self.options.alwaysSetState = true;
-						input.validable($.extend({},inlineOpts));
+					}else if(self.options.alwaysSetState || input.is('[class*=tk-validable]')){
+						input.validable(inlineOpts);
 					}
 				});
 				self.elmt.bind('submit.validable',getStateCB);
 			}else{
+				delete self.options.alwaysSetState; //-- only for form elements
 				if( ! self.options.maxlength ){
 					var maxl = self.elmt.attr('maxlength');
 					self.options.maxlength = ( typeof(maxl)===undefined || isNaN(maxl) || maxl<0 )? 0 : maxl;
@@ -179,15 +182,16 @@ $('#myForm').validable(formValidableOptions);
 				msg = this.elmt.attr('title');//.replace(/\\n/,'<br />');
 			}
 			if( msg==='@title' || ! msg.length){
-				return msg;
+				return '';
 			}
 			var o = $.extend({},this.options.helpOptions,{msg:msg});
 			this.elmt.tooltip('set',o);
 			if( this._tk.initialized ){
 				this.options.help = msg;
 				this.getState();
+			}else{
+				return msg;
 			}
-			return msg;
 		},
 		_set_helpTrigger:function(trigger){
 			if( trigger === null || this.options.help.length<1){
@@ -273,7 +277,7 @@ $('#myForm').validable(formValidableOptions);
 			if(! self.elmt.is(':input')){
 				if(! self.elmt.is('form'))
 					return false;
-				var res = true,state;
+				var res = true;
 				self.elmt.find(':input.tk-validable').each(function(){
 					res = (res && $(this).validable('return1_getState'))?true:false;
 				});

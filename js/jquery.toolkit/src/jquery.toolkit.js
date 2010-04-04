@@ -12,6 +12,7 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT / GPL licenses.
 
 @changelog
+ - 2010-04-04 - rewrite _trigger
  - 2010-02-24 - add ensureId jquery method and rename uniqueId toolkit method to requestUniqueId as it's more meeningfull
 							- make use of ensureId method at widet construction time.
 							- $.toolkit._getInstance() now accept jQuery element as first parameter (in which case it will work on the first element of the collection)
@@ -32,6 +33,21 @@ was really missing to better stick to my way of doing things so i start this new
 		}
 		if( typeof(console)!=='undefined' && console.debug){
 			console.debug(dbg.caller,arguments);
+		}else if(typeof opera !== 'undefined' && typeof opera.postError !== 'undefined'){
+			var s = [];
+			_dbg=function(a){
+				var i,s = [];
+				if( typeof(a)=='object'){
+					for( i in a ){ s.push( i+':'+_dbg(a[i])); }
+					return '{'+s.join(', ')+'}';
+				}else if (typeof(a)=='array'){
+					for( i=0;i<a.length;i++ ){ s.push((typeof(a[i])==='object' || typeof(a[i])==='array' )?_dbg(a[i]):a[i]); }
+					return '['+s.join(', ')+']';
+				}
+				return a;
+			}
+			for( i=0; i< arguments.length;i++ ){s.push(_dbg(arguments[i]));}
+			opera.postError(s.join(', '));
 		}
 	};
 
@@ -205,8 +221,6 @@ $.toolkit.prototype = {
 	},
 	//-- event management --//
 	_trigger: function(eventName, originalEvent, params){
-		//- var e = $.extend(originalEvent || {},{type:(eventName.indexOf(this._tk.pluginName)===0?eventName:this._tk.pluginName+'-'+eventName)});
-		//- return this.elmt.triggerHandler(e,params);
 		if( undefined===params){
 			params = [this.elmt];
 		}
@@ -217,9 +231,26 @@ $.toolkit.prototype = {
 				eventName = eventName.substr(1);break;
 			default://do nothing
 		}
-		var e = $.event.fix(originalEvent||{});
+		/*
+		next 7 lines from jquery-ui
+		copyright (c) 2010 AUTHORS.txt (http://jqueryui.com/about)
+		Dual licensed under the MIT (MIT-LICENSE.txt)
+		and GPL (GPL-LICENSE.txt) licenses.
+		copy original event properties over to the new event
+		this would happen if we could call $.event.fix instead of $.Event
+		but we don't have a way to force an event to be fixed multiple times*/
+		var e = $.Event(originalEvent);
+		if ( e.originalEvent ) {
+			for ( var i = $.event.props.length, prop; i; ) {
+				prop = $.event.props[ --i ];
+				e[ prop ] = e.originalEvent[ prop ];
+			}
+		}
+		//var e = $.event.fix(originalEvent||{});
 		e.type = eventName;
-		return this.elmt.triggerHandler(e,params);
+		//return this.elmt.triggerHandler(e,params);
+		this.elmt.trigger(e,params);
+		return e.isDefaultPrevented()?false:true;
 	},
 	_get_pluginInstance:function(){
 		return this;
@@ -268,7 +299,7 @@ $.toolkit.initPlugins = function(pluginNames){
 	}
 	for( var i=0,l=pluginNames.length,p='';i<l;i++){
 		p=pluginNames[i];
-		eval("jQuery('.tk-"+p+"')."+p+"()");
+		new Function("jQuery('.tk-"+p+"')."+p+"()")();
 	}
 };
 /**

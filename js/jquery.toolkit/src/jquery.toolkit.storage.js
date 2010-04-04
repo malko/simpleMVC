@@ -174,7 +174,7 @@ $.toolkit.storage = {
 			},
 			get: function(key){
 				var r = this._storage.name.match(new RegExp('(^|&)'+escape(key)+'=([^&=]*)($|&)'));
-				return r?r[2]:null;
+				return r?unescape(r[2]):null;
 			},
 			remove: function(key){ this._storage.name = this._storage.name.replace(new RegExp('(^|&)'+escape(key)+'=([^=&]*)(?=$|&)'),'');	}
 		},
