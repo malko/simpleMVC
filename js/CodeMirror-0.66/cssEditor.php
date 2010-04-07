@@ -97,7 +97,7 @@ when nested:
 	}
 	$.toolkit('tk.cssEditor',{
 		_storableOptions:{
-			urlElementLevel:'content|rawFilePath|compFilePath|compactOutput'
+			urlElementLevel:'content|compactOutput'
 		},
 
 		_init:function(){
@@ -413,6 +413,15 @@ when nested:
 
 
 jQuery(function(){
+	$.toolkit.storage.enable([
+		'localStorage',
+		'globalStorage',
+		'userData',
+		'gears',
+		//'cookies',
+		'sessionStorage',
+		'windowName' // be aware that window.name api is not secure at ALL (may be read by any domain whatever the origin is)
+	]);
 	$.toolkit.initPlugins('cssEditor');
 	$(window).resize(function(){
 		$('.tk-cssEditor').width($(window).width()-$('.CodeMirror-line-numbers').outerWidth()-2);
