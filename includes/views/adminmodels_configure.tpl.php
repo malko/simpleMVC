@@ -208,6 +208,7 @@
 		<div id="fieldGroupMethod"<?=empty($fieldGroupMethod)?' style="display:none;"':''?> class="ui-widget-content ui-corner-all">Grouping Method:
 			<label><input type="radio" name="fieldGroupMethod" value="fieldset"<?= 'fieldset'===$fieldGroupMethod?' checked="checked"':''?>/> FieldSet</label>
 			<label><input type="radio" name="fieldGroupMethod" value="tabs" <?= 'tabs'===$fieldGroupMethod?' checked="checked"':''?>/> Tabs</label>
+			<label><input type="radio" name="fieldGroupMethod" value="tabbed" <?= 'tabbed'===$fieldGroupMethod?' checked="checked"':''?>/> Tabbed</label>
 			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
 			<label><input type="radio" name="fieldGroupMethod" value="" <?= empty($fieldGroupMethod)?' checked="checked"':''?>/> none</label>
 		</div>

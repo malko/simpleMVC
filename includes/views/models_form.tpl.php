@@ -63,7 +63,7 @@ if(! empty($this->inputOpts)){
 				}
 			}
 			$tabs = isset($tabs)?"<ul>$tabs</ul>":'';
-			echo "<div id=\"fieldsGroups\">\n$tabs$formStr\n</div>\n";
+			echo "<div id=\"fieldsGroups\">\n$tabs".($fieldGroupMethod!=='tabbed'?$formStr:'<div class="tk-tabbed-pannels">'.$formStr.'</div>')."\n</div>\n";
 			if( !empty($fieldGroupMethod) && 'fieldset' !== $fieldGroupMethod){
 				if( $fieldGroupMethod === 'tabbed' ){
 					$this->_jqueryToolkit_tabbed('form #fieldsGroups');
