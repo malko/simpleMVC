@@ -8,8 +8,8 @@
 DEVEL_MODE = TRUE
 
 #- DEFAULT DISPATCHING
-DEFAULT_DISPATCH = default:index
-ERROR_DISPATCH = default:error
+DEFAULT_DISPATCH = pages:index
+ERROR_DISPATCH = pages:error
 #- DATABASE CONNECTION
 # DB_CONNECTION  = mysqldb://dbname;dbhost;dbuser;dbpass
 
