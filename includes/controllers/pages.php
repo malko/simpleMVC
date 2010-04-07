@@ -7,7 +7,7 @@
 * @since 2009-10-23
 * @package simpleMVC
 */
-class defaultController extends abstractController{
+class pagesController extends abstractController{
 	function indexAction(){ /* dummy default index action */	}
 	function errorAction(){ /* dummy default error action */	}
 }

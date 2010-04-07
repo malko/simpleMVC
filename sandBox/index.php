@@ -111,7 +111,7 @@ try{
 	if( DEVEL_MODE )
 		show($e->getMessage(),$e->getTrace(),'color:orange;exit');
 	abstractController::appendAppMsg(langManager::msg("Can't find '%s' controller.",array($_controller)),'error');
-	$controller = new defaultController();
+	$controller = new pagesController();
 	$controller->redirectAction(ERROR_DISPATCH,null,null,404);
 }
 #- action call
