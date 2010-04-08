@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+*            - 2010-04-08 - change validable callbacks for confirmations to conform tk-validable plugin
 *            - 2010-02-12 - change validable callbacks for confirmations
 *            - 2009-10-22 - add support for validable options
 *            - 2009-09-04 - add support for selecbuttonset
@@ -115,10 +116,7 @@ class formInput_viewHelper extends abstractViewHelper{
 					",'formInputCheckConfirm');
 					$this->js("
 						$('input#$options[id]').bind('change keyup',function(){
-							var oValidable = $('input#$confirmOpts[id]').data('validable');
-							if( $(this).val())
-								oValidable.required= $(this).val()!==''?true:false;
-							oValidable.check();
+							$('input#$confirmOpts[id]').validable('set_required',$(this).val()!==''?true:false).validable('getState');
 						})
 					");
 				}
