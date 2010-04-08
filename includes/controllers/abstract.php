@@ -516,8 +516,11 @@ abstract class abstractController{
 
 	function msgRedirect($msg,$state='error',$dispatchString=null,$params=null){
 		self::appendAppMsg($msg,$state);
-		if( $dispatchString===null && $state==='error')
-			$dispatchString = isset($_SERVER['HTTP_REFERER'])?$_SERVER['HTTP_REFERER']:$this->url(ERROR_DISPATCH);
+		if( $dispatchString===null && $state==='error'){
+			if( isset($_SERVER['HTTP_REFERER']) )
+				return  $this->redirect($_SERVER['HTTP_REFERER'],$params);
+			$dispatchString = ERROR_DISPATCH;
+		}
 		return $this->redirectAction($dispatchString,$params);
 	}
 
