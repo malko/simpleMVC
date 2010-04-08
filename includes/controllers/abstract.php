@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-04-08 - msgRedirect() try redirection to HTTP_REFERER before DEFAULT_DISPATCH on error msg with null dispatchString
 *            - 2010-03-29 - cacheManager integration
 *            - 2010-02-22 - add msgRedirect() method
 *            - 2010-02-08 - now redirectAction and forward only use the dispatch string as first parameter and so drop support for second controller parmeter (this will break backward compatibility so carrefull on updating older version)
@@ -516,7 +517,7 @@ abstract class abstractController{
 	function msgRedirect($msg,$state='error',$dispatchString=null,$params=null){
 		self::appendAppMsg($msg,$state);
 		if( $dispatchString===null && $state==='error')
-			$dispatchString = ERROR_DISPATCH;
+			$dispatchString = isset($_SERVER['HTTP_REFERER'])?$_SERVER['HTTP_REFERER']:$this->url(ERROR_DISPATCH);
 		return $this->redirectAction($dispatchString,$params);
 	}
 
