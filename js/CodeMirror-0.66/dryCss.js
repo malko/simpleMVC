@@ -1,8 +1,12 @@
 /**
 DryCss parser
 * @changelog
+*            - 2010-04-07 - add simple maths expression [ (int|float|#RGB|#RRGGBB) +-/* (int|float|#RGB|#RRGGBB) ]
+*                         - add simple ternary conditional expression [ a ? b : c ] where b may be omitted to signifie a and c may stay blank
+*                         - make mixins able to receive empty parameters with ''
 *            - 2010-03-31 - make deep rule import work from includes
 *            - 2010-03-30 - add getDefined method.
+* @todo manage options passing for imports
 */
 dryCss = function(str,options){
 	var self = this,
@@ -97,12 +101,13 @@ dryCss.prototype = {
 					for(var i=0,l=self.funcs[func].params.length; i<l; i++){
 						if( typeof params[i] === 'undefined' || params[i].match(/^\s*$/) ){
 							params[i] = self.funcs[func].params[i][1];
+						}else if( params[i] === "''"){
+							params[i] = '';
 						}
 					}
 					for( i=0; i<l;i++){
 						str=str.replace(new RegExp('@'+self.funcs[func].params[i][0]+'(?=[^a-zA-Z0-9_])','g'),params[i]);
 					}
-
 					return applyCallbacks(str);
 				}
 			],
@@ -117,6 +122,34 @@ dryCss.prototype = {
 					return m;
 				}
 			],
+			//-- replace [] evaluations
+			'eval':[
+				/\[([^\]]+?)]/g,
+				function(m,script){
+					//math operations
+					script = script.replace(/\s*(\.?\d+|\d+\.\d+|#[a-f0-9]{6}|#[a-f0-9]{3})\s*([+*\/-])\s*(\.?\d+|\d+\.\d+|#[a-f0-9]{6}|#[a-f0-9]{3})\s*/i,function(m,a,operator,b){
+						var aIsHex = a.substr(0,1)==='#'?true:false,
+							bIsHex = b.substr(0,1)==='#'?true:false;
+						a = aIsHex?color2rgb(a):parseFloat(a);
+						b = bIsHex?color2rgb(b):parseFloat(b);
+						dbg('isHex',aIsHex,bIsHex,typeof a,typeof b)
+						if( aIsHex || bIsHex){
+							return rgbMath(a,b,operator);
+						}
+						switch(operator){
+							case '*': return Math.round(a*b*100)/100;
+							case '-': return a-b;
+							case '+': return a+b;
+							case '/': return Math.round(a/b*100)/100;
+						}
+					});
+					// ternary conditional operator replacements
+					script = script.replace(/^\s*([^?]*?)\s*\?\s*([^:]*?)\s*:\s*(.*?)\s*$/,function(m,a,b,c){
+						return a?(b?b:a):c;
+					});
+					return script;
+				}
+			],
 			//-- make correct indentation
 			'clean':[
 				/([{;])\s*/g,
@@ -126,6 +159,36 @@ dryCss.prototype = {
 		delayed={},
 		cb,r,i,
 		fullRulesOrder=self._getFullRulesOrder(),
+		color2rgb=function(c){
+			if(c.substr(0,1))
+				c = c.substr(1);
+			if( c.length===3 ){
+				c = c.substr(0,1)+c.substr(0,1)+c.substr(1,1)+c.substr(1,1)+c.substr(2,1)+c.substr(2,1);
+			}
+			return [parseInt(c.substr(0,2),16),parseInt(c.substr(2,2),16),parseInt(c.substr(4,2),16)];
+		},
+		rgb2color=function(rgb){
+			for(var i=0;i<3;i++){
+				rgb[i] = (rgb[i]<16?'0':'')+Math.round(Math.max(0,Math.min(255,rgb[i]))).toString(16);
+			}
+			return '#'+rgb.join('');
+		},
+		rgbMath=function(a,b,operator){
+			var i,res=[0,0,0];
+			if( ! (a instanceof Array) ){
+				a = [a,a,a];
+			}
+			if( ! (b instanceof Array)){
+				b = [b,b,b];
+			}
+			switch(operator){
+				case '*': for(i=0;i<3;i++){res[i] = a[i]*b[i];} break;
+				case '-': for(i=0;i<3;i++){res[i] = a[i]-b[i];} break;
+				case '+': for(i=0;i<3;i++){res[i] = a[i]+b[i];} break;
+				case '/': for(i=0;i<3;i++){res[i] = a[i]/b[i];} break;
+			}
+			return rgb2color(res);
+		},
 		applyCallbacks = function(str){
 			if( str.indexOf('@')<0)
 				return str.replace(replaceCbs.clean[0],replaceCbs.clean[1]);
@@ -280,7 +343,7 @@ dryCss.prototype = {
 			str = str.replace(/@(!?)import\s+(.*?)\s*(;|$)/mg,function(m,realImport,uri){
 				importUrl = uri.match(/^http:\/\//)?uri:self.options.baseImportUrl+uri;
 				importContent = self.options.syncXHR(importUrl);
-				importContentDry = new dryCss(importContent);
+				importContentDry = new dryCss(importContent);//,self.options);
 				self.imported.push(importContentDry);
 				//-- import the str and make it a new
 				if(realImport ==="!" || uri.match(/\.dcss$/i)){

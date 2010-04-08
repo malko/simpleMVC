@@ -26,7 +26,7 @@ when nested:
 
 	//-- saving rawContent
 	if( !empty($_POST['rawContent']) ){
-		echo file_put_contents($_POST['path'].$_POST['id'].'.rawCss',$_POST['rawContent'])?'rawContent saved':'failed';
+		echo file_put_contents($_POST['path'].$_POST['id'].'.dcss',$_POST['rawContent'])?'rawContent saved':'failed';
 		exit;
 	}
 	//-- saving computedContent
@@ -36,7 +36,7 @@ when nested:
 	}
 	//-- loading saved rawContent
 	if( !empty($_POST['getRawContent']) ){
-		$rawFile = $_POST['path'].$_POST['id'].'.rawCss';
+		$rawFile = $_POST['path'].$_POST['id'].'.dcss';
 		if( !file_exists($rawFile)){
 			echo "/*no saved content found*/";exit;
 		}else{

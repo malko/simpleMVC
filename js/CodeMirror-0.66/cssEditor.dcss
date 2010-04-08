@@ -53,6 +53,14 @@
 	text-shadow: @shadowTop @shadowLeft @shadowFuzz @shadowColor;
 }
 
+/** took from */
+@=bgGradient(start=@shadowColor,stop=@lightShadowColor){
+  background-image: -moz-linear-gradient(top, @start, @stop); /* FF3.6 */
+  background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, @start),color-stop(1, @stop)); /* Saf4+, Chrome */
+            filter:  progid:DXImageTransform.Microsoft.gradient(startColorStr='@start', EndColorStr='@stop'); /* IE6,IE7 */
+        -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='@start', EndColorStr='@stop')"; /* IE8 */
+}
+
 @inlineStack{
   zoom:1;
   display:-moz-inline-stack;
