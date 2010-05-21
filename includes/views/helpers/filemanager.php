@@ -6,7 +6,7 @@
 
 class filemanager_viewHelper extends  jsPlugin_viewHelper{
 	public $requiredFiles = array(
-		'js/jqueryPlugins/jqueryFilemanager/ajaxupload.2.6.js',
+		'js/jqueryPlugins/jqueryFilemanager/ajaxupload.3.9.0.js',
 		'js/jqueryPlugins/jqueryFilemanager/filemanagerLang/fr.js',
 		'js/jqueryPlugins/jqueryFilemanager/jquery.filemanager.js',
 		'js/jqueryPlugins/jqueryFilemanager/jquery.filemanager.css',
