@@ -15,11 +15,9 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 
 
 	function adminSortableList(array $datas=null, array $headers = null, $PK = 'id',$editable=true,$deletable=true){
-		$this->view->helperLoad('js');
 		if( empty($datas) ){
 			return '<div style="font-weight:bold;color:silver;">'.langManager::msg('No item in database please, you must create one first.').'</div>';
 		}
-
 		if( is_null($headers) ){
 			$headers = array_keys(current($datas));
 		}
@@ -41,7 +39,7 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		#- $baseUrl = APP_URL.'/'.$controller->getName.'/';
 		$msgEdit = htmlentities(langManager::msg('Edit'),ENT_COMPAT,'utf-8');
 		$msgDel  = htmlentities(langManager::msg('Delete'),ENT_COMPAT,'utf-8');
-		$this->js("
+		$this->view->_js_script("
 			var options = {
 				".(($editable||$deletable)?"
 				rowRendering: function(row,data){

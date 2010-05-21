@@ -16,6 +16,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-04-09 - make wordCleaner a static method
 *            - 2010-02-08 - drop support for second $controllerName parameter now only support dipatchString as first parameter
 *            - 2009-06-23 - wordCleaner() add html_entity_decode charset parameter and remove utf8_decode
 *            - 2009-06-12 - wordCleaner() add utf8_decode after html_entity_decode and now keep traces of already cleaned words (more memory but better performance)
@@ -98,7 +99,7 @@ class url_viewHelper extends abstractViewHelper{
 			if(is_array($params)){
 				$Qstr = array();
 				if( isset($params['']))
-					$params[''] = $this->wordCleaner($params['']);
+					$params[''] = self::wordCleaner($params['']);
 				if(! $alreadyEncoded )
 					$params = array_map('urlencode',$params);
 
@@ -110,7 +111,7 @@ class url_viewHelper extends abstractViewHelper{
 					$Qstr[] = $k.$kv_sep.$v;
 				}
 				if( isset($params['']))
-					$Qstr[] = $this->wordCleaner($params['']);
+					$Qstr[] = self::wordCleaner($params['']);
 
 				$Qstr = implode((self::$useRewriteRules?'/':self::$argSeparator),$Qstr);
 			}
@@ -125,7 +126,7 @@ class url_viewHelper extends abstractViewHelper{
 		}
 		return $url;
 	}
-	function wordCleaner($word){
+	static function wordCleaner($word){
 		static $words=array(),$charset;
 		if( isset($words[$word]))
 			return $words[$word];
