@@ -88,7 +88,7 @@ class mpTreeTraversalModelAddon extends modelAddon{
 		if(isset(self::$treesCollections[$modelName]) )
 			return;
 		#- check model support this addon
-		$addons = abstractModel::_getModelStaticProp($modelName,'modelAddons');
+		$addons = abstractModel::_modelGetSupportedAddons($modelName);
 		if(! in_array('mpTreeTraversal',$addons) )
 			throw new Exception(__class__.'::'.__function__."() $modelName doesn't seems to support mpTreeTraversalModelAddon");
 		$internals = array(

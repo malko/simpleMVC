@@ -70,8 +70,7 @@ class activableModelAddon extends modelAddon{
 				case 'get':
 					return $this->modelInstance->datas[$field]?1:0;
 				case 'toggle':
-					$this->{"set$field"}($this->modelInstance->datas[$field]?0:1);
-					return $this->modelInstance;
+					return $this->{"set$field"}($this->modelInstance->datas[$field]?0:1);
 			}
 		}
 	}
