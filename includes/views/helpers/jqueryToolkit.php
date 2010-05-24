@@ -64,7 +64,7 @@ class jqueryToolkit_viewHelper extends jsPlugin_viewHelper{
 
 	function notify($msg,$state=null,array $options=null){
 		$this->loadPlugin('notify');
-		$this->_js_script("$('<div ".($state?'class="tk-state-'.$state:'').'">'.$msg.'</div>'."').notify(".self::_optionString($options).");");
+		$this->_js_script("$('<div ".($state?'class="tk-state-'.$state.'"':'').'>'.str_replace("'","\'",$msg).'</div>'."').notify(".self::_optionString($options).");");
 	}
 
 	function tabbed($tabSelector='.tk-tabbed',array $options=null){

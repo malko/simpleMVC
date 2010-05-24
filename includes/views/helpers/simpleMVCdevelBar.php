@@ -19,12 +19,12 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 	public $requiredPlugins = array(
 		'jquery'
 	);
-	function simpleMVCdevelBar(){
+	function simpleMVCdevelBar($editorName=FRONT_NAME){
 		return '<style type="text/css">#sMVCpannels .sMVCpannel,#sMVCmodelsList {display:none}</style><div id="sMVCtoolBar" class="ui-buttonset ui-buttonset-small"><button id="sMVCtoolBarToggle" class="ui-button ui-button-circle-triangle-w"></button>'
 		.'<button id="sMVCmodels" class="ui-button ui-button-gear">Models</button><button id="sMVCshow" class="ui-button ui-button-info">Show </button>'
-		.'<button id="sMVCphperr" class="ui-button ui-button-alert tk-state-error">PHP Errors </button><button id="sMVCdb" class="ui-button ui-button-clock">Db::profiler</button>'
+		.'<button id="sMVCphperr" class="ui-button ui-button-alert tk-state-error ui-state-error">PHP Errors </button><button id="sMVCdb" class="ui-button ui-button-clock">Db::profiler</button>'
 		#- .'<button id="sMVCcssEditor" class="ui-button ui-button-tag" onclick="window.open(\''.ROOT_URL.'/js/BespinEmbedded-0.5.2/cssEditor.php\',\'cssEditor\',\'menubar=no,toolbar=no,width=800,height=600\')" >cssEditor</button>'
-		.'<button id="sMVCcssEditor" rel="'.ROOT_URL.'/js/CodeMirror-0.66/cssEditor.php?editorId='.FRONT_NAME.'" class="ui-button ui-button-tag" >cssEditor</button>'
+		.'<button id="sMVCcssEditor" rel="'.ROOT_URL.'/js/dryCss/cssEditor.php?editorId='.$editorName.'" class="ui-button ui-button-tag" >cssEditor</button>'
 		.((defined('CACHE_MANAGER_ENABLE') && CACHE_MANAGER_ENABLE)?'<button onclick="window.location=\''.$this->url('default:clearCache').'\';" id="sMVCclearcache" class="ui-button ui-button-trash">Clear Cache</button>':'')
 		.'</div>
 			<div id="sMVCpannels"><div id="sMVCshow_div" class="sMVCpannel">

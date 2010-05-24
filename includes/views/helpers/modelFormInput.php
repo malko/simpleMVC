@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2010-05-17 - add forceEmptyChoice options for enum/sets
 *            - 2010-02-xx - related model field  supporting orderableModelAddon will be sort by orderableField if no sort options is given
 *            - 2010-02-09 - add sort options for hasOne relations too
 *            - 2009-10-12 - add support for controller define input types
@@ -34,7 +35,6 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 	*
 	*/
 	function modelFormInput($modelName, $keyName, array $options=array()){
-
 		$relsDefs =  abstractModel::modelHasRelDefs($modelName,null,true);
 		$datasDefs = abstractModel::_getModelStaticProp($modelName,'datasDefs');
 
@@ -50,8 +50,10 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 		if( isset($relsDefs['hasOne'][$keyName]) ){
 			if( $modelName instanceof abstractModel && is_object($modelName->{$keyName}) ){
 				$value = $modelName->{$keyName}->PK;
-			}elseif(isset($relsDefs['hasOne'][$keyName]['localField']) && isset($datasDefs[$relsDefs['hasOne'][$keyName]['localField']]['Default']) ){
+			}elseif(!isset($options['default']) && isset($relsDefs['hasOne'][$keyName]['localField']) && isset($datasDefs[$relsDefs['hasOne'][$keyName]['localField']]['Default']) ){
 				$value = $datasDefs[$relsDefs['hasOne'][$keyName]['localField']]['Default'];
+			}else{
+				$value = null;
 			}
 			if( empty($options['values']) ){
 				$relModelName = $relsDefs['hasOne'][$keyName]['modelName'];
@@ -95,9 +97,9 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 					$this->view->_js_script('
 					$("input[name^=\''.$keyName.'[\']").change(function(){
 						if( $(this).val() !== "0"){
-							$("#'.$keyName.'[value=0]").attr("checked",false);
+							$("#'.$keyName.'-0").attr("checked",false);
 						}else if($(this).is(":checked")){
-							$("#'.$keyName.':checked").not(this).attr("checked",false);
+							$("input:checked[name^=\''.$keyName.'[\']").not(this).attr("checked",false);
 						}
 					})');
 				}
@@ -105,10 +107,9 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 					$options['values'][$ck]=$cv->__toString();
 			}
 			if( ! isset($options['multiple']))
-				$options['multiple'] = true;
+				$options['multiple'] = 'multiple';
 			return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 		}
-
 		if( $keyName === 'PK' || $keyName === abstractModel::_getModelStaticProp($modelName,'primaryKey') ){
 			if( ! $modelName instanceof abstractModel )
 				return '';
@@ -132,6 +133,14 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			#- check for enum types
 			if( preg_match('!^enum!',$datasDefs[$keyName]['Type'])){
 				if(empty($options['values']) &&  method_exists($modelName,'get'.$keyName.'PossibleValues') ){
+					if(!empty($options['forceEmptyChoice'])){
+						'--- '.langManager::msg((empty($options['forceEmptyChoice'])||true===$options['forceEmptyChoice'])?$options['label']:$options['forceEmptyChoice']).' ---';
+						if( in_array($options['forceEmptyChoice'],array(1,true,'1'),true)){
+							$options['values'][''] = '--- '.langManager::msg((empty($options['forceEmptyChoice'])||true===$options['forceEmptyChoice'])?$options['label']:$options['forceEmptyChoice']).' ---';
+						}else{
+							$options['values'][''] = langManager::msg($options['forceEmptyChoice']);
+						}
+					}
 					eval('$values = '.(is_string($modelName)?$modelName:$modelName->modelName).'::get'.$keyName.'PossibleValues();');
 					foreach($values as $v)
 						$options['values'][$v] = $v;

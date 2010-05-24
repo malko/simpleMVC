@@ -68,7 +68,7 @@ class formInput_viewHelper extends abstractViewHelper{
 		$labelStr = (isset($options['label'])?"<label for=\"$options[id]\">$options[label]</label>":'');
 
 		#- check for some validable options.
-		$validableOptsNames = array('required','help','minlength','maxlength','rule','useIcon');
+		$validableOptsNames = array('required','help','minlength','maxlength','rule','useIcon','stateElmt');
 		$supportMaxlength = array('txt','text','pass','password','txtConfirm','passwordConfirm');
 		$validableOpts = array();
 		$validableForm = $this->view->getController() instanceof modelsController?'form.adminForm':'form';
@@ -209,7 +209,11 @@ class formInput_viewHelper extends abstractViewHelper{
 						else
 							$checked = ($ok==$value && ($value!=='' || ''===$ok))?' checked="checked"':'';
 						#- ~ $labelStr = "<label for=\"\">$ov</label>";
-						$opts .= "<label><input type=\"$type\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"$ok\"".$this->getAttrStr($options)."$checked />$ov</label>";
+						$options['id'] = "$idStr-$ok";
+						$opts .= "<label for=\"$options[id]\"><input type=\"$type\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"$ok\"".$this->getAttrStr($options)."$checked />$ov</label>";
+					}
+					if(! empty($validableOpts)){
+						$this->validable($name,array('stateElmt'=>'label[for^=$idStr]','helpTrigger'=>"label[for^=$idStr]",'helpAfter'=>"label[for=$options[id]]"),$validableForm);
 					}
 					return $this->formatInput($labelStr,$opts,$options['formatStr']);
 				}else{
