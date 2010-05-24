@@ -10,11 +10,11 @@
 	code{ white-space:pre; font-size:.8em; display:block;border-width:1px; border-style:dotted; padding:.4em;}
 	.editarea{ width:98%;height:350px;}
 </style>
-<h1><?=$this->modelType?> settings </h1>
+<h1><?php echo $this->modelType?> settings </h1>
 <div id="settings">
 
-<form action="<?= $this->url('setToString',array('modelType'=>$this->modelType)) ?>" method="post" id="string">
-	<h3><a name="string"><?= $this->modelType ?>::$__toString</a></h3>
+<form action="<?php echo $this->url('setToString',array('modelType'=>$this->modelType)) ?>" method="post" id="string">
+	<h3><a name="string"><?php echo $this->modelType ?>::$__toString</a></h3>
 	<div id="string-pannel">
 	<div class="selectors">
 	<?php
@@ -25,15 +25,15 @@
 	?>
 	</div>
 	<label>
-		<?= $this->modelType ?>::$__toString
-		<input type="text" name="_toStr" value="<?=htmlentities($this->_toStr,ENT_COMPAT,'UTF-8')?>" />
+		<?php echo $this->modelType ?>::$__toString
+		<input type="text" name="_toStr" value="<?php echo htmlentities($this->_toStr,ENT_COMPAT,'UTF-8')?>" />
 	</label>
 	<br />
-	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-small-disk"><?php echo langManager::msg('save'); ?></button>
 	</div>
 </form>
 
-<form action="<?= $this->url('setActions',array('modelType'=>$this->modelType)) ?>" method="post" id="actions">
+<form action="<?php echo $this->url('setActions',array('modelType'=>$this->modelType)) ?>" method="post" id="actions">
 	<h3><a name="actions">Allowed Actions</a></h3>
 	<div id="actions-pannel">
 	Choose allowed actions to manage this model
@@ -46,11 +46,11 @@
 		echo $this->formInput('actions[list]',empty($list)?0:1,'selectbuttonset',array('label'=>'Can be listed','values'=>array('no','yes')));
 	?>
 	<br />
-	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-small-disk"><?php echo langManager::msg('save'); ?></button>
 	</div>
 </form>
 
-<form action="<?= $this->url('setList',array('modelType'=>$this->modelType)) ?>" method="post"  id="list">
+<form action="<?php echo $this->url('setList',array('modelType'=>$this->modelType)) ?>" method="post"  id="list">
 	<h3><a name="list">List</a></h3>
 	<div id="list-pannel">
 		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
@@ -72,14 +72,14 @@
 		</ul>
 		<br />
 		<div class="ui-buttonset-small">
-			<button type="button" class="ui-button ui-button-circle-plus" id="listAddField"><?= langManager::msg('add list field')?></button>
-			<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+			<button type="button" class="ui-button ui-button-circle-plus" id="listAddField"><?php echo langManager::msg('add list field')?></button>
+			<button type="submit" class="ui-button ui-button-disk"><?php echo langManager::msg('save'); ?></button>
 		</div>
 	</div>
 </form>
 
 
-<form action="<?= $this->url('setFilters',array('modelType'=>$this->modelType)) ?>" method="post" id="filters">
+<form action="<?php echo $this->url('setFilters',array('modelType'=>$this->modelType)) ?>" method="post" id="filters">
 	<h3><a name="filters">List filters</a></h3>
 	<div id="filters-pannel">
 	<div class="selectors">
@@ -112,12 +112,12 @@
 
 	</label>
 	<br />
-	<button type="submit" class="ui-button ui-button-small-disk"><?= langManager::msg('save'); ?></button>
+	<button type="submit" class="ui-button ui-button-small-disk"><?php echo langManager::msg('save'); ?></button>
 	</div>
 </form>
 
 
-<form action="<?= $this->url('setFormInputs',array('modelType'=>$this->modelType)) ?>" method="post" id="forms">
+<form action="<?php echo $this->url('setFormInputs',array('modelType'=>$this->modelType)) ?>" method="post" id="forms">
 	<h3><a name="forms">Forms</a></h3>
 	<div id="forms-pannel">
 		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
@@ -205,22 +205,22 @@
 				?>
 		</div>
 		<br />
-		<div id="fieldGroupMethod"<?=empty($fieldGroupMethod)?' style="display:none;"':''?> class="ui-widget-content ui-corner-all">Grouping Method:
-			<label><input type="radio" name="fieldGroupMethod" value="fieldset"<?= 'fieldset'===$fieldGroupMethod?' checked="checked"':''?>/> FieldSet</label>
-			<label><input type="radio" name="fieldGroupMethod" value="tabs" <?= 'tabs'===$fieldGroupMethod?' checked="checked"':''?>/> Tabs</label>
-			<label><input type="radio" name="fieldGroupMethod" value="tabbed" <?= 'tabbed'===$fieldGroupMethod?' checked="checked"':''?>/> Tabbed</label>
-			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?= 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
-			<label><input type="radio" name="fieldGroupMethod" value="" <?= empty($fieldGroupMethod)?' checked="checked"':''?>/> none</label>
+		<div id="fieldGroupMethod"<?php echo empty($fieldGroupMethod)?' style="display:none;"':''?> class="ui-widget-content ui-corner-all">Grouping Method:
+			<label><input type="radio" name="fieldGroupMethod" value="fieldset"<?php echo 'fieldset'===$fieldGroupMethod?' checked="checked"':''?>/> FieldSet</label>
+			<label><input type="radio" name="fieldGroupMethod" value="tabs" <?php echo 'tabs'===$fieldGroupMethod?' checked="checked"':''?>/> Tabs</label>
+			<label><input type="radio" name="fieldGroupMethod" value="tabbed" <?php echo 'tabbed'===$fieldGroupMethod?' checked="checked"':''?>/> Tabbed</label>
+			<label><input type="radio" name="fieldGroupMethod" value="accordion" <?php echo 'accordion'===$fieldGroupMethod?' checked="checked"':''?>/> Accordion</label>
+			<label><input type="radio" name="fieldGroupMethod" value="" <?php echo empty($fieldGroupMethod)?' checked="checked"':''?>/> none</label>
 		</div>
 		<div class="ui-buttonset ui-buttonset-small">
 			<button type="button" id="resetFieldsOrder" class="ui-button ui-button-arrowreturnthick-1-w"><?php echo langManager::msg('Reset fields orders settings')?></button>
 			<button type="button" id="addFieldSet" class="ui-button ui-button-circle-plus"><?php echo langManager::msg('Add input group container')?></button>
-			<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+			<button type="submit" class="ui-button ui-button-disk"><?php echo langManager::msg('save'); ?></button>
 		</div>
 	</div>
 </form>
 
-<form action="<?= $this->url('setMessages',array('modelType'=>$this->modelType)) ?>" method="post" id="messages">
+<form action="<?php echo $this->url('setMessages',array('modelType'=>$this->modelType)) ?>" method="post" id="messages">
 	<h3><a name="messages">Field names translations</a></h3>
 	<div id="messages-pannel">
 	<?php
@@ -239,22 +239,22 @@
 	?>
 	<br />
 	<div class="ui-buttonset ui-buttonset-small">
-		<button type="button" class="ui-button ui-button-circle-plus" id="addTranslationField"><?= langManager::msg('add new field name translation'); ?></button>
-		<button type="submit" class="ui-button ui-button-disk"><?= langManager::msg('save'); ?></button>
+		<button type="button" class="ui-button ui-button-circle-plus" id="addTranslationField"><?php echo langManager::msg('add new field name translation'); ?></button>
+		<button type="submit" class="ui-button ui-button-disk"><?php echo langManager::msg('save'); ?></button>
 	</div>
 	</div>
 </form>
 
-<form action="<?= $this->url('saveEditConfig',array('modelType'=>$this->modelType)) ?>" method="post" id="config">
+<form action="<?php echo $this->url('saveEditConfig',array('modelType'=>$this->modelType)) ?>" method="post" id="config">
 	<h3><a name="config">Edit Configuration File</a></h3>
 	<div id="config-pannel">
-		<? /*= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) */?>
-		<?= $this->codemirror('smvcConfig',file_get_contents($this->configFile),array('language'=>'js')) ?>
+		<?php /*= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) */?>
+		<?php echo $this->codemirror('smvcConfig',file_get_contents($this->configFile),array('language'=>'js')) ?>
 		<button type="submit" class="ui-button ui-button-small-disk">save</save>
 	</div>
 </form>
 
-<form action="<?= $this->url('saveEditModel',array('modelType'=>$this->modelType)) ?>" method="post" id="model">
+<form action="<?php echo $this->url('saveEditModel',array('modelType'=>$this->modelType)) ?>" method="post" id="model">
 	<h3><a name="model">Edit Model File</a></h3>
 	<div id="model-pannel">
 		<div class="ui-state-highlight ui-corner-all" style="padding:5px;">
@@ -319,17 +319,23 @@
 				<code>class mymodel extends BASE_mymodel{
 	static protected $modelAddons = array('withCreateDate');
 	public $createDateField = 'createAt';
-	public $createDateStr   = 'Y-m-d- H:i:s';
+	public $createDateStr   = 'Y-m-d H:i:s';
+}</code>
+				</li>
+				<li>withUpdateDate:
+				<code>class mymodel extends BASE_mymodel{
+	static protected $modelAddons = array('withUpdateDate');
+	static public $_updateDateFields = array('dateUpdate'=>'Y-m-d H:i:s');
 }</code>
 				</li>
 			</ul>
 		</div>
-		<? /* = $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) */ ?>
-		<?= $this->codemirror('smvcModel',file_get_contents($this->modelFile),array('language'=>'php')) ?>
+		<?php /* = $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) */ ?>
+		<?php echo $this->codemirror('smvcModel',file_get_contents($this->modelFile),array('language'=>'php')) ?>
 		<button type="submit" class="ui-button ui-button-small-disk">save</save>
 	</div>
 </form>
-<a  href="<?= $this->listUrl ?>" class="ui-button ui-button-arrowreturnthick-1-w" style="float:right;"><?= langManager::msg('back to list'); ?></a>
+<a  href="<?php echo $this->listUrl ?>" class="ui-button ui-button-arrowreturnthick-1-w" style="float:right;"><?php echo langManager::msg('back to list'); ?></a>
 <div class="ui-helper-clearfix"></div>
 </div>
 

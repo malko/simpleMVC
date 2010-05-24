@@ -377,7 +377,7 @@ abstract class abstractController{
 					if( preg_match('!(^|\|)_cached_[^|]*:(controller|action)!',$tpl) ){
 						#- check for cached tpl for this action
 						$scriptFile = substr($this->view->lookUpScriptByAction($method,$this->getName(),$tpl),8);
-						$cacheName = preg_replace('!.tpl.php$!','',basename($scriptFile)).'_'.FRONT_NAME.(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').'_'.md5(serialize(array($_GET,$_POST)));
+						$cacheName = preg_replace('!\.tpl\.php$!','',basename($scriptFile)).'_'.FRONT_NAME.(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').'_'.md5(serialize(array($_GET,$_POST)));
 						if( null === cacheManager::get($cacheName) ){
 							$useCache = 0;
 							break;
@@ -396,8 +396,9 @@ abstract class abstractController{
 			if($tryPostAction && method_exists($this,'postAction'))
 				if( true === $this->postAction($method))
 					$tryPostAction = false;
-			if($tryPostAction && self::$viewAutoRendering)
+			if($tryPostAction && self::$viewAutoRendering){
 				$this->view->render($method);
+			}
 			$this->_currentActionEnd($method);
 			return $result;
 		}elseif($this->view instanceof viewInterface){ #- check for a view corresponding to this controller/action

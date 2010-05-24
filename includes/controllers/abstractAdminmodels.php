@@ -207,7 +207,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 		}
 		$this->view->assign('_smvcAllowedAction',$this->_allowedActions);
 		$this->setDictName();
-		$supportedAddons = abstractModel::_getModelStaticProp($this->modelType,'modelAddons');
+		$supportedAddons = abstractModel::_modelGetSupportedAddons($this->modelType);
 		$orderable = in_array('orderable',$supportedAddons);
 		$activable = in_array('activable',$supportedAddons);
 		$models = (isset($this->_models_) && $this->_models_ instanceof modelCollection )?$this->_models_:abstractModel::getAllModelInstances($this->modelType);
@@ -249,51 +249,40 @@ abstract class abstractAdminmodelsController extends abstractController{
 				}
 			}
 			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
-			if( empty($this->listFields) ){
-				$modelDatasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
-				foreach($models as $m){
-					$row = array();
-					foreach(array_keys($m->datas) as $key){
-						if( $key ===$PKname ){
-							$row['id'] = $m->PK.'/modelType/'.$this->modelType;
-							continue;
-						}
-						$row[$key] = $m->{$key};
-					}
-					$datas[] = $row;
-				}
-				$this->view->listHeaders = array_map(array($this,'langMsg'),array_keys($datas[0]));
-			}else{
-				$nbZeroFill = strlen($models->count());
-				foreach($models as $m){
-					$row = array();
-					$row['id'] = $m->PK.'/modelType/'.$this->modelType;
-					foreach($this->listFields as $k=>$v){
-						if($this->listFormats[$k]){
-							$row[$k] = $m->__toString($this->listFormats[$k]);
-							continue;
-						}
-						switch($k){
-							case $orderableField:
-								$row[$k] = '<span style="display:none;">'.sprintf('%0'.$nbZeroFill.'d',$m->{$k}).'</span><div class="ui-buttonset ui-buttonset-small"><a title="move up" href="'.($m->{$k}>0?$this->url('moveup').'/id/'.$row['id'].$filter.'" class="ui-button ui-button-i-arrow-1-n':'#" class="ui-button ui-button-i-arrow-1-n ui-state-disabled').'">move up</a>'
-									.'<a href="'.(in_array($m->PK,$orderableLastPos)?'#" class="ui-button ui-button-i-arrow-1-s ui-state-disabled':$this->url('movedown').'/id/'.$row['id'].$filter.'" class="ui-button ui-button-i-arrow-1-s').'" title="move down">move down</a></div>';
-								break;
-							default:
-								if(! ($activable && in_array($k,$m->_activableFields,'true')) ){
-									$row[$k] = $m->{$k};
-								}else{
-									$active=$m->{$k}?true:false;
-									$title = ($active?'de-':'').'activate';
-									$row[$k] = '<a href="'.$this->url('setActive').'/state/'.($active?0:1).'/prop/'.$k.'/id/'.$row['id'].$filter
-										.'" title="'.$title.'" class="ui-button ui-button-tiny-i-'.($active?'check':'cancel').'">'.($active?'yes':'no').'</a>';
-								}
-								break;
-						}
-					}
-					$datas[] = $row;
-				}
-				$this->view->listHeaders = array_map(array($this,'langMsg'),array_values($this->listFields));
+
+			if( empty($this->listFields)){
+				$this->listFields = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
+				$this->listFields = array_combine($this->listFields,$this->listFields);
 			}
+			$nbZeroFill = strlen($models->count());
+			foreach($models as $m){
+				$row = array();
+				$row['id'] = $m->PK.'/modelType/'.$this->modelType;
+				foreach($this->listFields as $k=>$v){
+					if(!empty($this->listFormats[$k])){
+						$row[$k] = $m->__toString($this->listFormats[$k]);
+						continue;
+					}
+					switch($k){
+						case $orderableField:
+							$row[$k] = '<span style="display:none;">'.sprintf('%0'.$nbZeroFill.'d',$m->{$k}).'</span><div class="ui-buttonset ui-buttonset-small"><a title="move up" href="'.($m->{$k}>0?$this->url('moveup').'/id/'.$row['id'].$filter.'" class="ui-button ui-button-i-arrow-1-n':'#" class="ui-button ui-button-i-arrow-1-n ui-state-disabled').'">move up</a>'
+								.'<a href="'.(in_array($m->PK,$orderableLastPos)?'#" class="ui-button ui-button-i-arrow-1-s ui-state-disabled':$this->url('movedown').'/id/'.$row['id'].$filter.'" class="ui-button ui-button-i-arrow-1-s').'" title="move down">move down</a></div>';
+							break;
+						default:
+							if(! ($activable && in_array($k,$m->_activableFields,'true')) ){
+								$row[$k] = $m->{$k} instanceof abstractModel?$m->{$k}->_toString():$m->{$k};
+							}else{
+								$active=$m->{$k}?true:false;
+								$title = ($active?'de-':'').'activate';
+								$row[$k] = '<a href="'.$this->url('setActive').'/state/'.($active?0:1).'/prop/'.$k.'/id/'.$row['id'].$filter
+									.'" title="'.$title.'" class="ui-button ui-button-tiny-i-'.($active?'check':'cancel').'">'.($active?'yes':'no').'</a>';
+							}
+							break;
+					}
+				}
+				$datas[] = $row;
+			}
+			$this->view->listHeaders = array_map(array($this,'langMsg'),array_values($this->listFields));
 		}
 		// Add filters to id (for edit&trash buttons)
 		if(!empty($this->fieldFilters)&& $count = count($datas)){
@@ -301,7 +290,6 @@ abstract class abstractAdminmodelsController extends abstractController{
 				$datas[$i]['id'] .= $filter ;
 		}
 		$this->view->listDatas = $datas;
-
 	}
 
 	function addAction(){

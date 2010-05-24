@@ -283,7 +283,7 @@ function match($pattern,$str,$id=1,$all=FALSE){
 ###--- DEBUG HELPER ---###
 function show(){
 	if( ! (defined('DEVEL_MODE') && DEVEL_MODE) )
-		return FALSE;
+		return false;
 	$args  = func_get_args();
 	$argc  = func_num_args();
 	$param = $args[$argc-1];
@@ -366,6 +366,7 @@ function show(){
 	echo "<div class=\"show\" style=\"background:#F0F0F0;text-align:left;font-size:12px;\"><strong $bStyle>Show ( $trace )</strong><br /><pre $preStyle><xmp>$str</xmp></pre></div>";
 	if($halt){
 		echo "<h5 style=color:red;text-align:center;>SCRIPT EXITED BY SHOW</h5>";
+		flush();
 		exit();
 	}
 	return false; # just for convenience
