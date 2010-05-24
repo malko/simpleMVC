@@ -165,11 +165,11 @@
 			$(this.editable).bind('mouseup.rte',{rte:this},function(e){e.data.rte.syncFromEditor();});
 			$(this.editable).bind('keyup.rte',{rte:this},function(e){e.data.rte.syncFromEditor();});
 			this.textarea.bind('keyup.rte',{rte:this},function(e){e.data.rte.syncFromTextarea();});
-			// this one is to ensure to have the correct editable binded when moved around the dom
-			this.container.bind('mouseenter', function(){ self.rebindEditable();});
+			/*/ this one is to ensure to have the correct editable binded when moved around the dom
+			this.container.bind('mouseenter', function(){ self.rebindEditable();});//*/
 			/*/ set to use paragraph on return to behave same on firefox as on ie. (doesn't work)
 			this.formatText("insertbronreturn",false);
-			this.formatText("enableinlinetableediting",false);*/
+			this.formatText("enableinlinetableediting",false);//*/
 		},
 
 		rebindEditable: function(){

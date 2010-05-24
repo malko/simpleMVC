@@ -12,6 +12,7 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT / GPL licenses.
 
 @changelog
+ - 2010-04-04 - add disable jquery method
  - 2010-04-04 - rewrite _trigger
  - 2010-02-24 - add ensureId jquery method and rename uniqueId toolkit method to requestUniqueId as it's more meeningfull
 							- make use of ensureId method at widet construction time.
@@ -31,8 +32,11 @@ was really missing to better stick to my way of doing things so i start this new
 		if(! _dbg_ ){
 			return false;
 		}
-		if( typeof(console)!=='undefined' && console.debug){
-			console.debug(dbg.caller,arguments);
+		if( typeof console !=='undefined' && console.debug){
+			if( typeof chrome !== 'undefined')
+				console.debug.call(console,Array.prototype.shift.call(arguments,0));
+			else
+				console.debug(dbg.caller,arguments);
 		}else if(typeof opera !== 'undefined' && typeof opera.postError !== 'undefined'){
 			var s = [];
 			_dbg=function(a){
@@ -122,6 +126,7 @@ $.toolkit = function(pluginName,prototype){
 	};
 	//-- extends plugin methods
 	$[nameSpace][pluginName].prototype = $.extend(
+		true,
 		{}, //-- create a new class
 		$.toolkit.prototype, //-- extend it with base tk prototype
 		prototype //-- finally add plugin own methods
@@ -400,13 +405,20 @@ $.toolkit.requestUniqueId = function(){
 	window.top.jQuery.toolkit._uniqueId=1;
 	return 'tkUID'+window.top.jQuery.toolkit._uniqueId;
 }
-$.fn.ensureId = function(){
-	return this.each(function(){
-		var e = $(this);
-		if( e.attr('id').length < 1){
-			e.attr('id',$.toolkit.requestUniqueId());
-		}
-	});
-}
-
+$.extend($.fn,{
+	ensureId:function(){
+		return this.each(function(){
+			var e = $(this);
+			if( e.attr('id').length < 1){
+				e.attr('id',$.toolkit.requestUniqueId());
+			}
+		});
+	},
+	disable:function(state){
+		state = state?true:false;
+		this.attr("disabled",state?false:"disabled")
+		.attr("aria-disabled",state?false:"disabled")
+		.toggleClass("tk-state-disabled",state?false:true);
+	}
+});
 })(jQuery);

@@ -248,6 +248,10 @@ $.toolkit('tk.positionRelative',{
 		}else if(this._tk.initialized && vPos===this.options.vPos){
 			return vPos;
 		}
+		if( ! this._related.length ){
+			//- dbg('no related')
+			return vPos;
+		}
 		var offset = this._related.offset(),
 			inner = vPos.toString().match(/^inner/),
 			s = inner?-this.options.vSpace:this.options.vSpace,
@@ -294,6 +298,10 @@ $.toolkit('tk.positionRelative',{
 		if( undefined===hPos ){
 			hPos = this.options.hPos;
 		}else if(this._tk.initialized && hPos===this.options.hPos){
+			return hPos;
+		}
+		if( ! this._related.length ){
+			//- dbg('no related')
 			return hPos;
 		}
 		var inner = hPos.toString().match(/^inner/),
@@ -441,7 +449,7 @@ $.tk.positionRelative.defaults={
 	hSpace:0,                 // spacing to add horizontally
 	related:null,             // object determining our main position
 	vBorderPolicy:'out',      // in or out specify if we work with the in or out side of the vertical border
-	hBorderPolicy:'out',      // in or out specify if we work with the in or out side of the vertical border
+	hBorderPolicy:'out',      // in or out specify if we work with the in or out side of the horizontal border
 	vEdgePolicy:'stick',   // none|opposite|stick
 	hEdgePolicy:'stick',        // none|opposite|stick
 	vPrefixClass:'tk-vpos-',
@@ -488,7 +496,7 @@ $.toolkit.mouseRelative={
 		this._checkBinding();
 	},
 	update:function(e){
-		this.elmt.css({top:1+e.pageY,left:0+e.pageX});
+		this.elmt.css({top:1+e.pageY,left:1+e.pageX});
 		for(var i in this._traking ){
 			this._traking[i].elmt.positionRelative('update');
 		}

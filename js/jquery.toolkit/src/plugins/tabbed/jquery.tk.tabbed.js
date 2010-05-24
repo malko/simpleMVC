@@ -27,14 +27,15 @@ $.toolkit('tk.tabbed',{
 		});
 		self._tabsNavItems = $(self._tabsNavItems);
 		self._tabsNavItems.addClass(self.options.tabsNavItemClass).height(maxTabItemHeight);
+		self._pannelsWrapper = self.elmt.find('.'+self.options.pannelsWrapperMainClass);
+		if(! self._pannelsWrapper.length ){
+			self._pannelsWrapper = $('<div class="'+self.options.pannelsWrapperMainClass+'"></div>')
+				.append(self.elmt.children().not(self._tabsNav))
+				.insertAfter(self._tabsNav);
+		}
+		self._pannelsWrapper.addClass(self.options.pannelsWrapperClass)
+			.children('div').addClass(self.options.pannelsItemClass);
 
-		var pannels = self.elmt.children()
-			.not(self._tabsNav)
-			.addClass(self.options.pannelsItemClass);
-		self._pannelsWrapper = $("<div></div>")
-			.insertAfter(self._tabsNav)
-			.addClass(self.options.pannelsWrapperClass)
-			.append(pannels);
 		self._applyOpts('fixedHeight|selected|selectEvent');
 	},
 
@@ -140,12 +141,13 @@ $.tk.tabbed.defaults = {
 	tabsNavClass: 'tk-tabbed-nav',
 	tabsNavItemClass: 'tk-tabbed-nav-item tk-inlineStack tk-border-top tk-border-left tk-border-right tk-corner-top',
 	tabsNavSelectedItemClass:'tk-tabbed-active',
-	pannelsWrapperClass: 'tk-tabbed-pannels tk-border tk-corner-bottom',
+	pannelsWrapperMainClass:'tk-tabbed-pannels',
+	pannelsWrapperClass: 'tk-border tk-corner-bottom',
 	pannelsItemClass: 'tk-tabbed-pannels-item',
 	wrapperClass:'',
 	selected:null,
 	selectEvent:'click',
-	fixedHeight:false
+	fixedHeight:true
 }
 
 

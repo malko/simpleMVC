@@ -4,6 +4,7 @@
 * @licence Dual licensed under the MIT / LGPL licenses.
 * @require tk.position
 * @changelog
+*            - 2010-05-06 - bug correction regarding tooltips from title attribute
 *            - 2010-03-30 - bug correction on connector display under ie8
 *            - 2010-03-23 - add some aria attrs
 */
@@ -15,7 +16,7 @@ $.toolkit('tk.tooltip',{
 	_pointer:null,
 	_pointerBg:null,
 	_classNameOptions:{
-		stateClass:'|warning|success|error|info',
+		stateClass:'|warning|success|error|info|normal|disabled',
 		position:'|(inner|middle|upper|lower)?([tT]op|[Bb]ottom|[mM]iddle)-(middle|inner|left|right)?([lL]eft|[cC]enter|[rR]ight)?',
 		stickyMouse:'|sticky'
 	},
@@ -33,7 +34,7 @@ $.toolkit('tk.tooltip',{
 			.bind('updatehpos updatevpos',function(){self._setPointerColor(true)});
 
 		// inline options standardisation
-		if( this.options.stateClass.match(/^(error|success|warning|info)$/) ){
+		if( this.options.stateClass.match(/^(error|success|warning|info|normal|disabled)$/) ){
 			this.options.stateClass = 'tk-state-'+this.options.stateClass
 		}
 
@@ -170,7 +171,7 @@ $.toolkit('tk.tooltip',{
 	show:function(){
 		$('.tk-tooltip-wrapper').hide();
 		this._wrapper.stop(true,true);
-		if( ! this.options.msg ){
+		if( this._msg[0].innerHTML.length < 1){
 			return false;
 		}
 		this._wrapper.positionRelative('update');

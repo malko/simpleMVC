@@ -1,6 +1,8 @@
 /**
 simple notification plugin
 @author jonathan gotti <jgotti at jgotti dot net>
+@changelog
+           - 2010-05-18 - correct _updatePos for ie6 when notifibox is bottom aligned
 @licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
 */
 (function($){
@@ -48,7 +50,7 @@ $.toolkit('tk.notifybox',{
 		var vCss={};
 		switch(vPos){
 			case 'top': vCss.top = (0+sY)+'px';break;
-			case 'bottom': vCss.bottom = (0+sY)+'px';break;
+			case 'bottom': vCss.bottom = 0;break;
 			default: vCss.top = parseInt(vPos+sY)+'px';
 		}
 		this.elmt.css({top:null,bottom:null}).css(vCss);

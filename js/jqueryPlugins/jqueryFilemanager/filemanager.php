@@ -1,4 +1,10 @@
 <?php
+/**
+* @class fileManager
+* @changelog
+*            - 2010-05-24 - uploaded files are passed in listfilters.
+*            - 2010-01-12 - set umask to 0 before upload and restore it.
+*/
 /*
 if((! isset($_POST['dir'])) && isset($_GET['dir']))
 	$_POST = $_GET;
@@ -54,7 +60,7 @@ class fileManager{
 	* @return json response code
 	*/
 	function processRequest(array $requestDatas = null){
-		error_reporting(E_ALL^E_NOTICE^E_WARNING);
+		//error_reporting(E_ALL^E_NOTICE^E_WARNING);
 		if( null === $requestDatas)
 			$requestDatas = $_POST;
 		$additionalDatas = array();
@@ -250,10 +256,14 @@ class fileManager{
 		if( ! is_writable($realPath))
 			return $this->response($additionalDatas,array('error'=>"directoryNotWritable",'basepath'=>$path));
 		$destPath = $realPath.$_FILES['newfile']['name'];
+		if(! $this->listApplyFilter($destPath) ){
+			return $this->response($additionalDatas,array('error'=>"badFileType",'basepath'=>$path));
+		}
 		if( file_exists($destPath))
 			return $this->response($additionalDatas,array('error'=>"fileAlreadyExists",'basepath'=>$path));
+		$uMask = umask(0);
 		$res = move_uploaded_file($_FILES['newfile']['tmp_name'],$destPath);
-
+		umask($uMask);
 		return $this->response(
 			$additionalDatas,
 			array('basepath'=>$path),

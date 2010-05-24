@@ -25,6 +25,9 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-05-14 - remove eval on unknown callback rule assignation (replaced by new Function)
+           - 2010-05-10 - add possibility for null/'none' as stateElmt option value
+					              - bug correction checking empty select sets
            - 2010-04-02 - form.validable will force any :input with a tk-validable* class to be promotted to validable widget nevermind the alwaysSetState option
            - 2010-04-01 - add _classNameOptions
 					              - add @title support and make it default value for help option
@@ -42,8 +45,8 @@ $('#myForm').validable(formValidableOptions);
 			required:'|req|opt',
 			useIcon:'|noIcon|withIcon',
 			initCheck:'|noInitCheck',
-			stateElmt:'|self|label',
-			rule:'|[^-\s]+?'
+			stateElmt:'|self|label|none',
+			rule:'|[a-zA-Z0-9_]+?'
 		},
 		_requiredElmt:null,
 		_stateIconElmt:null,
@@ -63,7 +66,7 @@ $('#myForm').validable(formValidableOptions);
 				}
 				self.elmt.find(':input:not(button,[type=submit],[type=reset],[type=hidden])').each(function(){
 					var input=$(this),
-						iname = input.attr('name'),
+						iname = input.attr('name').replace(/\[.*$/,''),
 						inlineOpts = $.extend({},dfltInputOptions,$.toolkit._readClassNameOpts(input,'tk-validable',self._classNameOptions));
 					if( self.options.rules[iname]){
 						input.validable($.extend({},inlineOpts,self.options.rules[iname]));
@@ -85,7 +88,7 @@ $('#myForm').validable(formValidableOptions);
 				self._applyOpts('minlength|maxlength',true);
 				self._applyOpts('labelElmt|rule|required|useIcon|help|helpTrigger|helpAfter');
 				//- check trigger
-				self.elmt.bind('change.validable, keyup.validable, focus.validable',getStateCB);
+				self.elmt.bind('change.validable, keyup.validable, focus.validable, blur.validable',getStateCB);
 			}
 			if( self.options.initCheck ==="noInitCheck"){
 				self.options.initCheck=false;
@@ -117,7 +120,7 @@ $('#myForm').validable(formValidableOptions);
 					rule = $.tk.validable.defaultRules[rule];
 				}else{ //-- consider this as a callback function name
 					try{
-						eval('rule ='+rule+';' );
+						rule = $.isFunction(rule)?rule:new Function('return '+rule+'.apply(this,arguments);');
 					}catch(e){
 						throw(rule+' is not a valid validable rule.')
 					}
@@ -234,14 +237,20 @@ $('#myForm').validable(formValidableOptions);
 			if( this.options.stateElmt==='label' && this._labelElmt ){
 				stateElmt = this._labelElmt;
 			}else if( this.options.stateElmt !== 'self' && this.options.stateElmt!=='label'){
-				stateElmt = $(this.options.stateElmt);
-				if( ! stateElmt.length){
-					stateElmt=this.elmt;
+				if( null === this.options.stateElmt || 'none' === this.options.stateElmt ){
+					stateElmt = null;
+				}else{
+					stateElmt = $(this.options.stateElmt);
+					if( ! stateElmt.length){
+						stateElmt=this.elmt;
+					}
 				}
 			}
 			if(state){
-				stateElmt.removeClass('tk-state-error')
-					.addClass('tk-state-success');
+				if( null !== stateElmt){
+					stateElmt.removeClass('tk-state-error')
+						.addClass('tk-state-success');
+				}
 				if( this._stateIconElmt){
 					this._stateIconElmt.removeClass('tk-state-error ui-state-error').addClass('tk-state-success ui-state-success')
 					.find('.ui-icon').removeClass('ui-icon-cancel').addClass('ui-icon-check');
@@ -250,8 +259,10 @@ $('#myForm').validable(formValidableOptions);
 					this.elmt.tooltip('set_stateClass','tk-state-success');
 				}
 			}else{
-				stateElmt.removeClass('tk-state-success')
-					.addClass('tk-state-error');
+				if( null !== stateElmt){
+					stateElmt.removeClass('tk-state-success')
+						.addClass('tk-state-error');
+				}
 				if( this._stateIconElmt){
 					this._stateIconElmt.removeClass('tk-state-success ui-state-success').addClass('tk-state-error ui-state-error')
 					.find('.ui-icon').removeClass('ui-icon-check').addClass('ui-icon-cancel');
@@ -294,7 +305,7 @@ $('#myForm').validable(formValidableOptions);
 				return self.options.alwaysSetState?self._setState(true):true;
 			}
 			var val   = self.elmt.val(),
-				len= val.length;
+				len= val?val.length:0;
 			if( len < 1 && self.options.required===false){
 				return self._setState(true);
 			}
@@ -326,7 +337,7 @@ $('#myForm').validable(formValidableOptions);
 						return self._setState(false);
 						break;
 					default:
-						return self._setState(val.length > 0?true:false);
+						return self._setState(len > 0?true:false);
 				}
 			}
 			return self._setState(true);
@@ -341,7 +352,7 @@ $('#myForm').validable(formValidableOptions);
 		required:false, // true or false, special value -1 may be applyed to leave the rule do the job even on empty values
 		minlength:0,
 		maxlength:0,
-		stateElmt:'self', //-- may be self, label or any valid selector
+		stateElmt:'self', //-- may be self, label or any valid selector null or 'none' for not set state on any elmt
 		useIcon:'auto',
 		labelElmt:null,
 		requiredTemplate:'<span class="tk-validable-required"> * </span>',

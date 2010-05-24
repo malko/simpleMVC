@@ -135,9 +135,22 @@
 	display:block;
 }
 
+/** took from */
+.tk-bgGradient{
+  background-image: -moz-linear-gradient(top, #aaa, #fff); /* FF3.6 */
+  background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #aaa),color-stop(1, #fff)); /* Saf4+, Chrome */
+            filter:  progid:DXImageTransform.Microsoft.gradient(startColorStr='#aaa', EndColorStr='#fff'); /* IE6,IE7 */
+        -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='#aaa', EndColorStr='#fff')"; /* IE8 */
+}
+
 /** some status classes */
 .tk-state-warning, .tk-state-error, .tk-state-success, .tk-state-info{
 	font-weight:bold;
+}
+.tk-state-normal{
+  background:#eee;
+  border-color:#333 !important;
+  color:#555;
 }
 .tk-state-warning {
   background:#ffb;
