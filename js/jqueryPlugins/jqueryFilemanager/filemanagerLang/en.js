@@ -39,6 +39,7 @@ jQuery(function($){
 		confirmDirDelete: "Are you sure you want to delete directory:<br />$path ?",
 		dirAlreadyExists: "Directory already exists.",
 		fileAlreadyExists: "File already exists.",
+		badFileType: "Unauthorized file type.",
 		directoryNotWritable: "Directory isn't writable",
 		browse:'browse'
 	};

@@ -38,6 +38,7 @@ jQuery(function($){
 		confirmFileDelete: "Etes vous sur de vouloir effacer le fichier :<br />$path ?",
 		confirmDirDelete: "Etes vous sur de vouloir effacer le répertoire :<br />$path ?",
 		fileAlreadyExists: "Le fichier existe déja.",
+		badFileType: "Type de fichier non authorisé.",
 		dirAlreadyExists: "Le répertoire existe déja.",
 		directoryNotWritable: "Le répertoire n'est pas accessible en écriture.",
 		browse:'parcourir'
