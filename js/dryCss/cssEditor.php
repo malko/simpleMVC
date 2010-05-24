@@ -14,6 +14,7 @@ when nested:
 	!extend parent selector
 */
 
+$codeMirrorPath = '../CodeMirror-0.67';
 
 	#- set editor id (will be also used as part as the storage key)
 	if( ! empty($_GET['editorId']) ){
@@ -53,12 +54,16 @@ when nested:
 	<script src="../jquery.toolkit/src/jquery.toolkit.js" type="text/javascript"></script>
 	<script src="../jquery.toolkit/src/jquery.toolkit.storage.js" type="text/javascript"></script>
 	<script src="../jquery.toolkit/src/plugins/notify/jquery.tk.notify.js" type="text/javascript"></script>
-	<script src="js/codemirror.js" type="text/javascript"></script>
-	<script src="dryCss.js" type="text/javascript"></script>
+	<script src="../jquery.toolkit/src/plugins/position/jquery.tk.position.js" type="text/javascript"></script>
+	<script src="../jquery.toolkit/src/plugins/tooltip/jquery.tk.tooltip.js" type="text/javascript"></script>
+	<script src="<?php echo $codeMirrorPath; ?>/js/codemirror.js" type="text/javascript"></script>
+	<script src="js/dryCss.js" type="text/javascript"></script>
 	<title>cssEditor</title>
+	<link rel="icon" type="image/x-icon" href="favicon.ico" />
 	<link rel="stylesheet" type="text/css" href="../jquery.toolkit/src/jquery.toolkit.css"/>
 	<link rel="stylesheet" type="text/css" href="../jquery.toolkit/src/plugins/notify/jquery.tk.notify.css"/>
-	<link rel="stylesheet" type="text/css" href="css/docs.css"/>
+	<link rel="stylesheet" type="text/css" href="../jquery.toolkit/src/plugins/tooltip/jquery.tk.tooltip.css"/>
+	<link rel="stylesheet" type="text/css" href="<?php echo $codeMirrorPath; ?>/css/docs.css"/>
 	<style>
 		body,div{
 			margin:0;padding:0;
@@ -87,7 +92,7 @@ when nested:
 	</style>
 </head>
 <body>
-<div id="<?=$editorId?>" class="tk-cssEditor"></div>
+<div id="<?php echo $editorId?>" class="tk-cssEditor"></div>
 <script>
 (function($){
 	if(! String.prototype.trim){
@@ -196,6 +201,9 @@ when nested:
 				});
 				self._definedList.show();
 			}
+			if( $.isFunction(self.options.initCallback)){
+				self.options.initCallback.call(self);
+			}
 		},
 
 		_get_content:function(c){
@@ -290,7 +298,7 @@ when nested:
 		},
 		//-- manage some shortcut keys
 		shortCutKey:function(e){
-			//dbg(e.which,e.ctrlKey)
+			//dbg([e.which,e.ctrlKey,e.shiftKey,e])
 			if(! e.ctrlKey)
 				return true;
 			var ed = this.editor,
@@ -299,6 +307,7 @@ when nested:
 			switch(e.which){
 				case 100://ctrl+d  duplicate line or selection
 				case 68:
+				case 4: // <- this is for chrome
 					var s = ed.selection();
 					if( s.length ){
 						ed.replaceSelection(s+''+s);
@@ -311,9 +320,11 @@ when nested:
 					break;
 				case 101: //e
 				case 69:
+				case 5: // <- this is for chrome
 					this.computeStyle('export');
 					letsgo = false;
 					break;
+				case 12: // l+ctrl under chrome
 				case 103: //g
 				case 71:
 					var l = prompt('Go to line:');
@@ -324,6 +335,7 @@ when nested:
 					break;
 				case 115: //s
 				case 83:
+				case 19: // <- this is for chrome if codemirror let it go there
 					if( e.shiftKey){
 						this.saveRawContent();
 						this.saveComputedContent();
@@ -349,7 +361,34 @@ when nested:
 		content:null,
 		compactOutput:false,
 		rawFilePath:'../../',
-		compFilePath:'../../'
+		compFilePath:'../../',
+		initCallback:function(){
+			var cssEditor = this
+				, editor = cssEditor.editor
+				, contentDoc
+				;
+			$(editor.frame).load(function(){
+				/* / get ContentDocument
+				contentDoc = this.contentDocument;
+				if(! contentDoc)
+					contentDoc = this.iframe.contentWindow.document;
+				$('body',contentDoc).append('<div id="colorPreview" class="tk-positionRelative-in-top-right-0 tk-border" style="z-index:10,position:absolute;width:20px;height:20px;display:none;"></div>');
+				$.toolkit.mouseRelative.init();
+				var cPrev = $('#colorPreview',contentDoc).positionRelative({related:$('body',contentDoc)})
+				$('body',contentDoc).click(function(e){
+					var elmt = $(e.target);
+					if( elmt.length && elmt.hasClass('drycss-colorcode')){
+						// $('#colorPreview','body').html('<b style="font-size:25px;">sdfsdfsd</b>').positionable('set',{x:200,y:200});
+						cPrev.css({'background':elmt.text()}).positionRelative('set',{related:elmt}).show();
+					}else{
+						cPrev.hide();
+					}
+				})
+				//$('body',contentDoc).tooltip('set',{msg:'qsdqd'}).positionRelative('set',{related:$('body')});
+				//*/
+			})
+			//dbg(editor,editor.frame,editor.editor);*/
+		}
 	}
 	$.tk.cssEditor.editorApis = {
 		bespin: {
@@ -383,22 +422,22 @@ when nested:
 			init: function(elmt){
 				var tkWidget = this;
 				tkWidget.editor = CodeMirror.fromTextArea(elmt.get(0), {
-						parserfile: "parsedrycss.js",
-						stylesheet: "css/csscolors.css",
-						path: "js/",
-						lineNumbers:true,
-						tabMode:'shift',
-						textWrapping:false,
-						saveFunction:function(){
-							tkWidget.computeStyle('inject');
-							return false;
-						},
-						initCallback:function(){
-							tkWidget._applyOpts('content');
-							$(tkWidget.editor.win.document).keypress(function(e){tkWidget.shortCutKey(e)});
-							tkWidget.editor.focus();
-						}
-					});
+					parserfile: "../../dryCss/js/parsedrycss.js",
+					stylesheet: "css/drycsscolors.css",
+					path: "<?php echo $codeMirrorPath; ?>/js/",
+					lineNumbers:true,
+					tabMode:'shift',
+					textWrapping:false,
+					saveFunction:function(){
+						tkWidget.computeStyle('inject');
+						return false;
+					},
+					initCallback:function(){
+						tkWidget._applyOpts('content');
+						$(tkWidget.editor.win.document).keypress(function(e){tkWidget.shortCutKey(e)});
+						tkWidget.editor.focus();
+					}
+				});
 			},
 			getContent: function(){
 				return this.getCode();
@@ -435,7 +474,7 @@ jQuery(function(){
 		loadingMsg.notify('hide');
 		if( XHR.status != 200 )
 			$(this).notifybox('msg','<div>'+XHR.status+' '+XHR.statusText+'</div>',{ttl:2500,state:XHR.status==200?'success':'error'});
-	})
+	});
 
 });
 </script>

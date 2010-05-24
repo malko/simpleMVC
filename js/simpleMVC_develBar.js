@@ -214,8 +214,12 @@ var cookies={
 		btToggle.click();
 
 	//-- no report to handle so just remove the bar
+	if( $.isFunction($.fn.buttonset) ){
+		$('#sMVCtoolBar').buttonset();
+	}
 	var openedPanel = cookies.get('SMVCDevBarPanel');
-	if( openedPanel )
+	if( openedPanel ){
 		eval('bt'+openedPanel+'.click();');
+	}
 
 });

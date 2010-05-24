@@ -119,6 +119,12 @@ var CodeMirror = (function(){
     div.className = "CodeMirror-wrapping";
     div.style.width = options.width;
     div.style.height = options.height;
+    // This is used by Editor.reroutePasteEvent
+    var teHack = this.textareaHack = document.createElement("TEXTAREA");
+    div.appendChild(teHack);
+    teHack.style.position = "absolute";
+    teHack.style.left = "-10000px";
+    teHack.style.width = "10px";
 
     // Link back to this object, so that the editor can fetch options
     // and add a reference to itself.
@@ -190,6 +196,42 @@ var CodeMirror = (function(){
 
     setParser: function(name) {this.editor.setParser(name);},
     setSpellcheck: function(on) {this.win.document.body.spellcheck = on;},
+    setStylesheet: function(names) {
+      if (typeof names === "string") names = [names];
+      var activeStylesheets = {};
+      var matchedNames = {};
+      var links = this.win.document.getElementsByTagName("link");
+      // Create hashes of active stylesheets and matched names.
+      // This is O(n^2) but n is expected to be very small.
+      for (var x = 0, link; link = links[x]; x++) {
+        if (link.rel.indexOf("stylesheet") !== -1) {
+          for (var y = 0; y < names.length; y++) {
+            var name = names[y];
+            if (link.href.substring(link.href.length - name.length) === name) {
+              activeStylesheets[link.href] = true;
+              matchedNames[name] = true;
+            }
+          }
+        }
+      }
+      // Activate the selected stylesheets and disable the rest.
+      for (var x = 0, link; link = links[x]; x++) {
+        if (link.rel.indexOf("stylesheet") !== -1) {
+          link.disabled = !(link.href in activeStylesheets);
+        }
+      }
+      // Create any new stylesheets.
+      for (var y = 0; y < names.length; y++) {
+        var name = names[y];
+        if (!(name in matchedNames)) {
+          var link = this.win.document.createElement("link");
+          link.rel = "stylesheet";
+          link.type = "text/css";
+          link.href = name;
+          this.win.document.getElementsByTagName('head')[0].appendChild(link);
+        }
+      }
+    },
     setTextWrapping: function(on) {
       if (on == this.options.textWrapping) return;
       this.win.document.body.style.whiteSpace = on ? "" : "nowrap";
@@ -241,14 +283,16 @@ var CodeMirror = (function(){
       }
       return num;
     },
-
-    // Old number-based line interface
-    jumpToLine: function(n) {
-      this.selectLines(this.nthLine(n), 0);
+    jumpToLine: function(line) {
+      if (typeof line == "number") line = this.nthLine(line);
+      this.selectLines(line, 0);
       this.win.focus();
     },
-    currentLine: function() {
-      return this.lineNumber(this.cursorPosition().line);
+    currentLine: function() { // Deprecated, but still there for backward compatibility
+      return this.lineNumber(this.cursorLine());
+    },
+    cursorLine: function() {
+      return this.cursorPosition().line;
     },
 
     activateLineNumbers: function() {

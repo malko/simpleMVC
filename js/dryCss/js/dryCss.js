@@ -1,6 +1,12 @@
 /**
 DryCss parser
 * @changelog
+*            - 2010-05-21 - bug correction regarding chrome support of quoted vars
+*            - 2010-05-05 - empty parameters must be pass as empty double quote like defining empty vars (so make it uniform)
+*            - 2010-04-21 - operation now allow for some units to be passed (em/px/%)
+*                         - add some simple comparisons operator to ternary operator expression
+*            - 2010-04-20 - ternary operator use , instead of : for separating args as : is too common in css and may be usefull in the expression
+*                         - attempt to allow nested expression to get evaled
 *            - 2010-04-07 - add simple maths expression [ (int|float|#RGB|#RRGGBB) +-/* (int|float|#RGB|#RRGGBB) ]
 *                         - add simple ternary conditional expression [ a ? b : c ] where b may be omitted to signifie a and c may stay blank
 *                         - make mixins able to receive empty parameters with ''
@@ -50,7 +56,8 @@ dryCss.prototype = {
 		var replaceCbs = {
 			//-- import @:ruleName top level rules, @!:ruleName recursively and @:ruleName[property] values
 		 'import':[ // rule import @: and @!:
-				/@!?:\s*([^;\n\{\}]+)/g,
+				//- /@!?:\s*([^;\n\{\}]+)/g,
+				/@!?:\s*(([^;\n\{\}\[\]]+|\[[^\[\]]+\])+)/g,
 				function(m,p){
 					var r=false,match;
 					p = self.trim(p);
@@ -73,10 +80,15 @@ dryCss.prototype = {
 						return match[1]?match[1]:m;
 					}
 					if(m.substr(1,1)==='!'){ //- repace @:@mixin
-						var id,_id;
+						var id
+							, _id
+							, pEscaped = p.replace('.','\\.')
+							, pEscapedG=new RegExp(pEscaped,'g')
+							, idExp = new RegExp('^'+pEscaped+'(?![a-zA-Z0-9_])(.+)$')
+							;
 						for( id in fullRulesOrder){
-							if( id.match(new RegExp('^'+p.replace('.','\\.')+'(?![a-zA-Z0-9_])(.+)$'))){
-								_id = id.replace(p,parseKey);
+							if( id.match(idExp)){
+								_id = id.replace(pEscapedG,parseKey);
 								delayed[_id] = (delayed[_id] ?delayed[_id]:'')+applyCallbacks(self.lookupRule(id));
 							}
 						}
@@ -90,7 +102,7 @@ dryCss.prototype = {
 			  }
 			],
 			funcs:[ //function call replacement
-				/@=([a-z0-9_]+)\(([^\)]*)\)/ig,
+				/@=([a-z0-9_]+)\((([^\(\)]*|\([^\)]+\))+)\)/ig,
 				function(m,func,params){
 					if( typeof self.funcs[func] === 'undefined'){
 						self.options.logError('Can\'t resolve call to unknown mixin '+func);
@@ -101,13 +113,14 @@ dryCss.prototype = {
 					for(var i=0,l=self.funcs[func].params.length; i<l; i++){
 						if( typeof params[i] === 'undefined' || params[i].match(/^\s*$/) ){
 							params[i] = self.funcs[func].params[i][1];
-						}else if( params[i] === "''"){
+						}else if( params[i] === '""'){
 							params[i] = '';
 						}
 					}
 					for( i=0; i<l;i++){
 						str=str.replace(new RegExp('@'+self.funcs[func].params[i][0]+'(?=[^a-zA-Z0-9_])','g'),params[i]);
 					}
+					//- str = new dryCss(str,self.options).toString();
 					return applyCallbacks(str);
 				}
 			],
@@ -124,35 +137,69 @@ dryCss.prototype = {
 			],
 			//-- replace [] evaluations
 			'eval':[
-				/\[([^\]]+?)]/g,
+				/\[(([^[\]]+|\[[^[\]]+\])+?)]/g,
 				function(m,script){
+					//- dbg('eval',m);
+					if( script.indexOf('[') >-1 && script.indexOf(']') > -1)
+						script = script.replace(replaceCbs.eval[0],replaceCbs.eval[1]);
+					//- dbg(script);
 					//math operations
-					script = script.replace(/\s*(\.?\d+|\d+\.\d+|#[a-f0-9]{6}|#[a-f0-9]{3})\s*([+*\/-])\s*(\.?\d+|\d+\.\d+|#[a-f0-9]{6}|#[a-f0-9]{3})\s*/i,function(m,a,operator,b){
+					script = script.replace(/\s*(\.?\d+|\d+\.\d+|#[a-f0-9]{6}|#[a-f0-9]{3})\s*(em|px|%)?\s*([+*\/-])\s*(\.?\d+|\d+\.\d+|#[a-f0-9]{6}|#[a-f0-9]{3})\s*(em|px|%)?\s*/i,function(m,a,aUnit,operator,b,bUnit){
 						var aIsHex = a.substr(0,1)==='#'?true:false,
-							bIsHex = b.substr(0,1)==='#'?true:false;
+							bIsHex = b.substr(0,1)==='#'?true:false,
+							unit='',res=0;
 						a = aIsHex?color2rgb(a):parseFloat(a);
 						b = bIsHex?color2rgb(b):parseFloat(b);
-						dbg('isHex',aIsHex,bIsHex,typeof a,typeof b)
+						//- dbg('isHex',a,b,aIsHex,bIsHex,typeof a,typeof b,m)
 						if( aIsHex || bIsHex){
 							return rgbMath(a,b,operator);
 						}
-						switch(operator){
-							case '*': return Math.round(a*b*100)/100;
-							case '-': return a-b;
-							case '+': return a+b;
-							case '/': return Math.round(a/b*100)/100;
+						if(aUnit && bUnit ){
+							aUnit = aUnit.toLowerCase();
+							bUnit = bUnit.toLowerCase();
+							if( aUnit === bUnit){
+								unit = aUnit;
+							}else{
+								if( aUnit === '%'){
+									a = a/100;
+									unit = bUnit;
+								}else if( bUnit === '%'){
+									b = b/100;
+									unit = aUnit;
+								}else{
+									unit=aUnit;
+								}
+								//- if(aUnit==='em' && bUnit==='px'){
+									//- a=16*a;
+								//- }else if(aUnit==='px' && bUnit==='em'){
+									//- b=16*b;
+								//- }
+							}
+						}else if( aUnit || bUnit ){
+							unit = (aUnit?aUnit:bUnit).toLowerCase();
 						}
+						switch(operator){
+							case '*': res = Math.round(a*b*100)/100; break;
+							case '-': res = a-b; break;
+							case '+': res = a+b; break;
+							case '/': res = Math.round(a/b*100)/100; break;
+						}
+						return unit==='px'?Math.round(res)+'px':res+unit;
 					});
 					// ternary conditional operator replacements
-					script = script.replace(/^\s*([^?]*?)\s*\?\s*([^:]*?)\s*:\s*(.*?)\s*$/,function(m,a,b,c){
+					script = script.replace(/^\s*([^?]*?)\s*\?\s*([^,]*?)\s*,\s*(.*?)\s*$/,function(m,a,b,c){
+						if( a.match(/&&|\|\||[><=]{1,3}|!==?/) ){
+							a=new Function('return "'+a.replace(/\s*(&&|\|\||[><=]{1,3}|!==?)\s*/,'"$1"')+'";')();
+						}
+						//- dbg('ternary operator',m,a);
 						return a?(b?b:a):c;
 					});
-					return script;
+					return script;//.replace(replaceCbs.eval[0],replaceCbs.eval[1]);
 				}
 			],
 			//-- make correct indentation
 			'clean':[
-				/([{;])\s*/g,
+				/(^|[{;])\s*/g,
 				self.options.compact?'$1':'$1\n\t'
 			]
 		},
@@ -190,12 +237,17 @@ dryCss.prototype = {
 			return rgb2color(res);
 		},
 		applyCallbacks = function(str){
-			if( str.indexOf('@')<0)
-				return str.replace(replaceCbs.clean[0],replaceCbs.clean[1]);
+			if( str.indexOf('@')<0  ){
+				if( str.indexOf('[')>-1 ){
+					str = str.replace(replaceCbs.eval[0],replaceCbs.eval[1]);
+				}
+				//- return str.replace(replaceCbs.clean[0],replaceCbs.clean[1]);
+				str = str.replace(replaceCbs.clean[0],replaceCbs.clean[1]);
+			}
 			for(cb in replaceCbs ){
 				str = str.replace(replaceCbs[cb][0],replaceCbs[cb][1]);
 			}
-			return str;
+			return str.match(/^\s*;+\s*$/)?'':str;
 		};
 
 
@@ -211,15 +263,19 @@ dryCss.prototype = {
 				continue;
 			}
 			r = applyCallbacks(r);
-			if( r ===''){
+			if( r ==='' || r === undefined){
 				continue;
 			}
-			str += parseKey+(self.options.compact?'{':'{\n\t')+r+(self.options.compact?'}\n':'\n}\n');
+			if( parseKey.length ){
+				str += parseKey+(self.options.compact?'{':'{\n\t')+r+(self.options.compact?'}\n':'\n}\n');
+			}else{
+				str += r+'\n';
+			}
 			for(i in delayed){
-				if( delayed[i] === ''){
+				if( delayed[i] === '' || delayed[i] === undefined){
 					continue;
 				}
-				if(delayed[i].indexOf('@')>-1){dbg('@found',delayed[i])};
+				// if(delayed[i].indexOf('@')>-1){dbg('@found',delayed[i])};
 				str += i+(self.options.compact?'{':'{\n\t')+delayed[i]+(self.options.compact?'}\n':'\n}\n');
 			}
 			delayed = {};
@@ -321,8 +377,10 @@ dryCss.prototype = {
 		//-- create prefix ( recurse the parent key stack)
 		var prefix = stackKey.length? this._fullKey(stackKey[stackKey.length-1],stackKey.slice(0,-1)) : '';
 		//-- check if the key must be glued to it's parent
-		key = key.replace(/^([:!])?([\s\S]+)$/,function(m,v1,v2){ if(v1){ return v1===':'?m:v2; } return ' '+m;})
+		key = key.replace(/^([:!])?([\s\S]+)$/,function(m,v1,v2){ if(v1){ return v1===':'?m:v2; } return (prefix.length?' ':'')+m;})
 			.replace(/\s+/g,' ');
+		if(! prefix.length)
+			return key;
 		if( prefix.indexOf(',')<0){
 			return prefix+key;
 		}
@@ -346,7 +404,7 @@ dryCss.prototype = {
 				importContentDry = new dryCss(importContent);//,self.options);
 				self.imported.push(importContentDry);
 				//-- import the str and make it a new
-				if(realImport ==="!" || uri.match(/\.dcss$/i)){
+				if(realImport ==="!" || uri.match(/\.dc?ss$/i)){
 					return importContentDry.toString();
 				}else{
 					self.imports.push(m);
@@ -370,10 +428,10 @@ dryCss.prototype = {
 			}
 		}
 		// then read doc vars
-		str = str.replace(/\s*(@[a-z_][a-z0-9_]*)\s*:\s*(?:([^;"']*)|("([^"]+|\\")*"|'([^']+|\\')'));/ig,function(m,k,v1,v2){
-			if( v1 !== '' ){
+		str = str.replace(/\s*(@[a-z_][a-z0-9_]*)\s*:\s*(?:([^;"']*)|("([^"]+|\\")*"|'([^']+|\\')'));(\s*;)?/ig,function(m,k,v1,v2){
+		if( v1 !== '' && v1 !== undefined){
 				self.vars[k]=v1;
-			}else if( v2 != '' ){
+			}else if( v2 !== '' && v2 !== undefined){
 				new Function('dry','k','dry.vars[k]='+v2+';')(self,k);
 			}
 			return '';
@@ -392,7 +450,8 @@ dryCss.prototype = {
 			}
 		}
 		// then read doc funcs
-		str = str.replace(/\s*@=([a-z0-9_]+)\s*\(([^\)]*)\)\s*\{([^\}]+|\{[^\}]+\})\}\s*/ig,function(m,f,p,code){
+		str = str.replace(/\s*@=([a-z0-9_]+)\s*\(([^\)]*)\)\s*\{((\{[^\}]+\}|[^\}])+)\}\s*/ig,function(m,f,p,code){
+			//dbg(code);
 			p = p.replace(/^\s+|\s+$/g).split(/\s*,\s*/);
 			var i=0,l=p.length;
 			for( i=0,l=p.length; i<l ; i++){
@@ -426,8 +485,14 @@ dryCss.prototype = {
 			parseStr += lines[i]+'\n';
 			if( parseStr.indexOf('{') > -1){ // look up for an identifier
 				match = parseStr.match(/^(\s*|[\s\S]+?[;\}]\s*)([^;\{\}]+)\s*\{([\s\S]*)$/);
-				parseKey = self.trim(match[2]);
+				try{
+					parseKey = self.trim(match[2]);
+				}catch(e){
+					self.options.logError('syntax error: <code>'+parseStr+'</code>');
+				}
 				parseStr = self.trim(match[3]);
+				if( parseKey==="!")
+					parseKey = "";
 				fullKey = self._fullKey(parseKey,stackKey);
 				self._rulesOrder[fullKey]=true;
 				stackKey.push(parseKey);
