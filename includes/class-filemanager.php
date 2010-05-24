@@ -2,6 +2,7 @@
 /**
 * @class fileManager
 * @changelog
+*            - 2010-05-24 - uploaded files are passed in listfilters.
 *            - 2010-01-12 - set umask to 0 before upload and restore it.
 */
 /*
@@ -256,6 +257,9 @@ class fileManager{
 		if( ! is_writable($realPath))
 			return $this->response($additionalDatas,array('error'=>"directoryNotWritable",'basepath'=>$path));
 		$destPath = $realPath.$_FILES['newfile']['name'];
+		if(! $this->listApplyFilter($destPath) ){
+			return $this->response($additionalDatas,array('error'=>"badFileType",'basepath'=>$path));
+		}
 		if( file_exists($destPath))
 			return $this->response($additionalDatas,array('error'=>"fileAlreadyExists",'basepath'=>$path));
 		$uMask = umask(0);
