@@ -179,8 +179,11 @@ class fileCacheBackend implements cacheBackend{
 	function __construct(){
 		if(! is_dir(self::$cacheRootDir)){
 			$umask = umask(0);
-			mkdir(self::$cacheRootDir,0755,true);
+			$res= mkdir(self::$cacheRootDir,0755,true);
 			umask($umask);
+			if(! $res ){
+				throw new ErrorException("Can't create directory ".self::$cacheRootDir,0,E_USER_WARNING);
+			}
 		}
 	}
 	function getItem($name){
@@ -241,10 +244,10 @@ class fileCacheBackend implements cacheBackend{
 	}
 	function clear($olderThan=null){
 		$files = glob(self::$cacheRootDir.'/*'.(self::$useSubDirs?'/*/*':''));
-		$olderThan=date('Y-m-d H:i:s',time()-$olderThan);
+		$olderThan=date('Y-m-d H:i:s',time()-(int) $olderThan);
 		cacheItem::clearMemory($olderThan);
 		foreach($files as $f){
-			if( null===$olderThan || $this->getFileTime($f) < $olderThan){
+			if( $this->getFileTime($f) < $olderThan){
 				unlink($f);
 			}
 		}
