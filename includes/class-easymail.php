@@ -4,6 +4,8 @@
 * @package MAIL
 * @since 2005-08-29
 * @licence General Public Licence
+* @todo allow extended mail address form (user display name <useradress@domain.com>)
+* @todo make some modification on set_address_header to better handle multiple values
 * @changelog
 *            - 2010-03-25 - add dontSend parameter to mailTpl() method
 *            - 2009-01-28 - better automated html to plain-text conversion
@@ -45,7 +47,7 @@ class easymail{
 	* @param string $charset  the charset encoding used for the header content (default to $dfltHeaderCharset)
 	* @return string
 	*/
-	static public function clean_header($headerval, $charset){
+	static public function clean_header($headerval, $charset=null){
 		if(is_null($charset))
 			$charset = self::$dfltHeaderCharset;
 		$headerval = preg_replace("![\r\n]!",'',$headerval);
@@ -132,6 +134,7 @@ class easymail{
 		if(preg_match('!\s*([^<]+)?<\s*([^@]+@[^>]+)\s*>\s*$!',$FROM,$m)){
 			if(! self::check_address($m[2]) )
 				return FALSE;
+			$FROM = self::clean_header($m[1])."<$m[2]>";
 		}elseif(! self::check_address($FROM)){
 			return FALSE;
 		}
