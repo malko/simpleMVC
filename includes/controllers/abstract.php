@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-05-26 - change treatment of undefined action methods call with existing coresponding views
 *            - 2010-04-08 - msgRedirect() try redirection to HTTP_REFERER before DEFAULT_DISPATCH on error msg with null dispatchString
 *            - 2010-03-29 - cacheManager integration
 *            - 2010-02-22 - add msgRedirect() method
@@ -360,7 +361,8 @@ abstract class abstractController{
 	*/
 	public function __call($method,$args=null){
 		#- show($method,'color:green');
-		if(method_exists($this,$method.'Action')){
+		#- check for action method or a scriptView corresponding to controller:action
+		if(method_exists($this,$method.'Action') || ($this->view instanceof viewInterface && $viewScriptAction = $this->view->lookUpScriptByAction($method)) ){
 			$this->_currentActionStart($method);
 			$tryPreAction = $tryPostAction = true;
 			#- appelle les methodes preAction
@@ -386,7 +388,10 @@ abstract class abstractController{
 					}
 				}
 			}
-			$result = empty($useCache)?call_user_func_array(array($this,$method.'Action'),$args):null;
+			if( isset($viewScriptAction) && $viewScriptAction!== false )
+				$result = null;
+			else
+				$result = empty($useCache)?call_user_func_array(array($this,$method.'Action'),$args):null;
 			if($result === true)
 				$tryPostAction = false;
 			#- appelle les methodes postAction
@@ -401,18 +406,11 @@ abstract class abstractController{
 			}
 			$this->_currentActionEnd($method);
 			return $result;
-		}elseif($this->view instanceof viewInterface){ #- check for a view corresponding to this controller/action
-			if( false===$this->view->lookUpScriptByAction($method,null,':controller_:action.tpl.php') ){
-				try{
-					return call_user_func_array(array($this->view,$method),$args);
-				}catch(viewException $e){
-					throw new BadMethodCallException(get_class($this)."::$method() method doesn't exist");
-				}
-			}else{
-				$this->_currentActionStart($method);
-				$this->view->render($method);
-				$this->_currentActionEnd($method);
-				return;
+		}elseif($this->view instanceof viewInterface){ #- try to delegate to viewInterface (allowing call to helpers methods)
+			try{
+				return call_user_func_array(array($this->view,$method),$args);
+			}catch(viewException $e){
+				throw new BadMethodCallException(get_class($this)."::$method() method doesn't exist");
 			}
 		}else{
 			throw new BadMethodCallException(get_class($this)."::$method() method doesn't exist");
