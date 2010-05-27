@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+*            - 2010-05-27 - forceEmptyChoice passed to false allow to remove the empty %s value for hasMany relations
 *            - 2010-05-17 - add forceEmptyChoice options for enum/sets
 *            - 2010-02-xx - related model field  supporting orderableModelAddon will be sort by orderableField if no sort options is given
 *            - 2010-02-09 - add sort options for hasOne relations too
@@ -92,7 +93,11 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				}elseif( $choices->count() && abstractModel::_modelSupportsAddon($relModelName,'orderable') ){
 					$choices->sort($choices->current()->_orderableField);
 				}
-				$options['values'][0] = langManager::msg('empty %s value',array(langManager::msg($keyName)));
+				if( isset($options['forceEmptyChoice']) && $options['forceEmptyChoice']===false){
+					unset($options['forceEmptyChoice']);
+				}else{
+					$options['values'][0] = langManager::msg('empty %s value',array(langManager::msg($keyName)));
+				}
 				if( isset($options['type']) && strpos($options['type'],'check') === 0){
 					$this->view->_js_script('
 					$("input[name^=\''.$keyName.'[\']").change(function(){
