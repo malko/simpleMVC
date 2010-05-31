@@ -2,6 +2,9 @@
 /**
 * helper to easily incorporate jquery.filemanager
 * @package simpleMVC
+* @subpackage viewHelpers
+* @changelog
+*           - 2010-05-31 - some quick optimisations regarding js default options settings
 */
 
 class filemanager_viewHelper extends  jsPlugin_viewHelper{
@@ -25,6 +28,11 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 	function init(){
 		if(is_null(self::$defaultOptions['connector']))
 			self::$defaultOptions['connector'] = $this->url('filemanager:index');
+		//-- init with default settings
+		$this->_js_script(
+		'$.fn.filemanager.defaults.rootDir = "'.self::$defaultOptions['rootDir']."\";\n"
+		.'$.fn.filemanager.defaults.connector = "'.self::$defaultOptions['connector']."\";\n"
+		.'$.fn.filemanager.defaults.prefixValue = "'.self::$defaultOptions['prefixValue'].'";');
 	}
 	/**
 	* return necessary code to render a filemanager widget
@@ -81,7 +89,7 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 		#- ~ <div id="'+fmb.dialogId+'" title="File selection" style="display:none;">\
 			#- ~ <div id="'+fmb.fmId+'" style="width:250px;overflow:auto;height:300px;"></div></div>
 
-		$options = self::_optionString(array_merge(self::$defaultOptions,(array)$options));
+		$options = self::_optionString($options);
 		$this->_js_script("$('#$id').filemanager($options)");
 		return $divStr;
 	}
@@ -99,7 +107,7 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 	function button($jsCallBack='undefined',$id=null,array $options=null){
 		if( null===$id)
 			$id=self::uniqueId();
-		$options = self::_optionString(array_merge(self::$defaultOptions,(array)$options));
+		$options = self::_optionString($options);
 		$this->_js_script("$('#$id').filemanagerButton($jsCallBack,$options)");
 		return '<button id="'.$id.'" class="ui-state-default ui-corner-all" title="browse"><span class="ui-icon ui-icon-folder-collapsed" title="browse">browse</span></button>';
 	}
@@ -119,9 +127,20 @@ class filemanager_viewHelper extends  jsPlugin_viewHelper{
 			$size = '';
 		else
 			$size = " size=\"$options[size]\"";unset($options['size']);
-		$options = self::_optionString(array_merge(self::$defaultOptions,(array)$options));
+		$options = self::_optionString($options);
 		$this->_js_script("$('#$id').filemanagerEntry($options)");
 		return '<input type="text" name="'.$inputName.'" id="'.$id.'" value="'.$value.'" class="filemanagerEntry"'.$size.'/>';
+	}
+
+	static function _optionString($options,$indentSize=0){
+		$validKeys = array('imgPath','rootDir','connector','fileClicked','folderClicked','folderLoaded','uiInfoIcon','langPath','lang','infosToggleEffect','itemDefaultStyle','prefixValue');
+		foreach($options as $k=>$v){
+			if( ! in_array($k,$validKeys,true))
+				unset($options[$k]);
+		}
+		if( empty($options))
+			return '';
+		return parent::_optionString($options,$indentSize);
 	}
 
 }

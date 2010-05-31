@@ -32,7 +32,7 @@ function show(){
 		imgPath:null,
 		rootDir:'/',
 		connector:'./filemanager.php',
-		ajaxUpload:'ajaxupload.2.6.js',
+		ajaxUpload:'ajaxupload.3.9.0.js',
 		/** callbacks function will receive filemanager instance as this and path as first param */
 		fileClicked:undefined,           // happen when a file node is clicked
 		folderClicked:'fm.folderToggle', // happen when a folder node is clicked by default toggle the the folder

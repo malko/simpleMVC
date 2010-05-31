@@ -7,6 +7,7 @@
 * - eventually define an init() method to take particuliar actions at load time.
 * @class jsPlugin_viewHelper
 * @changelog
+*            - 2010-04-22 - _optionString() handle multi line strings
 *            - 2010-04-22 - _optionString() bug correction better regexp detection (reject expression containing unescaped '/') and add float detection
 *            - 2010-01-18 - _optionString() bug correction
 *            - 2009-10-20 - _optionString() method now preserve regexp object too
@@ -46,7 +47,7 @@ abstract class jsPlugin_viewHelper extends abstractViewHelper{
 				return $opts;
 			//-- keep arrays, objects, quoted strings, regexp, numeric values and boolean untouched
 			if(! preg_match('!^\s*(\[.*\]|\{.*\}|["\'].*["\']|/(?:[^/]+|\\\\/[^/]+)+/[igm]*|\d+(?:\.\d+)?|true|false)\s*$!s',$opts) ){
-				$opts = "'".preg_replace("/(?<!\\\\)'/","\'",$opts)."'";
+				$opts = "'".preg_replace(array("/(?<!\\\\)'/",'!\r?\n!'),array("\'",'\n'),$opts)."'";
 			}
 			return $opts;
 		}

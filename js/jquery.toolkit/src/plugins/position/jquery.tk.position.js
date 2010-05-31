@@ -464,7 +464,7 @@ $.toolkit.mouseRelative={
 	elmt:null,
 	init:function(elmt,options){
 		var self = this;
-		self.elmt = $('<div id="tk-mouse" style="position:absolute;top:0;left:O;width:1px;height:1px;visibility:hidden;"></div>')
+		self.elmt = $('<div id="tk-mouse" style="position:absolute;top:1px;left:O;width:1px;height:1px;visibility:hidden;"></div>')
 			.appendTo('body');
 	},
 	/**
