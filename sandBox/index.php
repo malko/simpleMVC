@@ -30,6 +30,13 @@ if( isset($_SESSION) )
 session_name(FRONT_NAME);
 session_start();
 
+if( DEVEL_MODE ){
+	$_SMVC_BENCH_ = array(
+		'start'=> microtime(true),
+		'initMem' => memory_get_usage(true)
+	);
+}
+
 #- if needed specified your default database connection (uncomment next two lines)
 #- db::setDefaultConnectionStr(DB_CONNECTION);
 #- db::$_default_verbosity = DEVEL_MODE?1:0; #- only report errors
@@ -39,6 +46,7 @@ session_start();
 
 #- Set default views directories lasts will be try first and vice-versa
 abstractController::$defaultViewClass = 'baseView';
+abstractController::$appMsgIgnoreRepeated=2;
 abstractController::$defaultViewDirs  = array(
 	LIB_DIR.'/views',
 	APP_DIR.'/views'
@@ -79,7 +87,7 @@ if( USE_REWRITE_RULES ){
 			unset($_GET[$_SERVER['PATH_INFO']]);
 		}
 	}elseif((!isset($_SERVER['PATH_INFO'])) && PHP_SAPI==='cli' && isset($argv[1]) ){ // read from command line first parameter
-		$_SERVER['PATH_INFO'] = ($argv[1][1]==='/'?'':'/').$argv[1];
+		$_SERVER['PATH_INFO'] = ($argv[1][0]==='/'?'':'/').$argv[1];
 	}
 	if( isset($_SERVER['PATH_INFO']) ){
 		$route = explode('/',substr($_SERVER['PATH_INFO'],1));
