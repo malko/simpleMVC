@@ -1,6 +1,7 @@
 /**
 DryCss parser
 * @changelog
+*            - 2010-06-03 - real/deep file imports are not parsed anymore before inclusion
 *            - 2010-05-21 - bug correction regarding chrome support of quoted vars
 *            - 2010-05-05 - empty parameters must be pass as empty double quote like defining empty vars (so make it uniform)
 *            - 2010-04-21 - operation now allow for some units to be passed (em/px/%)
@@ -401,6 +402,13 @@ dryCss.prototype = {
 			str = str.replace(/@(!?)import\s+(.*?)\s*(;|$)/mg,function(m,realImport,uri){
 				importUrl = uri.match(/^http:\/\//)?uri:self.options.baseImportUrl+uri;
 				importContent = self.options.syncXHR(importUrl);
+				if(realImport ==="!" ){
+					return self._cleanStr(importContent);
+				}else{
+					self.imported.push(new dryCss(importContent));//,self.options);
+					self.imports.push(m);
+					return '';
+				}/*
 				importContentDry = new dryCss(importContent);//,self.options);
 				self.imported.push(importContentDry);
 				//-- import the str and make it a new
@@ -409,7 +417,7 @@ dryCss.prototype = {
 				}else{
 					self.imports.push(m);
 					return '';
-				}
+				}*/
 			});
 		}
 		self.imported.reverse();
