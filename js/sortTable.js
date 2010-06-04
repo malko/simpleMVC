@@ -10,6 +10,7 @@
 *
 * @since 2006-08-24
 * @changelog
+*            - 2010-06-03 - add className options for headers as objects
 *            - 2009-09-01 - add arrowBefore and noArrow options
 *            - 2009-06-24 - add bodyRendering callback option
 *            - 2009-04-01 - add saveUserPrefs options to save user preferences by cookies
@@ -29,7 +30,7 @@ myTableId = [
 	['eddy','1978-05','M',84670]
 ];
 window.onload = function(){
-	var mytableheaders = [{label:'name',width:'150px'}, {label:'birthday',width:'100px',sortmethod:myDateComparisonFunction}, {label:'gender',width:'20px',unsortable:true}, 'town zip'];
+	var mytableheaders = [{label:'name',width:'150px',className:'myclass'}, {label:'birthday',width:'100px',sortmethod:myDateComparisonFunction}, {label:'gender',width:'20px',unsortable:true}, 'town zip'];
 	// myTableId MUST BE the same as the dataset variable name
 	sortTable.init('myTableId', mytableheaders);
 }
@@ -317,8 +318,11 @@ sortTable = {
 		for(var i = 0; i < this.headers[tid].length; i++){
 			var cell = this._renderTh(tid,i);
 			head.appendChild(cell);
-			if((typeof headers[i] == 'object') && headers[i].width){
-				cell.width = headers[i].width;
+			if(typeof headers[i] == 'object'){
+				if( headers[i].width)
+					cell.width = headers[i].width;
+				if( headers[i].className)
+					cell.className = headers[i].className;
 			}
 		}
 	},
