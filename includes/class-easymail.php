@@ -386,7 +386,7 @@ class easymail{
 
 	/**
 	* send the mail accordingly to previously defined recipient(s) or/and the optionnaly given one
-	* @param string $subject  optionnal subject
+	* @param string $SUBJECT  optionnal subject
 	* @param string $TO       optionnal email adress to send the mail to (must be passed if you haven't use easymail::to() before)
 	* @param bool   $cleanTO  if set to true then empty the $_to array before adding new recipients.
 	* @return bool

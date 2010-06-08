@@ -9,6 +9,7 @@
 	div.fieldSet .ui-widget-header .ui-icon{ float:right;}
 	code{ white-space:pre; font-size:.8em; display:block;border-width:1px; border-style:dotted; padding:.4em;}
 	.editarea{ width:98%;height:350px;}
+	.sMVC_dataField{ vertical-align:middle !important; }
 </style>
 <h1><?php echo $this->modelType?> settings </h1>
 <div id="settings">
@@ -18,10 +19,12 @@
 	<div id="string-pannel">
 	<div class="selectors">
 	<?php
-		if( $this->datasFields )
+		if( $this->datasFields ){
 			echo "List of datas Fields: $this->datasFields<br />";
-		if( $this->hasOnes )
+		}
+		if( $this->hasOnes ){
 			echo "List of hasOne relations : $this->hasOnes<br />";
+		}
 	?>
 	</div>
 	<label>
@@ -204,6 +207,23 @@
 					}
 				?>
 		</div>
+		<div class="ui-widget-content ui-corner-all" id="formAddFieldList" style="padding:.4em;">
+			add relation fields :
+			<?php
+
+				if( $hasOnes = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne')) ){
+					echo '<span class="tk-border tk-corner tk-inlineStack tk-content">'
+						.implode('</span><span class="tk-border tk-corner tk-inlineStack tk-content">',$hasOnes)
+						.'</span>';
+				}
+				if( $hasManys = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasMany')) ){
+					echo '<span class="tk-border tk-corner tk-inlineStack tk-content">'
+						.implode('</span><span class="tk-border tk-corner tk-inlineStack tk-content">',$hasManys)
+						.'</span>';
+				}
+
+			?>
+		</div>
 		<br />
 		<div id="fieldGroupMethod"<?php echo empty($fieldGroupMethod)?' style="display:none;"':''?> class="ui-widget-content ui-corner-all">Grouping Method:
 			<label><input type="radio" name="fieldGroupMethod" value="fieldset"<?php echo 'fieldset'===$fieldGroupMethod?' checked="checked"':''?>/> FieldSet</label>
@@ -250,7 +270,7 @@
 	<div id="config-pannel">
 		<?php /*= $this->editarea('smvcConfig',file_get_contents($this->configFile),array('syntax'=>'js','min_width'=>'700',"min_height"=>'350','display'=>'later')) */?>
 		<?php echo $this->codemirror('smvcConfig',file_get_contents($this->configFile),array('language'=>'js')) ?>
-		<button type="submit" class="ui-button ui-button-small-disk">save</save>
+		<button type="submit" class="ui-button ui-button-small-disk">save</button>
 	</div>
 </form>
 
@@ -332,7 +352,7 @@
 		</div>
 		<?php /* = $this->editarea('smvcModel',file_get_contents($this->modelFile),array('syntax'=>'php','min_width'=>'700',"min_height"=>'350','display'=>'later')) */ ?>
 		<?php echo $this->codemirror('smvcModel',file_get_contents($this->modelFile),array('language'=>'php')) ?>
-		<button type="submit" class="ui-button ui-button-small-disk">save</save>
+		<button type="submit" class="ui-button ui-button-small-disk">save</button>
 	</div>
 </form>
 <a  href="<?php echo $this->listUrl ?>" class="ui-button ui-button-arrowreturnthick-1-w" style="float:right;"><?php echo langManager::msg('back to list'); ?></a>

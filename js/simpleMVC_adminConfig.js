@@ -76,6 +76,23 @@ $("#addFieldSet").click(function(){
 	$("#forms #fieldGroupMethod").show();
 });
 updateFieldSets();
+
+$('#formAddFieldList span').click(function(){
+	//recuperation de la derniere liste
+	var fName = $(this).text()
+		, fldSet= $('#fieldList .fieldSet:last')
+		, clone = fldSet.find('.formInput:last').clone(true)
+		, order = fldSet.find('input[type=hidden][name^=fieldsOrder]')
+		;
+	clone.find('select').attr('id','inputTypes['+fName+']').attr('name','inputTypes['+fName+']');
+	clone.find('label:first').attr("for",'inputTypes['+fName+']').text(fName);
+	clone.find('input[type=text]').attr('id','inputOptions['+fName+']').attr('name','inputOptions['+fName+']');
+	clone.find('label:last').attr("for",'inputOptions['+fName+']');
+	order.val(order.val()+','+fName);
+	fldSet.append(clone);
+	//dbg($('#fieldList .fieldSet:last .formInput:last'));
+});
+
 //- manage fields order reset button
 $("#resetFieldsOrder").click(function(){
 	if( confirm("Are You sure you want to reset form fields order?") ){
