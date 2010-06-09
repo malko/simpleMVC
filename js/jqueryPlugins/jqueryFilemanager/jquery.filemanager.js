@@ -2,6 +2,7 @@
 * define filemanager, filemanagerButton, filemanagerEntry plugins
 * @require jquery.ui >= 1.7
 * @changelog
+*           - 2010-06-09 - better management of filemanager button dialog size
 *           - 2009-10-22 - now filemanagerEntry() trigger a change event when a file is selected
 *           - 2009-04-02 - resize rootList when container is scrolled to keep a info buttons clickable
 *           - 2009-03-24 - add filemanagerButton extension
@@ -99,7 +100,14 @@ function show(){
 			opts.fileClicked = fmb.fileClicked;
 			fmb.dialog.find('#'+fmb.fmId).filemanager(opts);
 			fmb.fm = $('#'+fmb.fmId).data('filemanager');
-			fmb.dialog.dialog({autoOpen:false,resizable:true,width:'278px',close:function(){fm.infos.hide()}});
+			fmb.dialog.dialog({
+				autoOpen:false
+				, resizable:true
+				, width:'350px'
+				, close:function(){fm.infos.hide()}
+				, resizeStart: function(e,ui){ ui.element.find('.fmanagerButtonDialogContent').height('99%') }
+				, resizeStop: function(e,ui){ var c = ui.element.find('.fmanagerButtonDialogContent'); c.height(c.height()) }
+			});
 			fmb.elmt.click(function(){
 				fm.infos.hide(); //hide any infoBox on opening
 				fmb.dialog.dialog('moveToTop').dialog('open');
