@@ -33,10 +33,13 @@ was really missing to better stick to my way of doing things so i start this new
 			return false;
 		}
 		if( typeof console !=='undefined' && console.debug){
-			if( typeof chrome !== 'undefined')
-				console.debug.call(console,Array.prototype.shift.call(arguments,0));
-			else
+			if( typeof chrome !== 'undefined'){
+				for( var i=0,l=arguments.length,args=[];i<l;i++)
+					args[i]=arguments[i];
+				console.debug(args);
+			}else{
 				console.debug(dbg.caller,arguments);
+			}
 		}else if(typeof opera !== 'undefined' && typeof opera.postError !== 'undefined'){
 			var s = [];
 			_dbg=function(a){

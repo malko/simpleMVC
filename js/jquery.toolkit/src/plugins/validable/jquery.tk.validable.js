@@ -25,6 +25,7 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-06-09 - add confirm method as predefined defaultRules
            - 2010-05-14 - remove eval on unknown callback rule assignation (replaced by new Function)
            - 2010-05-10 - add possibility for null/'none' as stateElmt option value
 					              - bug correction checking empty select sets
@@ -394,20 +395,21 @@ $('#myForm').validable(formValidableOptions);
 	}
 
 	$.tk.validable.defaultRules={
-		email:/^[^@\s]+@[^@\s]+\.[a-z]{2,5}$/i,
-		'int':/^\d+$/,
-		'float':/^\d+((\.|,)\d+)?$/,
-		zipcode:/^\d{2,5}$/,
-		phone:/^\d{10}$/,
-		alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-']+$/)?true:false },
-		Alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-']+$/i)?true:false },
-		ALPHA:function(str){ return removeAccents(str).match(/^[A-Z_\s-']+$/)?true:false },
-		alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/)?true:false },
-		Alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/i)?true:false },
-		ALPHANUM:function(str){ return removeAccents(str).match(/^[0-9A-Z_\s-']+$/)?true:false },
-		img:/\.(jpe?g|gif|png)$/i,
-		video:/\.(mpe?g|avi|flv|mov)$/i,
-		flashEmbeddable:/\.(jpe?g|flv|gif|png|swf|mp3)$/i
+		email:/^[^@\s]+@[^@\s]+\.[a-z]{2,5}$/i
+		, 'int':/^\d+$/
+		, 'float':/^\d+((\.|,)\d+)?$/
+		, zipcode:/^\d{2,5}$/
+		, phone:/^\d{10}$/
+		, alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-']+$/)?true:false }
+		, Alpha:function(str){ return removeAccents(str).match(/^[a-z_\s-']+$/i)?true:false }
+		, ALPHA:function(str){ return removeAccents(str).match(/^[A-Z_\s-']+$/)?true:false }
+		, alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/)?true:false }
+		, Alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/i)?true:false }
+		, ALPHANUM:function(str){ return removeAccents(str).match(/^[0-9A-Z_\s-']+$/)?true:false }
+		, confirm:function(v){ return $($(this).attr('rel')).val()===v?true:false }
+		, img:/\.(jpe?g|gif|png)$/i
+		, video:/\.(mpe?g|avi|flv|mov)$/i
+		, flashEmbeddable:/\.(jpe?g|flv|gif|png|swf|mp3)$/i
 	};
 	//add defaults validable rules to classNameOptions
 	//$.tk.validable.prototype._classNameOptions.rule=(function(){var r,res=[];for(r in $.tk.validable.defaultRules){res.push(r);} return '|'+res.join('|');})()

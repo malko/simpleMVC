@@ -137,7 +137,7 @@ var cookies={
 		dbDiv.hide().remove();
 	}else{
 		report.children('caption').click(); // open profiler table
-		addPanel(btDb,dbDiv,report,(dbMsgs.length ? $('tbody tr',report).length+'/'+dbMsgs.length : $('tbody tr',report).length));
+		addPanel(btDb,dbDiv,report,(dbMsgs.length ? $('tbody tr',report).length+'/'+dbMsgs.length : $('tbody tr',report).length/2));
 		if( dbMsgs.length){
 			dbDiv.append('<h2>DB::messages</h2>').append(dbMsgs.css('display','block'));
 			$('h2',dbDiv).addClass('ui-widget-header').css('font-size','0.8em');
