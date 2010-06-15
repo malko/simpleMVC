@@ -120,7 +120,7 @@ try{
 		show($e->getMessage(),$e->getTrace(),'color:orange;exit');
 	abstractController::appendAppMsg(langManager::msg("Can't find '%s' controller.",array($_controller)),'error');
 	$controller = new pagesController();
-	$controller->redirectAction(ERROR_DISPATCH,null,null,404);
+	$controller->redirectAction(ERROR_DISPATCH,null,404);
 }
 #- action call
 try{
@@ -129,5 +129,5 @@ try{
 	if( DEVEL_MODE )
 		show($e->getMessage(),$e->getTrace(),'color:maroon;exit');
 	abstractController::appendAppMsg(langManager::msg("Can't find '%s' action for '%s' controller.",array($_action,$_controller)),'error');
-	$controller->redirectAction(ERROR_DISPATCH,null,null,404);
+	$controller->redirectAction(ERROR_DISPATCH,null,404);
 }
