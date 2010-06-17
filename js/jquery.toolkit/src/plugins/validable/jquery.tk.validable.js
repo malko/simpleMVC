@@ -25,17 +25,18 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-06-10 - add ualpha[num] methods for checking input alphanum chars without accented chars and single quote
            - 2010-06-09 - add confirm method as predefined defaultRules
            - 2010-05-14 - remove eval on unknown callback rule assignation (replaced by new Function)
            - 2010-05-10 - add possibility for null/'none' as stateElmt option value
-					              - bug correction checking empty select sets
+                        - bug correction checking empty select sets
            - 2010-04-02 - form.validable will force any :input with a tk-validable* class to be promotted to validable widget nevermind the alwaysSetState option
            - 2010-04-01 - add _classNameOptions
-					              - add @title support and make it default value for help option
-												- some bug correction
+                        - add @title support and make it default value for help option
+                        - some bug correction
            - 2010-03-31 - add required:-1 option and correctly remove tk-required class when set to false
            - 2010-03-30 - check radio/checkbox are checked when required
-					              - add event validable_formGetState(event,elmt,state) emitted on form checking state; (stop submission if return false)
+                        - add event validable_formGetState(event,elmt,state) emitted on form checking state; (stop submission if return false)
            - 2009-10-22 - add options helpTrigger and helpAfter
            - 2009-10-20 - add support for string callbacks
 */
@@ -406,6 +407,12 @@ $('#myForm').validable(formValidableOptions);
 		, alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/)?true:false }
 		, Alphanum:function(str){ return removeAccents(str).match(/^[0-9a-z_\s-']+$/i)?true:false }
 		, ALPHANUM:function(str){ return removeAccents(str).match(/^[0-9A-Z_\s-']+$/)?true:false }
+		, ualpha:function(str){ return str.match(/^[a-z_\s-]+$/)?true:false }
+		, uAlpha:function(str){ return str.match(/^[a-z_\s-]+$/i)?true:false }
+		, uALPHA:function(str){ return str.match(/^[A-Z_\s-]+$/)?true:false }
+		, ualphanum:function(str){ return str.match(/^[0-9a-z_\s-]+$/)?true:false }
+		, uAlphanum:function(str){ return str.match(/^[0-9a-z_\s-]+$/i)?true:false }
+		, uALPHANUM:function(str){ return str.match(/^[0-9A-Z_\s-]+$/)?true:false }
 		, confirm:function(v){ return $($(this).attr('rel')).val()===v?true:false }
 		, img:/\.(jpe?g|gif|png)$/i
 		, video:/\.(mpe?g|avi|flv|mov)$/i
