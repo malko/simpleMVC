@@ -368,35 +368,37 @@ $('#myForm').validable(formValidableOptions);
 		}
 	};
 
-	var accentTable = {
-		'µ':'u',
-		'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A', 'Å':'A', 'Æ':'AE',
-		'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E',
-		'Ì':'I', 'Í':'I', 'Î':'I', 'Ï':'I', 'Ð':'D', 'Ñ':'N',
-		'Ò':'O', 'Œ':'OE', 'Ó':'O','Ô':'O', 'Õ':'O', 'Ö':'O', 'Ø':'O',
-		'Ù':'U', 'Ú':'U', 'Û':'U', 'Ü':'U', 'Ý':'Y', 'ß':'s',
-		'à':'a', 'á':'a', 'â':'a', 'ã':'a', 'ä':'a', 'å':'a', 'æ':'ae',
-		'ç':'c', 'è':'e', 'é':'e', 'ê':'e', 'ë':'e',
-		'ì':'i', 'í':'i', 'î':'i', 'ï':'i', 'ñ':'n',
-		'ð':'o', 'œ':'oe', 'ò':'o','ó':'o', 'ô':'o', 'õ':'o', 'ö':'o', 'ø':'o',
-		'ù':'u', 'ú':'u', 'û':'u', 'ü':'u', 'ý':'y', 'ÿ':'y',
-		'’':'\'','`':'\''
-	},
-	accentExp=[];
-	var removeAccents = function(str){
-		if( accentExp instanceof Array){
-			for(var c in accentTable){
-				accentExp.push(c);
+	if( typeof removeAccents === 'undefined'){
+		var accentTable = {
+			'µ':'u',
+			'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A', 'Å':'A', 'Æ':'AE',
+			'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E',
+			'Ì':'I', 'Í':'I', 'Î':'I', 'Ï':'I', 'Ð':'D', 'Ñ':'N',
+			'Ò':'O', 'Œ':'OE', 'Ó':'O','Ô':'O', 'Õ':'O', 'Ö':'O', 'Ø':'O',
+			'Ù':'U', 'Ú':'U', 'Û':'U', 'Ü':'U', 'Ý':'Y', 'ß':'s',
+			'à':'a', 'á':'a', 'â':'a', 'ã':'a', 'ä':'a', 'å':'a', 'æ':'ae',
+			'ç':'c', 'è':'e', 'é':'e', 'ê':'e', 'ë':'e',
+			'ì':'i', 'í':'i', 'î':'i', 'ï':'i', 'ñ':'n',
+			'ð':'o', 'œ':'oe', 'ò':'o','ó':'o', 'ô':'o', 'õ':'o', 'ö':'o', 'ø':'o',
+			'ù':'u', 'ú':'u', 'û':'u', 'ü':'u', 'ý':'y', 'ÿ':'y',
+			'’':'\'','`':'\''
+		},
+		accentExp=[];
+		removeAccents = function(str){
+			if( accentExp instanceof Array){
+				for(var c in accentTable){
+					accentExp.push(c);
+				}
+				accentExp = new RegExp('('+accentExp.join('|')+')','g');
 			}
-			accentExp = new RegExp('('+accentExp.join('|')+')','g');
+			return str.replace(accentExp,function(m,c){
+				return accentTable[c];
+			});
 		}
-		return str.replace(accentExp,function(m,c){
-			return accentTable[c];
-		});
 	}
 
 	$.tk.validable.defaultRules={
-		email:/^[^@\s]+@[^@\s]+\.[a-z]{2,5}$/i
+		email:/^[^@\s]+@[^@\s]+\.[a-z]{2,5}$/
 		, 'int':/^\d+$/
 		, 'float':/^\d+((\.|,)\d+)?$/
 		, zipcode:/^\d{2,5}$/
