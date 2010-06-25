@@ -18,6 +18,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-06-24 - use abstractController::_getActionCacheNameParameter() for view cacheName
 *            - 2010-03-29 - add viewInterface::getLayout() method
 *            - 2010-03-22 - add cacheManager support to renderScript() method ( little impact on lookUpScript() too)
 *            - 2009-12-09 - cacheName now take currentLang into account when langManager is used
@@ -397,7 +398,7 @@ class baseView implements viewInterface{
 		if( strpos($scriptFile,'_cached_')===0 ){
 			$cached = true;
 			$scriptFile = substr($scriptFile,8);
-			$cacheName = preg_replace('!.tpl.php$!','',basename($scriptFile)).'_'.FRONT_NAME.(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').'_'.md5(serialize(array($_GET,$_POST)));
+			$cacheName = FRONT_NAME.'_'.preg_replace('!.tpl.php$!','',basename($scriptFile)).(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').$this->getController()->_getActionCacheNameParameter();
 			$res = cacheManager::get($cacheName);
 			if( null !== $res ){
 				echo $res;

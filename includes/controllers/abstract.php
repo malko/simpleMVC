@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-06-24 - introduce method abstractController::_getActionCacheNameParameter() to better handle the unicity of cached pages
 *            - 2010-05-26 - change treatment of undefined action methods call with existing coresponding views
 *            - 2010-04-08 - msgRedirect() try redirection to HTTP_REFERER before DEFAULT_DISPATCH on error msg with null dispatchString
 *            - 2010-03-29 - cacheManager integration
@@ -379,7 +380,7 @@ abstract class abstractController{
 					if( preg_match('!(^|\|)_cached_[^|]*:(controller|action)!',$tpl) ){
 						#- check for cached tpl for this action
 						$scriptFile = substr($this->view->lookUpScriptByAction($method,$this->getName(),$tpl),8);
-						$cacheName = preg_replace('!\.tpl\.php$!','',basename($scriptFile)).'_'.FRONT_NAME.(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').'_'.md5(serialize(array($_GET,$_POST)));
+						$cacheName = FRONT_NAME.'_'.preg_replace('!\.tpl\.php$!','',basename($scriptFile)).(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').$this->_getActionCacheNameParameter();
 						if( null === cacheManager::get($cacheName) ){
 							$useCache = 0;
 							break;
@@ -415,6 +416,10 @@ abstract class abstractController{
 		}else{
 			throw new BadMethodCallException(get_class($this)."::$method() method doesn't exist");
 		}
+	}
+
+	public function _getActionCacheNameParameter(){
+		return md5(serialize(array($_GET,$_POST)));
 	}
 
 	public function __get($k){
