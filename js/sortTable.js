@@ -75,7 +75,7 @@ sortTable = {
 		%nbres(total of record in dataset) %tid (table id) %psizesel(manual page size selector) %nbpages(total page count)
 		%pstart(first record displayed on current page) %pend(last record displayed on current page) */
 		footerString: '<span style="float:right;" class="sorttable-pagesize-setting">afficher %psizesel lignes</span><div style="white-space:nowrap;" class="sorttable-pagenav-settings">%pnav</div>', //template string for footer rendering
-		pinputStr: 		'<input type="text" value="%pnum" onfocus="this.value=\'\';" onkeydown="if(event.keyCode == 13){sortTable.setPageNb(\'%tid\',this.value);}" size="3" title="jump to page" style="text-align:center;">',
+		pinputStr: 		'<input type="text" value="%pnum" onfocus="this.value=\'\';" onkeydown="if(event.keyCode == 13){sortTable.setPageNb(\'%tid\',this.value); return false;}" size="3" title="jump to page" style="text-align:center;">',
 		// template string for page navigation rendering (MUSTN'T CONTAIN %pnav as it will be used to generate replacement string for %pnav)
 		navAttrs: {
 			first    : '<a href="%lnk" class="pagelnk"><<</a>',

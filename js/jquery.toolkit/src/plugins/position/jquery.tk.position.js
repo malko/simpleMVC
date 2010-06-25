@@ -2,6 +2,8 @@
 /**
 	allow an element to be positioned at the given offset setting its position handler.
 	be aware that margin are taken into consideration when positionning the element.
+	@changelog
+		- 2010-06-23 - add some NaN check that can crash the script under ie
 */
 $.toolkit('tk.positionable',{
 	_classNameOptions:{
@@ -90,12 +92,18 @@ $.toolkit('tk.positionable',{
 		this._applyOpts('y');
 	},
 	_set_x:function(x){
+		if( isNaN(x) ){
+			x=0;
+		}
 		this.elmt.css({
 			'right':'',
 			'left':Math.round(this.__getPxVal(x)+this._xRef)
 		});
 	},
 	_set_y:function(y){
+		if( isNaN(y) ){
+			y=0;
+		}
 		this.elmt.css({
 			'bottom':'',
 			'top':Math.round(this.__getPxVal(y)+this._yRef)
@@ -257,18 +265,27 @@ $.toolkit('tk.positionRelative',{
 			s = inner?-this.options.vSpace:this.options.vSpace,
 			borderPolicy=this.options.vBorderPolicy==='in'?true:false,
 			pos = { yRef:'top', y:0 };
-
+		if( borderPolicy){
+			var borderTopWidth = parseFloat(this._related.css('borderTopWidth')),
+				borderBottomWidth = parseFloat(this._related.css('borderBottomWidth'));
+			if( isNaN(borderTopWidth)){
+				borderTopWidth = 0;
+			}
+			if( isNaN(borderBottomWidth)){
+				borderBottomWidth = 0;
+			}
+		}
 		switch(vPos){
 			case 'top':
 			case 'middleTop':
 			case 'innerTop':
-				pos.y += offset.top - s + (borderPolicy?parseFloat(this._related.css('borderTopWidth')):0);
+				pos.y += offset.top - s + (borderPolicy?borderTopWidth:0);
 				pos.yRef = vPos.match(/^middle/)?'middle':(inner?'top':'bottom');
 				break;
 			case 'bottom':
 			case 'middleBottom':
 			case 'innerBottom':
-				pos.y += offset.top + this._related.outerHeight() + s - (borderPolicy?parseFloat(this._related.css('borderBottomWidth')):0);
+				pos.y += offset.top + this._related.outerHeight() + s - (borderPolicy?borderBottomWidth:0);
 				pos.yRef = vPos.match(/^middle/)?'middle':(inner?'bottom':'top');
 				break;
 			case  'middle':
@@ -277,13 +294,13 @@ $.toolkit('tk.positionRelative',{
 				if(! borderPolicy ){
 					var h = this._related.outerHeight()/2;
 				}else{
-					var h = this._related.innerHeight()/2 + parseFloat(this._related.css('borderTopWidth'));
+					var h = this._related.innerHeight()/2 +borderTopWidth
 				}
 				pos.y += offset.top  + h;
 				pos.yRef=vPos.match(/^upper/)?'bottom':(vPos.match(/^lower/)?'top':'middle');
 				break;
 			default:
-				pos.y += offset.top + parseFloat(vPos) - s + (borderPolicy?parseFloat(this._related.css('borderTopWidth')):0);
+				pos.y += offset.top + parseFloat(vPos) - s + (borderPolicy?borderTopWidth:0);
 		}
 		this.elmt.positionable('set',pos);
 		if( vPos !== this._realPos.v ){
@@ -309,18 +326,27 @@ $.toolkit('tk.positionRelative',{
 			borderPolicy=this.options.hBorderPolicy==='in'?true:false,
 			offset = this._related.offset(),
 			pos = { xRef:'left', x:0 };
-
+		if( borderPolicy){
+			var borderLeftWidth = parseFloat(this._related.css('borderLeftWidth')),
+				borderRightWidth = parseFloat(this._related.css('borderRightWidth'));
+			if( isNaN(borderLeftWidth)){
+				borderLeftWidth = 0;
+			}
+			if( isNaN(borderRightWidth)){
+				borderRightWidth = 0;
+			}
+		}
 		switch(hPos){
 			case 'left':
 			case 'middleLeft':
 			case 'innerLeft':
-				pos.x += offset.left - s + (borderPolicy?parseFloat(this._related.css('borderLeftWidth')):0);
+				pos.x += offset.left - s + (borderPolicy?borderLeftWidth:0);
 				pos.xRef = hPos.match(/^middle/)?'center':(inner?'left':'right');
 				break;
 			case 'right':
 			case 'middleRight':
 			case 'innerRight':
-				pos.x += offset.left + this._related.outerWidth()+ s - (borderPolicy?parseFloat(this._related.css('borderRightWidth')):0);
+				pos.x += offset.left + this._related.outerWidth()+ s - (borderPolicy?borderRightWidth:0);
 				pos.xRef = hPos.match(/^middle/)?'center':(inner?'right':'left');
 				break;
 			case 'center':
@@ -329,13 +355,13 @@ $.toolkit('tk.positionRelative',{
 				if(! borderPolicy ){
 					var w = this._related.outerWidth()/2;
 				}else{
-					var w = this._related.innerWidth()/2 + parseFloat(this._related.css('borderLeftWidth'));
+					var w = this._related.innerWidth()/2 + borderLeftWidth;
 				}
 				pos.x += offset.left + w ;
 				pos.xRef = hPos.match(/^left/)?'right':(hPos.match(/^right/)?'left':'center');
 				break;
 			default:
-				pos.x += offset.left + parseFloat(hPos) - s + (borderPolicy?parseFloat(this._related.css('borderLeftWidth')):0);
+				pos.x += offset.left + parseFloat(hPos) - s + (borderPolicy?borderLeftWidth:0);
 		}
 		this.elmt.positionable('set',pos);
 		if( hPos !== this._realPos.h ){

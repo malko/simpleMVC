@@ -47,13 +47,13 @@ var cookies={
 	var btCss,cssDiv;
 
 	//-- styling toolbar
-	toolBar.css({position:'absolute',right:0,top:0,zIndex:1000,margin:0});
+	toolBar.css({position:'absolute',right:0,top:0,zIndex:9999,margin:0});
 	var pannelStyle = {
 		//- background:'#F0F0F0', position:'absolute', left:0, top:0,
 		//- zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
 		//- border:'solid #333 1px',borderTop:'none',borderLeft:'none'
 		position:'absolute', left:0, top:0,textAlign:'left',
-		zIndex:999,  overflow:'auto', display:'none'
+		zIndex:9999,  overflow:'auto', display:'none'
 	};
 	var pannelTitleStyle = { color:'#555', fontSize:'18px', margin:'10px 0', borderBottom:'solid #555 1px'};
 	/*var toolBarButtonStyle = {border:'solid #555 1px','border-top':'none',color:'#333',cursor:'pointer',background:'#F0F0F0',margin:0};
