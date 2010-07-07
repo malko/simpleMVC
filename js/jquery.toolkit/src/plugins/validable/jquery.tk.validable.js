@@ -25,6 +25,9 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-06-30 - add getStateAutoScroll option
+                        - getState on form now ignore disabled elements
+                        - propagate event thrue getState validation callbacks (second parameters)
            - 2010-06-10 - add ualpha[num] methods for checking input alphanum chars without accented chars and single quote
            - 2010-06-09 - add confirm method as predefined defaultRules
            - 2010-05-14 - remove eval on unknown callback rule assignation (replaced by new Function)
@@ -43,6 +46,7 @@ $('#myForm').validable(formValidableOptions);
 (function($) {
 	$.toolkit('tk.validable',{
 		_classNameOptions: {
+			getStateAutoScroll:'|noScroll|autoScroll',
 			alwaysSetState:'|all',
 			required:'|req|opt',
 			useIcon:'|noIcon|withIcon',
@@ -57,6 +61,9 @@ $('#myForm').validable(formValidableOptions);
 			var self = this,
 				id = self.elmt.attr('id'),
 				getStateCB=function(e){return self.getState(e)};
+			if(self.options.getStateAutoScroll==='noScroll' || self.options.getStateAutoScroll==='autoScroll' ){
+				self.options.getStateAutoScroll = self.options.getStateAutoScroll ==='noScroll'?false:true;
+			}
 			if(self.options.alwaysSetState==='all'){
 				self.options.alwaysSetState = true;
 			}
@@ -96,7 +103,10 @@ $('#myForm').validable(formValidableOptions);
 				self.options.initCheck=false;
 			}
 			if(self.options.initCheck){
+				var autoScroll = self.options.getStateAutoScroll;
+				self.options.getStateAutoScroll = false;
 				self.getState();
+				self.options.getStateAutoScroll = autoScroll;
 			}
 		},
 		_set_labelElmt:function(label){
@@ -235,19 +245,7 @@ $('#myForm').validable(formValidableOptions);
 		internal method to visually set the state of the stateElement, the stateIcon and tooltip
 		*/
 		_setState:function(state){
-			var stateElmt = this.elmt;
-			if( this.options.stateElmt==='label' && this._labelElmt ){
-				stateElmt = this._labelElmt;
-			}else if( this.options.stateElmt !== 'self' && this.options.stateElmt!=='label'){
-				if( null === this.options.stateElmt || 'none' === this.options.stateElmt ){
-					stateElmt = null;
-				}else{
-					stateElmt = $(this.options.stateElmt);
-					if( ! stateElmt.length){
-						stateElmt=this.elmt;
-					}
-				}
-			}
+			var stateElmt = this.getStateElmt();
 			if(state){
 				if( null !== stateElmt){
 					stateElmt.removeClass('tk-state-error')
@@ -284,22 +282,50 @@ $('#myForm').validable(formValidableOptions);
 		_hasRule:function(){
 			return (this.options.maxlength || this.options.minlength || this.options.required || this.options.rule)?true:false;
 		},
-
+		getStateElmt:function(){
+			var stateElmt = this.elmt;
+			if( this.options.stateElmt==='label' && this._labelElmt ){
+				stateElmt = this._labelElmt;
+			}else if( this.options.stateElmt !== 'self' && this.options.stateElmt!=='label'){
+				if( null === this.options.stateElmt || 'none' === this.options.stateElmt ){
+					stateElmt = null;
+				}else{
+					stateElmt = $(this.options.stateElmt);
+					if( ! stateElmt.length){
+						stateElmt=this.elmt;
+					}
+				}
+			}
+			return stateElmt;
+		},
 		getState: function(event){
 			var self = this;
 			if(! self.elmt.is(':input')){
 				if(! self.elmt.is('form'))
 					return false;
-				var res = true;
-				self.elmt.find(':input.tk-validable').each(function(){
-					res = (res && $(this).validable('return1_getState'))?true:false;
+				var res = true,i=0;
+				self.elmt.find(':input.tk-validable:not(:disabled)').each(function(){
+					res = (res && $(this).validable('return1_getState',event))?true:false;
+					if(self.options.getStateAutoScroll && res===false && i===0){ //scroll to first error element
+						i++;
+						var elmt=$(this),stateElmt = elmt.validable('return1_getStateElmt'),top=null,wTop = $(window).scrollTop();
+						if( stateElmt.length ){
+							top = stateElmt.offset().top;
+						}else if( elmt.is(':visible') ){
+							top = elmt.offset().top;
+						}
+						if( wTop > top || (wTop+$(window).height()) < top){
+							$(window).scrollTop(top-20);
+						}
+
+					}
 				});
 				if( false === self._trigger('formGetState', event,[self.elmt,res]) ){
 					return false;
 				}
 				return res;
 			}else{
-				if( event && event.type === 'keyup' && event.which == 27	)
+				if( event && event.type === 'keyup' && event.which == 27 )
 					self.elmt.tooltip('hide');
 			}
 
@@ -322,7 +348,7 @@ $('#myForm').validable(formValidableOptions);
 				return self._setState(m===null?false:true);
 			}else if(self.options.rule){ //	if( typeof self.options.rule === 'function'){
 				try{
-					var res = self.options.rule.call(self.elmt.get(0),val);
+					var res = self.options.rule.call(self.elmt.get(0),val,event);
 				}catch(e){
 					throw(self.options.rule +' is not a valid validable rule.'+e);
 				}
@@ -351,6 +377,7 @@ $('#myForm').validable(formValidableOptions);
 		rule: null,
 		initCheck:true,
 		alwaysSetState:false,
+		getStateAutoScroll:true, // bool, only available for formElements if true then will jump to the first stateElment visible that trigger an error
 		required:false, // true or false, special value -1 may be applyed to leave the rule do the job even on empty values
 		minlength:0,
 		maxlength:0,

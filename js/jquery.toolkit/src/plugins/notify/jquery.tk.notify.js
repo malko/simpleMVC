@@ -2,6 +2,7 @@
 simple notification plugin
 @author jonathan gotti <jgotti at jgotti dot net>
 @changelog
+           - 2010-07-01 - add $.tk.notify.[msg|notify]  quick accessors for corresponding notifybox methods
            - 2010-05-18 - correct _updatePos for ie6 when notifibox is bottom aligned
 @licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
 */
@@ -59,11 +60,11 @@ $.toolkit('tk.notifybox',{
 	},
 	notify:function(elmt,options){
 		var e = $(elmt).clone();
-		return e.notify($.extend({notifybox:this.elmt,destroy:true},options||{})).get(0);
+		return e.notify($.extend({notifybox:this.elmt,destroy:true},options||{}));
 	},
 	msg:function(msg,options){
 		options = $.extend({notifybox:this.elmt,destroy:true},options||{});
-		return $('<div class="tk-notify-msg'+(typeof(options.state)!=='undefined'?' tk-state-'+options.state:'')+' tk-corner">'+msg+'</div>').appendTo('body').notify(options).get(0);
+		return $('<div class="tk-notify-msg'+(typeof(options.state)!=='undefined'?' tk-state-'+options.state:'')+' tk-corner">'+msg+'</div>').appendTo('body').notify(options);
 	},
 	_set_vPos:function(pos){
 		var css={};
@@ -92,8 +93,11 @@ $.toolkit('tk.notifybox',{
 $.tk.notifybox.defaultBox=null;
 
 $.tk.notifybox.initDefault=function(options){
-	if( null === $.tk.notifybox.defaultBox) //-- init a default notification box
+	if( null === $.tk.notifybox.defaultBox){ //-- init a default notification box
 		$('<div></div>').notifybox(options);
+	}else if(options){
+		$.tk.notifybox.defaultBox.notifybox('set',options);
+	}
 	return $.tk.notifybox.defaultBox.elmt;
 }
 
@@ -120,7 +124,7 @@ $.toolkit('tk.notify',{
 		if( (self.options.closeButton==='noclose' || !self.options.closeButton) || (self.options.closeButton==="auto" && self.options.ttl>0) ){
 			var closeButton = false;
 		}
-		self.wrapper = $('<div class="'+self.options.wrapperClassName+'">'+(closeButton?'<div class="tk-icon-close" title="close"><span class="ui-icon ui-icon-close">X</span></div>':'')+'</div>');
+		self.wrapper = $('<div class="'+self.options.wrapperClassName+'">'+(closeButton?'<div class="tk-icon-close" title="close"><span>x</span></div>':'')+'</div>');
 		if( self.options.notifybox.notifybox('get_vPos')[0] === 'bottom'){
 			self.wrapper.prependTo(self.options.notifybox);
 		}else{
@@ -142,6 +146,7 @@ $.toolkit('tk.notify',{
 	show:function(e){
 		if(false === this._trigger('show',e,[this.elmt]) )
 			return false;
+		this.wrapper.stop();
 		this.wrapper[this.options.effectShow]();
 		return true;
 	},
@@ -149,6 +154,7 @@ $.toolkit('tk.notify',{
 		var self = this;
 		if(false === self._trigger('hide',e,[this.elmt]) )
 			return false;
+		this.wrapper.stop();
 		self.wrapper[self.options.effectHide]();
 		if( self.options.destroy){
 			setTimeout(function(){self.wrapper.remove()},self.options.ttl);
@@ -165,4 +171,11 @@ $.tk.notify.defaults={
 	closeButton:'auto',// one of true|false or auto (auto mean only when ttl 0)
 	destroy:true
 };
+//-- quick accessors
+$.tk.notify.msg = function(msg,options){
+	return $.tk.notifybox.initDefault().notifybox('return1_msg',msg,options);
+}
+$.tk.notify.notify = function(elmt,options){
+	return $.tk.notifybox.initDefault().notifybox('return1_notify',elmt,options);
+}
 })(jQuery);

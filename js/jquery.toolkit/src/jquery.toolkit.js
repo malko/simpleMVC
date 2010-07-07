@@ -12,6 +12,7 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT / GPL licenses.
 
 @changelog
+ - 2010-04-04 - change disable method to consider true/false as intended (true => disable) and return this
  - 2010-04-04 - add disable jquery method
  - 2010-04-04 - rewrite _trigger
  - 2010-02-24 - add ensureId jquery method and rename uniqueId toolkit method to requestUniqueId as it's more meeningfull
@@ -418,10 +419,11 @@ $.extend($.fn,{
 		});
 	},
 	disable:function(state){
-		state = state?true:false;
-		this.attr("disabled",state?false:"disabled")
-		.attr("aria-disabled",state?false:"disabled")
-		.toggleClass("tk-state-disabled",state?false:true);
+		state = state===undefined?true:(state?true:false);
+		this.attr("disabled",state?"disabled":false)
+		.attr("aria-disabled",state?"disabled":false)
+		.toggleClass("tk-state-disabled",state);
+		return this;
 	}
 });
 })(jQuery);
