@@ -14,7 +14,7 @@ when nested:
 	!extend parent selector
 */
 
-$codeMirrorPath = '../CodeMirror-0.67';
+$codeMirrorPath = '../CodeMirror-0.7';
 
 	#- set editor id (will be also used as part as the storage key)
 	if( ! empty($_GET['editorId']) ){
