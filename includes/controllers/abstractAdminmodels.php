@@ -483,11 +483,11 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$hasOnes     = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne'));
 		$hasMany     = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasMany'));
 		foreach($this->datasDefs as $v)
-			$this->datasFields .= "<span class=\"sMVC_dataField tk-border tk-corner tk-content tk-inlineStack\">%$v</span> &nbsp; ";
+			$this->datasFields .= "<span class=\"sMVC_dataField tk-border tk-corner tk-inlineStack\">%$v</span> &nbsp; ";
 		foreach($hasOnes as $v)
-			$this->hasOnes .= "<span class=\"sMVC_dataField tk-border tk-corner tk-content tk-inlineStack\">%$v</span> &nbsp; ";
+			$this->hasOnes .= "<span class=\"sMVC_dataField tk-border tk-corner tk-inlineStack\">%$v</span> &nbsp; ";
 		foreach($hasMany as $v)
-			$this->hasManys .= "<span class=\"sMVC_dataField tk-border tk-corner tk-content tk-inlineStack\">%$v</span> &nbsp; ";
+			$this->hasManys .= "<span class=\"sMVC_dataField tk-border tk-corner tk-inlineStack\">%$v</span> &nbsp; ";
 		#--- list fields configuration
 		#- check for config file
 		$this->primaryKey    = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');

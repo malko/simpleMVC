@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-07-01 - add clearSession method
 *            - 2010-06-24 - introduce method abstractController::_getActionCacheNameParameter() to better handle the unicity of cached pages
 *            - 2010-05-26 - change treatment of undefined action methods call with existing coresponding views
 *            - 2010-04-08 - msgRedirect() try redirection to HTTP_REFERER before DEFAULT_DISPATCH on error msg with null dispatchString
@@ -528,9 +529,14 @@ abstract class abstractController{
 		return $this->redirectAction($dispatchString,$params);
 	}
 
-	function clearCacheAction(){
+	function clearCache(){
 		if( DEVEL_MODE )
 			cacheManager::clear(0);
+		return $this->redirect();
+	}
+	function clearSession(){
+		if( DEVEL_MODE )
+			$_SESSION = array();
 		return $this->redirect();
 	}
 }

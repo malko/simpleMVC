@@ -9,7 +9,8 @@
 	div.fieldSet .ui-widget-header .ui-icon{ float:right;}
 	code{ white-space:pre; font-size:.8em; display:block;border-width:1px; border-style:dotted; padding:.4em;}
 	.editarea{ width:98%;height:350px;}
-	.sMVC_dataField{ vertical-align:middle !important; }
+	.sMVC_dataField{ vertical-align:middle !important; padding:.2em .4em; margin:0 ;}
+	.tk-inlineStack{ padding:.2em .4em;margin:0 .2em;}
 </style>
 <h1><?php echo $this->modelType?> settings </h1>
 <div id="settings">
@@ -212,13 +213,13 @@
 			<?php
 
 				if( $hasOnes = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne')) ){
-					echo '<span class="tk-border tk-corner tk-inlineStack tk-content">'
-						.implode('</span><span class="tk-border tk-corner tk-inlineStack tk-content">',$hasOnes)
+					echo '<span class="tk-border tk-corner tk-inlineStack">'
+						.implode('</span><span class="tk-border tk-corner tk-inlineStack">',$hasOnes)
 						.'</span>';
 				}
 				if( $hasManys = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasMany')) ){
-					echo '<span class="tk-border tk-corner tk-inlineStack tk-content">'
-						.implode('</span><span class="tk-border tk-corner tk-inlineStack tk-content">',$hasManys)
+					echo '<span class="tk-border tk-corner tk-inlineStack">'
+						.implode('</span><span class="tk-border tk-corner tk-inlineStack">',$hasManys)
 						.'</span>';
 				}
 
