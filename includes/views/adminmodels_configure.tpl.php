@@ -162,25 +162,25 @@
 						$types = array('--- default ---','skip','select','selectbuttonset','text','textConfirm','password','passwordConfirm','forcetextarea','textarea','rte','checkbox','radio','hidden','datepicker','timepicker','datetimepicker','file','fileextended','fileentry','codepress');
 						$types = array_combine($types,$types);
 						$fieldGroupMethod = '';
-						if( is_object($this->fieldOrder)){
+						if( ! empty($this->fieldOrder['fieldGroupMethod'])){
 							foreach($this->fieldOrder as $k=>$group){
 								if( $k === 'fieldGroupMethod'){
 									$fieldGroupMethod = $group;
 									continue;
 								}
 								#- ~ echo "<fieldset><legend>$group->name</legend>\n";
-								if( empty($group->name) ){
+								if( empty($group['name']) ){
 									echo '<div class="fieldSet">'
 									.'<label class="ui-widget-header">Primary ungrouped inputs</label>'
 									.'<input type="hidden" name="fieldsOrder[primary]" value="" />';
 								}else{
 									echo '<div class="fieldSet" id="fieldSet_'.$k.'">'
-									.'<label class="ui-widget-header">Group Name: <input type="text" name="fieldSet[]" value="'.htmlentities($group->name,ENT_COMPAT,'UTF-8').'" /></label>'
+									.'<label class="ui-widget-header">Group Name: <input type="text" name="fieldSet[]" value="'.htmlentities($group['name'],ENT_COMPAT,'UTF-8').'" /></label>'
 									.'<input type="hidden" name="fieldsOrder[]" value="" />';
 
 								}
-								if( !empty($group->fields)){
-									foreach($group->fields as $f){
+								if( !empty($group['fields'])){
+									foreach($group['fields'] as $f){
 										if( $f === $this->primaryKey )
 											continue;
 										echo "\n\t<div class=\"formInput\">"

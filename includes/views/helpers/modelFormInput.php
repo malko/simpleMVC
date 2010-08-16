@@ -74,7 +74,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 
 			if(! empty($options['value']) )
 				$value = $options['value'];
-			return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
+			return $this->formInput($keyName,($value instanceof abstractModel?$value->PK:$value),empty($options['type'])?'select':$options['type'],$options);
 		}elseif(isset($relsDefs['hasMany'][$keyName]) ){
 			#- prepare les valeurs
 			if( $modelName instanceof abstractModel && $modelName->{$keyName} instanceof modelCollection)

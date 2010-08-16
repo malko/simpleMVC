@@ -29,7 +29,7 @@ if( ! empty($this->_modelConfig['LIST_FILTERS']) && count(array_diff($this->_mod
 			'formatStr' => '<div class="adminListFiltersItem">%label %input</div>',
 			'forceEmptyChoice'=>true,
 			'multiple'=>false,
-			'maxlength'=>0
+			//'maxlength'=>0
 		);
 		if( $type !== 'default'){
 			$options['type'] = ($type==='like')?'text':$type;

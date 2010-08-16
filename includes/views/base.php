@@ -191,7 +191,7 @@ class baseView implements viewInterface{
 		if(preg_match('!^get((_|[A-Z]).*)!',$m,$match)){
 			if($match[2] !== '_')
 				$match[1] = '_'.strtolower($match[2]).substr($match[1],1);
-			if( isset($this->{$match[1]}) )
+			if( preg_match('!^(_controller|_rendered|_viewDirs|_layout|_loadedHelpers|_datas|_appMsgs)$!',$match[1]) )
 				return $this->{$match[1]};
 		}
 		$cached = false;

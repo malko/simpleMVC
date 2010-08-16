@@ -56,6 +56,8 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - pickerOpts   is used for datetimepicker (something like that: array(0=>dateOptStr,1=>timeOptStr))
 	*                          - rteOpts      is used for rte options
 	*                          - confirmOpts  is used for t[e]xtConfirm and passwordConfirm to override default confirmation options.
+	*                          - labelClass   used to add a class attribute to the label
+	*                          - placeholder  for text/password and textarea fields (when browser support it will make additional javascript  later for old browsers)
 	*/
 	function formInput($name,$value=null,$type='text',array $options=array()){
 		$dfltOpts = array(
@@ -65,7 +67,7 @@ class formInput_viewHelper extends abstractViewHelper{
 		);
 		$options = array_merge($dfltOpts,$options);
 		$value = null!==$value?$value:(isset($options['default'])?$options['default']:'');
-		$labelStr = (isset($options['label'])?"<label for=\"$options[id]\">$options[label]</label>":'');
+		$labelStr = (isset($options['label'])?"<label for=\"$options[id]\"".(empty($options['labelClass'])?'':' class="'.$options['labelClass'].'"').">$options[label]</label>":'');
 
 		#- check for some validable options.
 		$validableOptsNames = array('required','help','minlength','maxlength','rule','useIcon','stateElmt');
@@ -93,6 +95,9 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'txtConfirm':
 			case 'textConfirm':
 			case 'passwordConfirm':
+				if( isset($options['label']) && ! isset($options['placeholder'])){
+					$options['placeholder'] = $options['label'];
+				}
 				if(strpos($type,'Confirm')){ //-- manage confirmation if required
 					$type = str_replace('Confirm','',$type);
 					$confirmOpts = array_merge($options, array(
@@ -123,7 +128,6 @@ class formInput_viewHelper extends abstractViewHelper{
 				if($type==='txt')
 					$type='text';
 				$value = preg_replace('/(?<!\\\\)"/','\"',$value);
-
 				return $this->formatInput(
 					$labelStr,
 					"<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
@@ -138,6 +142,9 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'textarea':
 			case 'forcetextarea':
 				if((! self::$useRTE) || $type==='forcetextarea'){
+					if( isset($options['label']) && ! isset($options['placeholder'])){
+						$options['placeholder'] = $options['label'];
+					}
 					return $this->formatInput(
 						$labelStr,
 						"<textarea name=\"$name\"".$this->getAttrStr($options).">$value</textarea>",
@@ -231,6 +238,9 @@ class formInput_viewHelper extends abstractViewHelper{
 				if( !empty($validableOpts) ){
 					$this->validable($name,array('helpAfter'=> "#$options[id] ~ .ui-datepicker-trigger"),$validableForm);
 				}
+				if( isset($options['label']) && ! isset($options['placeholder'])){
+					$options['placeholder'] = $options['label'];
+				}
 				return $this->formatInput(
 					$labelStr,
 					$this->datepicker($name,$value,empty($options['pickerOptStr'])?null:$options['pickerOptStr']),
@@ -248,6 +258,9 @@ class formInput_viewHelper extends abstractViewHelper{
 						$validableForm
 					);
 				}
+				if( isset($options['label']) && ! isset($options['placeholder'])){
+					$options['placeholder'] = $options['label'];
+				}
 				return $this->formatInput(
 					$labelStr,
 					$this->timepicker($name,$value,empty($options['pickerOptStr'])?null:$options['pickerOptStr']),
@@ -264,6 +277,9 @@ class formInput_viewHelper extends abstractViewHelper{
 						$validableForm
 					);
 				}
+				if( isset($options['label']) && ! isset($options['placeholder'])){
+					$options['placeholder'] = $options['label'];
+				}
 				return $this->formatInput(
 					$labelStr,
 					$this->_datepicker_withTime($name,$value,empty($options['pickerOpts'])?null:$options['pickerOpts']),
@@ -273,6 +289,9 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'file':
 			case 'fileentry':
 			case 'fileextended':
+				if( isset($options['label']) && ! isset($options['placeholder'])){
+					$options['placeholder'] = $options['label'];
+				}
 				if( $type==='fileentry' || ( $type=='file' && self::$useFileEntry ) ){
 					if( !empty($validableOpts))
 						$this->validable($name,array('helpAfter'=>"#bt$options[id]"),$validableForm);
@@ -300,7 +319,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	}
 
 	protected function getAttrStr(array $attrs,array $excludeAttrs=null){
-		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked');
+		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked','placeholder');
 		$attrStr= '';
 		foreach($attrs as $ok=>$ov){
 			if( is_array($excludeAttrs) && in_array($ok,$excludeAttrs) )

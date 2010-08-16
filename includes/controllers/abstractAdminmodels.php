@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-08-13 - now will conserve config defined inside class over thoose defined in simpleMVC_xxx_config
 *            - 2010-02-26 - little rewrite of list filters support
 *            - 2010-02-12 - bug correction for list configuration in configure action
 *            - 2010-02-08 - make it compatible with url,redirectAction and forward that dropped support for controllerName as second argument
@@ -122,9 +123,12 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$this->_config = parse_conf_file($this->configFile,true);
 		foreach($this->_config as $k => $v){
 			if( preg_match('!^(LIST(?:_FILTERS)?|ACTION|FORM(?:_ORDER)?)_'.$this->modelType.'$!',$k,$m)){
+				if(! isset($this->_modelConfig[$m[1]])){
+					#- $this->_modelConfig[$m[1]] = json_decode($v,$m[1]==='FORM_ORDER'?false:true);
+					$this->_modelConfig[$m[1]] = json_decode($v,true);
+				}
 				if( $m[1] === 'ACTION' )
-					$this->_allowedActions = 	json_decode($v,true);
-				$this->_modelConfig[$m[1]] = json_decode($v,$m[1]==='FORM_ORDER'?false:true);
+					$this->_allowedActions = $this->_modelConfig['ACTION'];
 			}
 		}
 		$this->view->_config = $this->_config;
@@ -219,8 +223,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 					$this->loadDatas = empty($this->loadDatas)?$fld:"$this->loadDatas|$fld";
 			}
 		}
-		if( ! empty($this->loadDatas) )
-			$models->loadDatas($this->loadDatas);
+		$models->loadDatas(empty($this->loadDatas)?null:$this->loadDatas);
 		$datas = array();
 
 
@@ -519,10 +522,10 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$this->inputOptions = empty($inputOptions)?array():$inputOptions;
 		if( !empty($this->_modelConfig['FORM_ORDER'])){
 			$this->fieldOrder = $this->_modelConfig['FORM_ORDER'];
-			if( is_object($this->fieldOrder) ){
+			if( isset($this->fieldOrder['fieldGroupMethod']) ){
 				foreach( $this->fieldOrder as $k=>$fldGroup ){
-					if( is_object($fldGroup) && !empty($fldGroup->name) )
-						$_idMsgs[] = $fldGroup->name;
+					if( !empty($fldGroup['name']) )
+						$_idMsgs[] = $fldGroup['name'];
 				}
 			}
 		}
