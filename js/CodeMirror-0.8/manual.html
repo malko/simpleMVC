@@ -112,6 +112,10 @@
   stylesheet: "lib/codemirror/css/jscolors.css"
 });</pre>
 
+    <p>Instances created like this will have a
+    <code>toTextArea()</code> method which removes them and restores
+    the text area they were based on.</p>
+
     <p>The reason that the script path has to be configured is that
     CodeMirror will load in a bunch of extra files when an editor is
     created (the parser script, among others). To be able to do this,
@@ -145,7 +149,7 @@
     when you are trying to figure out how they work, but wastes a lot
     of bandwidth in a production system. Take a look at the
     description of the <code>basefiles</code> option below if you want
-    to concatenate and minimise the library.</p>
+    to concatenate and minimise the library (see the <a href="compress.html">compression API</a>).</p>
 
     <p>Apart from these, there are files that implement the various
     parsers. These all start with either <code>parse</code> or
@@ -261,7 +265,11 @@
 
       <dt><code>width</code>, <code>height</code></dt><dd>The size of
       the editor frame, given as a style-sheet quantities (for example
-      <code>"600px"</code> or <code>"100%"</code>).</dd>
+      <code>"600px"</code> or <code>"100%"</code>). When
+      <code>height</code> is set to <code>dynamic</code>, the editor
+      will automatically resize to fit its contents. In this case, the
+      <code>minHeight</code> option (an integer) is used to determine
+      the minimum height in pixels.</dd>
 
       <dt><code>disableSpellcheck</code></dt><dd>Should the editor
       disable spell-checking on browsers that support it (Firefox 2+).
@@ -537,6 +545,14 @@
       to find the name, it'll be something like
       <code>CSSParser</code>). The second argument is optional, and
       can be used to pass a new parser configuration object.</dd>
+
+      <dt><code>cursorCoords(start)</code></dt><dd>Get the coordinates
+      of the cursor in the editor, relative to the top-left corner of
+      the outer document. Normally returns an object with
+      <code>x</code>, <code>y</code>, and <code>yBot</code> (the
+      bottom of the cursor) properties. May return <code>null</code>
+      if the cursor position could not be determined (for example, if
+      the editor is not focused).</dd>
     </dl>
 
     <p>For detailed interaction with the content of the editor,
