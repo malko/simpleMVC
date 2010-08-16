@@ -25,6 +25,7 @@ formValidableOptions = {
 };
 $('#myForm').validable(formValidableOptions);
 @changelog
+           - 2010-07-30 - validable_formGetState only trigger when initialized
            - 2010-06-30 - add getStateAutoScroll option
                         - getState on form now ignore disabled elements
                         - propagate event thrue getState validation callbacks (second parameters)
@@ -134,7 +135,7 @@ $('#myForm').validable(formValidableOptions);
 					try{
 						rule = $.isFunction(rule)?rule:new Function('return '+rule+'.apply(this,arguments);');
 					}catch(e){
-						throw(rule+' is not a valid validable rule.')
+						throw(rule+' is not a valid validable rule.');
 					}
 				}
 			}
@@ -268,11 +269,11 @@ $('#myForm').validable(formValidableOptions);
 					.find('.ui-icon').removeClass('ui-icon-check').addClass('ui-icon-cancel');
 				}
 				if( this.options.help.length>0 && this._hasRule()){
-					this.elmt.tooltip('set','stateClass','tk-state-error');
+					this.elmt.tooltip('set',{stateClass:'tk-state-error'});
 				}
 			}
 			if( this.stateIconElmt){
-				this._stateIconElmt.toggle((this.options.rule || this.options.required || this.options.minlength || this.options.maxlength)?true:false)
+				this._stateIconElmt.toggle((this.options.rule || this.options.required || this.options.minlength || this.options.maxlength)?true:false);
 			}
 			return state?true:false;
 		},
@@ -301,32 +302,42 @@ $('#myForm').validable(formValidableOptions);
 		getState: function(event){
 			var self = this;
 			if(! self.elmt.is(':input')){
-				if(! self.elmt.is('form'))
+				if(! self.elmt.is('form')){
 					return false;
+				}
 				var res = true,i=0;
 				self.elmt.find(':input.tk-validable:not(:disabled)').each(function(){
 					res = (res && $(this).validable('return1_getState',event))?true:false;
-					if(self.options.getStateAutoScroll && res===false && i===0){ //scroll to first error element
+					if( res===false){
+						var elmt=$(this), stateElmt = elmt.validable('return1_getStateElmt');
+						//-- print an error message
+						//- if(self._tk.initialized && i===0 && self.options.errorMsg.length ){
+							//- self.__printErrorMsg(elmt.options.helpAfter!==null?elmt.options.helpAfter:elmt);
+						//- }
+						//scroll to first error element
+						if(self.options.getStateAutoScroll && i===0){
+							var top=null,wTop = $(window).scrollTop();
+							if( stateElmt.length ){
+								top = stateElmt.offset().top;
+							}else if( elmt.is(':visible') ){
+								top = elmt.offset().top;
+							}
+							if( wTop > top || (wTop+$(window).height()) < top){
+								$(window).scrollTop(top-20);
+							}
+						}
 						i++;
-						var elmt=$(this),stateElmt = elmt.validable('return1_getStateElmt'),top=null,wTop = $(window).scrollTop();
-						if( stateElmt.length ){
-							top = stateElmt.offset().top;
-						}else if( elmt.is(':visible') ){
-							top = elmt.offset().top;
-						}
-						if( wTop > top || (wTop+$(window).height()) < top){
-							$(window).scrollTop(top-20);
-						}
-
 					}
 				});
-				if( false === self._trigger('formGetState', event,[self.elmt,res]) ){
+
+				if( self._tk.initialized && false === self._trigger('formGetState', event,[self.elmt,res]) ){
 					return false;
 				}
 				return res;
 			}else{
-				if( event && event.type === 'keyup' && event.which == 27 )
+				if( event && event.type === 'keyup' && event.which == 27 ){
 					self.elmt.tooltip('hide');
+				}
 			}
 
 			if(! self._hasRule() ){
@@ -352,8 +363,9 @@ $('#myForm').validable(formValidableOptions);
 				}catch(e){
 					throw(self.options.rule +' is not a valid validable rule.'+e);
 				}
-				if(! res )
+				if(! res ){
 					return self._setState(false);
+				}
 			}
 			if( self.options.required === true){
 				switch( self.elmt.attr('type').toLowerCase()){
@@ -388,6 +400,7 @@ $('#myForm').validable(formValidableOptions);
 		help:'@title', //-- by default will check for title attr value
 		helpTrigger:null,
 		helpAfter:null,
+		//- errorMsg:'', // message to display on error
 		helpOptions:{
 			position:'middle-right',
 			stickyMouse:false,
@@ -421,7 +434,7 @@ $('#myForm').validable(formValidableOptions);
 			return str.replace(accentExp,function(m,c){
 				return accentTable[c];
 			});
-		}
+		};
 	}
 
 	$.tk.validable.defaultRules={

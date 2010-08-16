@@ -12,7 +12,10 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT / GPL licenses.
 
 @changelog
- - 2010-04-04 - change disable method to consider true/false as intended (true => disable) and return this
+ - 2010-07-26 - first attempt for pseudo plugin inheritance (not real inheritance as we don't use functions constructors)
+ - 2010-07-22 - add tkSetState() method
+ - 2010-07-13 - add support for user define initPlugin method ($.tk.[pluginName].initPlugin = function(){...})
+ - 2010-07-08 - change disable method to consider true/false as intended (true => disable) and return this
  - 2010-04-04 - add disable jquery method
  - 2010-04-04 - rewrite _trigger
  - 2010-02-24 - add ensureId jquery method and rename uniqueId toolkit method to requestUniqueId as it's more meeningfull
@@ -35,15 +38,17 @@ was really missing to better stick to my way of doing things so i start this new
 		}
 		if( typeof console !=='undefined' && console.debug){
 			if( typeof chrome !== 'undefined'){
-				for( var i=0,l=arguments.length,args=[];i<l;i++)
+				for( var i=0,l=arguments.length,args=[];i<l;i++){
 					args[i]=arguments[i];
+				}
 				console.debug(args);
 			}else{
 				console.debug(dbg.caller,arguments);
 			}
 		}else if(typeof opera !== 'undefined' && typeof opera.postError !== 'undefined'){
-			var s = [];
-			_dbg=function(a){
+			var s = []
+			,i
+			,_dbg=function(a){
 				var i,s = [];
 				if( typeof(a)=='object'){
 					for( i in a ){ s.push( i+':'+_dbg(a[i])); }
@@ -53,14 +58,18 @@ was really missing to better stick to my way of doing things so i start this new
 					return '['+s.join(', ')+']';
 				}
 				return a;
-			}
+			};
 			for( i=0; i< arguments.length;i++ ){s.push(_dbg(arguments[i]));}
 			opera.postError(s.join(', '));
 		}
 	};
 
-$.toolkit = function(pluginName,prototype){
+$.toolkit = function(pluginName,basePlugin,prototype){
 	//-- make nameSpace optional default to tk.
+	if( ! prototype ){
+		prototype = basePlugin;
+		basePlugin = null;
+	}
 	var nameSpace = 'tk';
 	if( pluginName.indexOf('.')){
 		pluginName = pluginName.split('.');
@@ -72,6 +81,9 @@ $.toolkit = function(pluginName,prototype){
 		$[nameSpace]={};
 	}
 	$[nameSpace][pluginName] = function(elmt,options) {
+		if( arguments.length < 1){ //-- if no arguments we considering to be in situation of extending the plugin
+			return;
+		}
 		var self = this;
 		self._tk ={
 			nameSpace : nameSpace,
@@ -130,9 +142,10 @@ $.toolkit = function(pluginName,prototype){
 	};
 	//-- extends plugin methods
 	$[nameSpace][pluginName].prototype = $.extend(
-		true,
-		{}, //-- create a new class
-		$.toolkit.prototype, //-- extend it with base tk prototype
+		true,{},
+		basePlugin?new $.tk[basePlugin]():new $.toolkit.plugin(), //-- create a new class
+		//- basePlugin?$.tk[basePlugin].prototype:$.toolkit.plugin.prototype, //-- create a new class
+		//- $.toolkit.plugin.prototype, //-- extend it with base tk prototype
 		prototype //-- finally add plugin own methods
 	);
 
@@ -149,13 +162,13 @@ $.toolkit = function(pluginName,prototype){
 				var match = method.match(/^([sg]et|return)(1)?(?:_+(.*))?$/);
 				if( null === match){
 					if(typeof(_throwOnBadCall)!=='undefined' && _throwOnBadCall){
-						throw('jquery.toolkit: '+method+'() unknown method call.')
+						throw('jquery.toolkit.plugin: '+method+'() unknown method call.');
 					}
 					return this;
 				}
 				propName = match[3]?match[3]:Array.prototype.shift.call(arguments,1);
 				method   = ('return'===match[1])?propName:match[1];
-				onlyOne  = match[2]?true:false
+				onlyOne  = match[2]?true:false;
 			}
 		}
 		var args = arguments,
@@ -184,7 +197,8 @@ $.toolkit = function(pluginName,prototype){
 /**
 * Common toolkit plugins prototypes
 */
-$.toolkit.prototype = {
+$.toolkit.plugin = function(){};
+$.toolkit.plugin.prototype = {
 	_tk:{
 		nameSpace:null,
 		pluginName:'tkplugin',
@@ -211,17 +225,18 @@ $.toolkit.prototype = {
 	// effectively apply settings by calling set on given options names.
 	// additional parameter ifNotDefault will only apply settings if different from default.
 	_applyOpts: function(names,ifNotDefault){
+		var i;
 		if( typeof names === 'string'){
 			names = names.split(/[|,]/);
 		}
 		if(! ifNotDefault){
-			for(var i=0;i<names.length;i++){
+			for(i=0;i<names.length;i++){
 				this.set(names[i],this.options[names[i]]);
 			}
 			return this;
 		}
 		var defaults = $[this._tk.nameSpace][this._tk.pluginName].defaults;
-		for(var i=0;i<names.length;i++){
+		for(i=0;i<names.length;i++){
 			if( defaults[names[i]] !== this.options[names[i]] ){
 				this.set(names[i],this.options[names[i]]);
 			}
@@ -273,7 +288,7 @@ $.toolkit.prototype = {
 	},
 	set:function(key,value){
 		if( typeof key === 'object'){
-			var _key='';
+			var k='';
 			for( k in key){
 				this.set(k,key[k]);
 			}
@@ -308,7 +323,11 @@ $.toolkit.initPlugins = function(pluginNames){
 	}
 	for( var i=0,l=pluginNames.length,p='';i<l;i++){
 		p=pluginNames[i];
-		new Function("jQuery('.tk-"+p+"')."+p+"()")();
+		if( $.tk && $.tk[p] && $.isFunction($.tk[p].initPlugin)){
+			$.tk[p].initPlugin();
+		}else{
+			new Function("jQuery('.tk-"+p+"')."+p+"()")();
+		}
 	}
 };
 /**
@@ -359,7 +378,6 @@ $.toolkit._readClassNameOpts=function(elmt,baseClass,optionsList){
 	if( undefined===classAttr || classAttr.length <1){ // nothing to read return
 		return {};
 	}
-
 	//prepare expression
 	var opts={}, optName='', id=0, exp = '(?:^|\\s)'+baseClass+'(?=-)',noCaptureExp = /(^|[^\\])\((?!\?:)/g, oVals;
 	for(optName in optionsList ){
@@ -412,8 +430,12 @@ $.toolkit.requestUniqueId = function(){
 $.extend($.fn,{
 	ensureId:function(){
 		return this.each(function(){
-			var e = $(this);
-			if( e.attr('id').length < 1){
+			var e = $(this)
+				, id = e.attr('id');
+			if( undefined === id){
+				return ;
+			}
+			if( id.length < 1){
 				e.attr('id',$.toolkit.requestUniqueId());
 			}
 		});
@@ -424,6 +446,46 @@ $.extend($.fn,{
 		.attr("aria-disabled",state?"disabled":false)
 		.toggleClass("tk-state-disabled",state);
 		return this;
+	},
+	tkSetState:function(state){
+		$.toolkit._removeClassExp(this,'tk-state-*','tk-state-'+state);
+		return this;
 	}
 });
+//-- ensure bgiframe function if not already included --//
+/* Copyright (c) 2006 Brandon Aaron (http://brandonaaron.net)
+* Dual licensed under the MIT (http://www.opensource.org/licenses/mit-license.php)
+* and GPL (http://www.opensource.org/licenses/gpl-license.php) licenses.
+* Version 2.1.1
+*/
+if(! $.fn.bgiframe ){
+	$.fn.bgiframe = function(s) {
+		// This is only for IE6
+		if ( $.browser.msie && /6.0/.test(navigator.userAgent) ) {
+			s = $.extend({
+				top:'auto', // auto == .currentStyle.borderTopWidth
+				left:'auto', // auto == .currentStyle.borderLeftWidth
+				width:'auto', // auto == offsetWidth
+				height:'auto', // auto == offsetHeight
+				opacity:true,
+				src:'javascript:false;'
+			}, s || {});
+			var prop = function(n){return n&&n.constructor==Number?n+'px':n;},
+					html = '<iframe class="bgiframe"frameborder="0"tabindex="-1"src="'+s.src+'"'+
+										 'style="display:block;position:absolute;z-index:-1;'+
+											 (s.opacity !== false?'filter:Alpha(Opacity=\'0\');':'')+
+									 'top:'+(s.top=='auto'?'expression(((parseInt(this.parentNode.currentStyle.borderTopWidth)||0)*-1)+\'px\')':prop(s.top))+';'+
+									 'left:'+(s.left=='auto'?'expression(((parseInt(this.parentNode.currentStyle.borderLeftWidth)||0)*-1)+\'px\')':prop(s.left))+';'+
+									 'width:'+(s.width=='auto'?'expression(this.parentNode.offsetWidth+\'px\')':prop(s.width))+';'+
+									 'height:'+(s.height=='auto'?'expression(this.parentNode.offsetHeight+\'px\')':prop(s.height))+';'+
+						'"/>';
+			return this.each(function() {
+				if ( $('> iframe.bgiframe', this).length == 0 )
+					this.insertBefore( document.createElement(html), this.firstChild );
+			});
+		}
+		return this;
+	};
+}
+
 })(jQuery);

@@ -10,10 +10,12 @@
 .tk-notify-wrapper{
 	background:#333;
 	color:#fff;
-	padding:10px;
+	padding:8px;
 	margin:8px;
 	text-align:left;
 	position:relative;
+	opacity:1;
+	filter: alpha(opacity=100)!important; /* use to avoid bug with bgIframe */
 }
 .tk-notify-wrapper .tk-icon-close{
 	position:absolute;

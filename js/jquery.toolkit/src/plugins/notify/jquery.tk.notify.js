@@ -2,6 +2,7 @@
 simple notification plugin
 @author jonathan gotti <jgotti at jgotti dot net>
 @changelog
+           - 2010-07-13 - now notifybox.initDefault will first check for a .tk-notifybox presence
            - 2010-07-01 - add $.tk.notify.[msg|notify]  quick accessors for corresponding notifybox methods
            - 2010-05-18 - correct _updatePos for ie6 when notifibox is bottom aligned
 @licence Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
@@ -25,6 +26,9 @@ $.toolkit('tk.notifybox',{
 		if( self.elmt.css('position').toLowerCase() ==='absolute'){ //ie-6 position:fixed lack workaround
 			$(window).scroll(function(){self._updatePos()});
 			self._updatePos();
+			// apply bgIframe too
+			if( $.fn.bgIframe )
+				self.elmt.bgIframe();
 		}
 	},
 	_updatePos:function(){
@@ -94,7 +98,11 @@ $.tk.notifybox.defaultBox=null;
 
 $.tk.notifybox.initDefault=function(options){
 	if( null === $.tk.notifybox.defaultBox){ //-- init a default notification box
-		$('<div></div>').notifybox(options);
+		var elmt = $('.tk-notifybox:eq(0)');
+		if(! elmt.length ){
+			elmt = $('<div></div>');
+		}
+		elmt.notifybox(options);
 	}else if(options){
 		$.tk.notifybox.defaultBox.notifybox('set',options);
 	}

@@ -123,7 +123,7 @@ $.toolkit('tk.tooltip',{
 			}
 			return;
 		}
-		self.elmt.bind(eventName+'.'+self._tk.pluginName,function(){self.show()});
+		self.elmt.bind(eventName+'.'+self._tk.pluginName,function(e){self.show(e)});
 	},
 	_set_hideTrigger:function(eventName){
 		var self = this;
@@ -133,7 +133,7 @@ $.toolkit('tk.tooltip',{
 			}
 			return;
 		}
-		self.elmt.bind(eventName+'.'+self._tk.pluginName,function(){self.hide()});
+		self.elmt.bind(eventName+'.'+self._tk.pluginName,function(e){self.hide(e)});
 	},
 	/** correctly set pointer colors */
 	_setPointerColor:function(doIt){
@@ -168,8 +168,11 @@ $.toolkit('tk.tooltip',{
 				break;
 		}
 	},
-	show:function(){
-		$('.tk-tooltip-wrapper').hide();
+	show:function(event){
+		if( false === this._trigger('show',event)){
+			return false;
+		}
+		$('.tk-tooltip-wrapper').not(this._wrapper[0]).hide();
 		this._wrapper.stop(true,true);
 		if( this._msg[0].innerHTML.length < 1){
 			return false;
@@ -186,7 +189,10 @@ $.toolkit('tk.tooltip',{
 		this._wrapper.attr("aria-hidden", false);
 		this._wrapper.positionRelative('update');
 	},
-	hide:function(){
+	hide:function(event){
+		if( false === this._trigger('hide',event)){
+			return false;
+		}
 		this._wrapper.stop(true,true);
 		if( this.options.stickyMouse ){
 			this._wrapper.mouseRelative('set_tracking',false);
