@@ -13,6 +13,7 @@ class jqueryToolkit_viewHelper extends jsPlugin_viewHelper{
 		'positionable' => 'position',
 		'positionRelative'=> 'position',
 		'notifybox'=> 'notify',
+		'confirmbox'=> 'dialogbox',
 	);
 	static public $dependencies = array(
 		'tooltip' => 'position',
@@ -64,7 +65,10 @@ class jqueryToolkit_viewHelper extends jsPlugin_viewHelper{
 
 	function notify($msg,$state=null,array $options=null){
 		$this->loadPlugin('notify');
-		$this->_js_script("$('<div ".($state?'class="tk-state-'.$state.'"':'').'>'.str_replace("'","\'",$msg).'</div>'."').notify(".self::_optionString($options).");");
+		if( $state !== null )
+			$options['state'] = $state;
+		$this->_js_script('$.tk.notify.msg("'.str_replace("'","\'",$msg).'"'.(empty($options)?'':','.self::_optionString($options)).');');
+		//'.$state?$('<div ".($state?'class="tk-state-'.$state.'"':'').'>'.str_replace("'","\'",$msg).'</div>'."').notify(".self::_optionString($options).");");
 	}
 
 	function tabbed($tabSelector='.tk-tabbed',array $options=null){
