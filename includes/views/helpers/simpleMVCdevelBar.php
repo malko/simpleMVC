@@ -18,18 +18,24 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 		'js/simpleMVC_develBar.js'
 	);
 	public $requiredPlugins = array(
-		'jquery'
+		'jquery','button'
 	);
+	static public $disable = false;
 	function simpleMVCdevelBar($editorName=FRONT_NAME){
+		if( self::$disable)
+			return '';
+
+		self::$disable = true;
 		$benchInfos = '';
 		if( !empty($GLOBALS['_SMVC_BENCH_']) ){
 			$memUnit=array('o','Ko','Mo','Go','To','Po');
 			$memUsage  = memory_get_usage(true);
-			$memUsage2 = memory_get_usage(true)-$GLOBALS['_SMVC_BENCH_']['initMem'];
+			#- $memUsage2 = memory_get_usage(true)-$GLOBALS['_SMVC_BENCH_']['initMem'];
+			$memUsage2 = memory_get_peak_usage(true);
 			$memUsage2= round($memUsage2/pow(1024,($i=floor(log($memUsage2,1024)))),2).' '.$memUnit[$i];
 			$memUsage= round($memUsage/pow(1024,($i=floor(log($memUsage,1024)))),2).' '.$memUnit[$i];
 
-			$benchInfos = '<button>'.round(microtime(true) - $GLOBALS['_SMVC_BENCH_']['start'],4).'s  '.$memUsage2.' / '.$memUsage.'</button>';
+			$benchInfos = '<button>'.round(microtime(true) - $GLOBALS['_SMVC_BENCH_']['start'],4).'s  '.$memUsage.' / '.$memUsage2.'</button>';
 
 		}
 
@@ -47,7 +53,7 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 			<div id="sMVCphperr_div" class="sMVCpannel"><h1>Php Errors</h1></div>
 			<div id="sMVCdb_div" class="sMVCpannel"><h1>Db::profiler</h1></div></div>'
 			. $this->adminModelsMenu("sMVCmodelsList",true,true)
-			. (class_exists('dbProfiler',false)?dbProfiler::printReport():'')
-			. $this->view->_js_getPending();
+			. (class_exists('dbProfiler',false)?dbProfiler::printReport(true):'')
+			. ((defined('JS_TO_HEAD') && JS_TO_HEAD)?'':$this->view->_js_getPending());
 	}
 }

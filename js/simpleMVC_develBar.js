@@ -10,7 +10,7 @@
 *            - 2009-02-07 - cookies path set to slash as default
 *            - 2009-01-14 - add quick cookie management to keep trace of last opened panel
 */
-jQuery().ready(function(){
+jQuery(function(){
 var cookies={
 	get:function(name){
 			var re=new RegExp(name+'=([^;]*);?','gi'), result=re.exec(document.cookie)||[];
@@ -33,52 +33,57 @@ var cookies={
 	}
 };
 
-	var toolBar = $('#sMVCtoolBar');
-	var btShow  = $('#sMVCshow');
-	var showDiv = $('#sMVCshow_div');
-	var btPhperr  = $('#sMVCphperr');
-	var phperrDiv = $('#sMVCphperr_div');
-	var showDiv = $('#sMVCshow_div');
-	var btDb  = $('#sMVCdb');
-	var dbDiv = $('#sMVCdb_div');
-	var btDataMenu  = $('#sMVCmodels');
-	var dataMenu = $('ul#sMVCmodelsList');
-	var btToggle = $('#sMVCtoolBarToggle');
-	var btCss,cssDiv;
+	var toolBar = $('#sMVCtoolBar').css({position:'fixed',top:0})
+		, positionUsed = toolBar.offset().top===$(window).scrollTop()?'fixed':'absolute'
+		, btShow  = $('#sMVCshow')
+		, showDiv = $('#sMVCshow_div')
+		, btPhperr  = $('#sMVCphperr')
+		, phperrDiv = $('#sMVCphperr_div')
+		, showDiv = $('#sMVCshow_div')
+		, btDb  = $('#sMVCdb')
+		, dbDiv = $('#sMVCdb_div')
+		, btDataMenu  = $('#sMVCmodels')
+		, dataMenu = $('ul#sMVCmodelsList')
+		, btToggle = $('#sMVCtoolBarToggle')
+		, btCss
+		, cssDiv
+	;
 
 	//-- styling toolbar
-	toolBar.css({position:'absolute',right:0,top:0,zIndex:9999,margin:0});
+	toolBar.css({position:positionUsed,right:0,zIndex:9999,margin:0});
+
 	var pannelStyle = {
 		//- background:'#F0F0F0', position:'absolute', left:0, top:0,
 		//- zIndex:999,  overflow:'auto', display:'none', textAlign:'left',padding:'10px',
 		//- border:'solid #333 1px',borderTop:'none',borderLeft:'none'
-		position:'absolute', left:0, top:0,textAlign:'left',
-		zIndex:9999,  overflow:'auto', display:'none'
+		position:positionUsed, left:"0.5%", top: ".5%",maxHeight:"99%",
+		textAlign:'left',zIndex:9998,  overflow:'auto', display:'none',
+		fontSize:'12px', width:"99%"
 	};
-	var pannelTitleStyle = { color:'#555', fontSize:'18px', margin:'10px 0', borderBottom:'solid #555 1px'};
+	var pannelTitleStyle = { color:'#555', fontSize:'14px', margin:'10px 0', borderBottom:'solid #555 1px'};
 	/*var toolBarButtonStyle = {border:'solid #555 1px','border-top':'none',color:'#333',cursor:'pointer',background:'#F0F0F0',margin:0};
 	$('button',toolBar).css(toolBarButtonStyle);*/
 
 
 	function _toInt(value){ var i = parseInt(value); return isNaN(i)?0:i; }
-	function getWidth(){
-		return $('body').width()-toolBar.outerWidth(true)-2;
-	}
 
 	function addPanel(bt,pannel,content,addcount){
 		if( addcount ){
 			bt.append('<small> ('+ ((typeof(addcount)=='number'||typeof(addcount)=='string')?addcount:content.length)+')</small>');
 		}
 		pannel = $(pannel);
-		pannel.append(content).css(pannelStyle).addClass('ui-widget ui-widget-content ui-corner-bottom');
-		//- $('h1',pannel).css(pannelTitleStyle);
-		$('h1',pannel).addClass('ui-widget-header');
-		bt.bind('click',{p:pannel},function(e){
-			var p = e.data.p;
-			$('.sMVCpannel').not(p).hide();
-			p.width(getWidth())
-				.css('maxHeight',"98%")
-				.toggle();
+		pannel.append(content).css(pannelStyle).addClass('ui-widget ui-widget-content ui-corner-all');
+		$('h1',pannel).css(pannelTitleStyle)
+			.addClass('ui-widget-header')
+			.prepend('<span class="ui-icon ui-icon-close" style="float:left;" title="close pannel"></span>')
+			.find('span.ui-icon')
+				.hover(function(){$(this).parent('h1').toggleClass('ui-state-hover');})
+				.css({cursor:"pointer"})
+				.click(function(){pannel.hide();setPanelCookie(); } )
+		;
+		bt.click(function(e){
+			$('.sMVCpannel').not(pannel).hide();
+			pannel.toggle();
 			setPanelCookie();
 		});
 	}
@@ -151,26 +156,33 @@ var cookies={
 	}else{
 		btDataMenu.before(dataMenu);
 		dataMenu.css({
-			borderTop:'none',
+			//borderTop:'none',
 			position:'absolute',
-			zIndex:1000,
-			left:'-1px',
+			zIndex:9999,
+			//right:0,
+			left:0,
 			top:btDataMenu.innerHeight(),
 			textAlign:'left',
 			listStyleType:'none',
 			listStyleImage:'none',
+			overflow:'auto',
 			margin:'2px 0',
 			padding:'0 10px',
+			maxHeight:'350px',
 			display:'none'
-		}).addClass('ui-widget-content ui-button-none ui-corner-bottom');
+		}).addClass('ui-widget-content ui-button-none ui-corner-bottom ui-corner-top-left');
 		$('li',dataMenu).css({fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
-		btDataMenu.bind('click',{p:dataMenu},function(e){
-			var p = e.data.p;
-			dataMenu.css('top',$(this).innerHeight()).toggle();
+		btDataMenu.click(function(e){
+			//dbg($(this).position().left+$(this).width())
+			dataMenu.css({
+				top:$(this).innerHeight(),
+				//left:  $(this).position().left + $(this).width() - dataMenu.width(),
+				maxHeight:$(window).height()*0.9
+			}).toggle();
 		});
 	}
 
-	//-- Manage DynCss
+	/*/-- Manage DynCss
 	simpleMVCDynCssAppend= function(e){
 		if( ! $('#sMVCcss').length){ //- create elements
 			btCss = $('<button id="sMVCcss" class="ui-button">DynCss</button></div>').appendTo(toolBar).button()
@@ -183,7 +195,7 @@ var cookies={
 		$('<pre style="text-align:left;"></pre>').html(e.innerHTML).appendTo(cssDiv);
 		if( cookies.get('SMVCDevToggle') != 1)
 			btCss.hide();
-	};
+	};*/
 
 	//-- Manage cssEditor button
 	$('#sMVCcssEditor').click(function(){
@@ -208,9 +220,8 @@ var cookies={
 		$(this).button('option','icon',visible?'ui-icon-circle-triangle-w':'ui-icon-circle-triangle-e')
 		//this.innerHTML = visible?'&gt;':'&lt;';
 		cookies.set('SMVCDevToggle',visible?1:0);
-		$('.sMVCpannel:visible').css('width',getWidth());
 	});
-	if( cookies.get('SMVCDevToggle') == 1 )
+	if( cookies.get('SMVCDevToggle') == 1 && !btPhperr.is(':visible') ) // force opened when there's some php_errors
 		btToggle.click();
 
 	//-- no report to handle so just remove the bar

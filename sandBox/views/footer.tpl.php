@@ -1,11 +1,8 @@
 
 <?php
-	if(defined('DEVEL_MODE') && DEVEL_MODE){
-		echo $this->simpleMVCdevelBar();
+	if( ! (defined('JS_TO_HEAD') && JS_TO_HEAD) ){
+		echo $this->_js_getPending();
 	}
-	$this->button('.ui-button',array('checkButtonset'=>true));
-	$this->_js_script("$('.ui-selectbuttonset').selectbuttonset();");
-	echo $this->_js_getPending()
 ?>
 </body>
 </html>

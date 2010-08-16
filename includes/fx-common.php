@@ -47,7 +47,55 @@ if( defined('DEVEL_MODE') && DEVEL_MODE){
 	ini_set('error_prepend_string','<div class="php_error">'.preg_replace('!<br\s*/?>!','',ini_get('error_prepend_string')));
 	ini_set('error_append_string',preg_replace('!<br\s*/?>!','',ini_get('error_append_string')).'</div>');
 	error_reporting(E_ALL | E_STRICT);
+	//-- devel bar management;
+	if( PHP_SAPI !== 'cli' ){
+		$_SMVC_BENCH_ = array(
+			'start'=> microtime(true),
+			'initMem' => memory_get_usage(true)
+		);
+		ob_start();
+		function smvcPrintDevelBar(){
+			if( class_exists('baseView',false) && baseView::hasLivingInstance() && baseView::getInstance()->getController() && ! simpleMVCdevelBar_viewHelper::$disable ){
+				$develBar = baseView::getInstance()->simpleMVCdevelBar();
+			}else{
+				return ob_end_flush();
+			}
+			$out = ob_get_clean();
+			if(preg_match('!</body>\s*!i',$out)){
+				echo preg_replace('!</body>\s*!i',$develBar.'$0',$out,1);
+			}else{
+				echo "$out$develBar";
+			}
+		}
+		register_shutdown_function('smvcPrintDevelBar');
+	}
 }
+#- show(JS_TO_HEAD,'exit');
+/** manage jsplugin pendings to always be included in the header */
+if( defined('JS_TO_HEAD') && JS_TO_HEAD){
+	ob_start();
+	function smvcJsPendingToHEader(){
+		if(! class_exists('baseView',false)){
+			return ob_end_flush();
+		}
+		$view = baseView::hasLivingInstance(true);
+		if( false === $view ){
+			return ob_end_flush();
+		}
+		$jsHelper = $view->helperLoaded('js',true);
+		if( (! $jsHelper instanceof viewHelperInterface) || empty(js_viewHelper::$pendingScript) ){
+			return ob_end_flush();
+		}
+		$out = ob_get_clean();
+		if(preg_match('!</(?:head|body)>\s*!i',$out)){
+			echo preg_replace('!</(?:head|body)>\s*!i',$jsHelper->getPending().'$0',$out,1);
+		}else{
+			echo $out.$jsHelper->getPending();
+		}
+	}
+	register_shutdown_function('smvcJsPendingToHEader');
+}
+//*/
 
 ###--- AUTOLOAD ---###
 if( function_exists('spl_autoload_register')){
