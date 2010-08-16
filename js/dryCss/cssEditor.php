@@ -14,7 +14,7 @@ when nested:
 	!extend parent selector
 */
 
-$codeMirrorPath = '../CodeMirror-0.7';
+$codeMirrorPath = '../CodeMirror-0.8';
 
 	#- set editor id (will be also used as part as the storage key)
 	if( ! empty($_GET['editorId']) ){
@@ -177,7 +177,7 @@ $codeMirrorPath = '../CodeMirror-0.7';
 						display:'none',
 						zIndex:1,
 						margin:0,
-						padding:0,
+						padding:0
 					});
 				}
 				if( self._definedList.is(':visible')){
