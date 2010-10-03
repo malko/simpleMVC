@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-09-05 - add a try/catch on save
 *            - 2010-08-13 - now will conserve config defined inside class over thoose defined in simpleMVC_xxx_config
 *            - 2010-02-26 - little rewrite of list filters support
 *            - 2010-02-12 - bug correction for list configuration in configure action
@@ -97,10 +98,12 @@ abstract class abstractAdminmodelsController extends abstractController{
 		));
 
 		$this->configFile = CONF_DIR.'/simpleMVCAdmin_'.FRONT_NAME.'_config.php';
-		if(! is_file($this->configFile) && is_writable(CONF_DIR))
-			touch($this->configFile);
-		if(! is_writable($this->configFile) ){
-			self::appendAppMsg("$this->configFile isn't writable.",'error');
+		if( DEVEL_MODE ){
+			if(! is_file($this->configFile) && is_writable(CONF_DIR))
+				touch($this->configFile);
+			if(! is_writable($this->configFile) ){
+				self::appendAppMsg("$this->configFile isn't writable.",'error');
+			}
 		}
 		$this->loadModelConfig();
 		$this->pageTitle = ucFirst(langManager::msg($this->modelType,null,$this->getName().'_'.$this->modelType.'|'.$this->getName().'|default'));
@@ -411,7 +414,13 @@ abstract class abstractAdminmodelsController extends abstractController{
 			$successMsg = "Nouvel enregistrement ajouté.";
 		else
 			$successMsg = "Enregistrement mis à jour.";
-		$model->save();
+		try{
+			$model->save();
+		}catch(Exception $e){
+			self::appendAppMsg($e->getMessage(),'error');
+			$this->view->assign($model->datas);
+			return $this->forward('form');
+		}
 		self::appendAppMsg($successMsg,'success');
 		if( empty($this->_allowedActions['list'])){
 			$this->_isAllowedAction_('edit',false);
