@@ -377,14 +377,15 @@ function show(){
 	}
 
 	$str = array();
-	foreach($args as $arg)
+	foreach($args as $arg){
     $str[]= preg_replace('!^\r?\n!m','',print_r($arg,1));
+	}
 
 	$cleanExps = array(
 		'!^([\t ]+)!me', //-- reduce tab size
 		'!((db|dbprofiler|mysqli?db|sqlitedb3?) Object)\n(\s+)\(.*?\n\3\)\n!si', //-- avoid dbs object printing
 		'/(?!<\s|^)Object\s*\*RECURSION\*\s*\n/', //-- reduce recursion to one line
-		'/(?!<\s|^)Array\s*\(\s*\)\n/', //-- reduce emty array to single line
+		'/(?!<\s|^)Array\s*\(\s*\)\n/', //-- reduce empty array to single line
 	);
 	$cleanReplace = array(
 		'str_repeat(" ",strlen("$1")/2);',

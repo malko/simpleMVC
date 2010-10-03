@@ -17,6 +17,6 @@ class button_viewHelper extends jsPlugin_viewHelper{
 	* disabled: (bool)
 	*/
 	function button($selector=".ui-button",array $options=null){
-		$this->_js_script("$('$selector').button(".(is_array($options)?json_encode($options):'').");");
+		$this->_js_scriptOnce("$('$selector').button(".(is_array($options)?json_encode($options):'').");");
 	}
 }

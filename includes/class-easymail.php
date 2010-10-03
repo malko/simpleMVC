@@ -474,7 +474,7 @@ class easymail{
 	* @param bool   $dontSend  if true then mail won't be send and easymail object will be returned
 	* @return bool or easymail if $dontSend is true and all is ok
 	*/
-	static public function mailTpl($to,$subject,$doc,$from,$datas,$type='html',$dontSend=false){
+	static public function mailTpl($to,$subject,$doc,$from=null,array $datas=null,$type='html',$dontSend=false){
 		static $prepareKeys;
 		if(! isset($prepareKeys))
 			$prepareKeys = create_function('$e','return "---$e---";');
@@ -482,17 +482,17 @@ class easymail{
 		//test du document
 		if(strlen($doc) <255 && is_file($doc))
 			$doc = file_get_contents($doc);
-
-		$keys   = array_map($prepareKeys, array_keys($datas));
-		$values = array_values($datas);
-		$body   = str_replace($keys,$values,$doc);
-
+		if( !empty($datas)){
+			$keys   = array_map($prepareKeys, array_keys($datas));
+			$values = array_values($datas);
+			$doc   = str_replace($keys,$values,$doc);
+		}
 		$easymail = new easymail();
-		if(! $easymail->from($from) )
+		if(null!==$from && ! $easymail->from($from) )
 			return false;
 
 		$easymail->body(
-			$body,
+			$doc,
 			($type!=='plain'?'html':'plain'),
 			($type==='both'?true:false),
 			self::$dfltHeaderCharset

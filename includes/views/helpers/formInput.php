@@ -96,7 +96,7 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'textConfirm':
 			case 'passwordConfirm':
 				if( isset($options['label']) && ! isset($options['placeholder'])){
-					$options['placeholder'] = $options['label'];
+					$options['placeholder'] = strip_tags($options['label']);
 				}
 				if(strpos($type,'Confirm')){ //-- manage confirmation if required
 					$type = str_replace('Confirm','',$type);
