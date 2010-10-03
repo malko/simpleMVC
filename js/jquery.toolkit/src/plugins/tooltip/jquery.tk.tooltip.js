@@ -4,6 +4,9 @@
 * @licence Dual licensed under the MIT / LGPL licenses.
 * @require tk.position
 * @changelog
+*            - 2010-08-30 - bugs correction regarding spacing and connector colors
+*                         - added method tipWrapper (used with return_tipWrapper)
+*                         - add option opacity;
 *            - 2010-05-06 - bug correction regarding tooltips from title attribute
 *            - 2010-03-30 - bug correction on connector display under ie8
 *            - 2010-03-23 - add some aria attrs
@@ -23,7 +26,7 @@ $.toolkit('tk.tooltip',{
 	_init:function(){
 		var self = this,
 			ttipId = "tooltip_"+self.elmt.attr('id');
-		self._wrapper = $('<div class="tk-tooltip-wrapper tk-border tk-corner" role="tooltip" id="'+ttipId+'"><div class="tk-tooltip-msg"></div><div class="tk-pointer"><div class="tk-pointer-bg"><span/></div></div></div>');
+		self._wrapper = $('<div class="tk-tooltip-wrapper tk-border tk-corner" role="tooltip" id="'+ttipId+'"><div class="tk-tooltip-msg"></div><div class="tk-pointer"><div class="tk-pointer-bg"><span></span></div></div></div>');
 		self.elmt.attr("aria-describedby", ttipId);
 		self._msg = self._wrapper.find('.tk-tooltip-msg');
 		self._pointer=self._wrapper.find('.tk-pointer');
@@ -37,11 +40,16 @@ $.toolkit('tk.tooltip',{
 		if( this.options.stateClass.match(/^(error|success|warning|info|normal|disabled)$/) ){
 			this.options.stateClass = 'tk-state-'+this.options.stateClass
 		}
+		self._applyOpts('stateClass|position|connector|msg|width|height|showTrigger|hideTrigger|stickyMouse|opacity');
 
-		self._applyOpts('stateClass|position|connector|msg|width|height|showTrigger|hideTrigger');
-		self._applyOpts('stickyMouse');
 		this._setPointerColor(true);
 
+	},
+	tipWrapper:function (){
+		return this._wrapper;
+	},
+	_set_opacity:function(o){
+		this._wrapper.css('opacity',o?o:1);
 	},
 	_set_stickyMouse:function(sticky){
 		var self = this;
@@ -92,21 +100,25 @@ $.toolkit('tk.tooltip',{
 				vSpace: (s+cSpace)
 			};
 		this._wrapper.positionRelative('set',space);
+		return s;
 	},
 	_set_width:function(w){
 		this._wrapper.width(w);
 	},
 	_set_height:function(h){
-		this._wrapper.width(h);
+		this._wrapper.height(h);
 	},
 	_set_stateClass:function(stateClass){
 		this._wrapper.removeClass(this.options.stateClass).addClass(stateClass);
 		this._setPointerColor(this._tk.initialized);
 	},
 	_set_connector:function(c){
-		this._pointer.toggle(c);
+		this._pointer.toggle(this.options.connector=c?true:false);
 		//this._wrapper.positionRelative('set_space',this.options.spacing+(this.options.connector?16:0));
 		this._applyOpts('spacing');
+		if( this._tk.initialized && c){
+			this._setPointerColor(this.options.connector=c);
+		}
 	},
 	_set_msg:function(msg){
 		if( msg.toString().length < 1){
@@ -116,6 +128,8 @@ $.toolkit('tk.tooltip',{
 		this._msg.html(msg);
 	},
 	_set_showTrigger:function(eventName){
+		if( null===eventName)
+			return;
 		var self = this;
 		if( eventName instanceof Array ){
 			for(var i=0,l=eventName.length;i<l;i++){
@@ -126,6 +140,8 @@ $.toolkit('tk.tooltip',{
 		self.elmt.bind(eventName+'.'+self._tk.pluginName,function(e){self.show(e)});
 	},
 	_set_hideTrigger:function(eventName){
+		if( null===eventName)
+			return;
 		var self = this;
 		if( eventName instanceof Array ){
 			for(var i=0,l=eventName.length;i<l;i++){
@@ -140,6 +156,8 @@ $.toolkit('tk.tooltip',{
 		if( ! doIt){ //-- prevent setting colors multiple times at init time
 			return false;
 		}
+		if(! this.options.connector )
+			return false;
 		var pos=this._wrapper.positionRelative('return1_realpos'),
 			bgColor = this._wrapper.css('backgroundColor');
 		//-- reset inlineStyle (put something in it to get it work on ie8)
@@ -217,7 +235,8 @@ $.tk.tooltip.defaults={
 	width:'auto',
 	height:'auto',
 	msg:'',
-	showTrigger:['focus','mouseenter'],
+	opacity:false,// 0-100 based
+	showTrigger:['focus','mouseenter'],// may be a single string eventName an array list of eventsNames or null
 	hideTrigger:['blur','mouseleave'],
 	showMethod:'show',//['fadeIn','fast'], //may be string or array methodName + duration
 	hideMethod:'hide' // ['hide',0]

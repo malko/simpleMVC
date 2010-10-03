@@ -12,7 +12,8 @@ was really missing to better stick to my way of doing things so i start this new
 @licence Dual licensed under the MIT / GPL licenses.
 
 @changelog
- - 2010-07-26 - first attempt for pseudo plugin inheritance (not real inheritance as we don't use functions constructors)
+ - 2010-08-31 - some more work on plugin inheritance (instanceof basePlugin will only be true if basePlugin is a toolkit.plugin (we want to create a toolkit.plugin! ))
+ - 2010-07-26 - first attempt for pseudo plugin inheritance
  - 2010-07-22 - add tkSetState() method
  - 2010-07-13 - add support for user define initPlugin method ($.tk.[pluginName].initPlugin = function(){...})
  - 2010-07-08 - change disable method to consider true/false as intended (true => disable) and return this
@@ -66,11 +67,21 @@ was really missing to better stick to my way of doing things so i start this new
 
 $.toolkit = function(pluginName,basePlugin,prototype){
 	//-- make nameSpace optional default to tk.
+	var nameSpace = 'tk';
 	if( ! prototype ){
 		prototype = basePlugin;
-		basePlugin = null;
+		basePlugin = $.toolkit.plugin;
+	}else if( typeof basePlugin === 'string' ){
+		if( basePlugin.indexOf('.') > 0){
+			basePlugin = basePlugin.split('.');
+			if( undefined === $[basePlugin[0]] || undefined === $[basePlugin[0]][basePlugin[1]] ){
+				throw('jquery.toolkit '+pluginName+' trying to extend undefined plugin $.'+basePlugin[0]+'.'+basePlugin[1]);
 	}
-	var nameSpace = 'tk';
+			basePlugin = $[basePlugin[0]][basePlugin[1]];
+		}else{
+			basePlugin = $[nameSpace][basePlugin];
+		}
+	}
 	if( pluginName.indexOf('.')){
 		pluginName = pluginName.split('.');
 		nameSpace = pluginName[0];
@@ -141,13 +152,19 @@ $.toolkit = function(pluginName,basePlugin,prototype){
 		self._tk.initialized=true;
 	};
 	//-- extends plugin methods
-	$[nameSpace][pluginName].prototype = $.extend(
+	basePlugin = new basePlugin;
+	if(! ( basePlugin	instanceof $.toolkit.plugin) ){
+		basePlugin = $.extend(true,new $.toolkit.plugin,basePlugin);
+	}
+	$[nameSpace][pluginName].prototype = basePlugin;
+	$.extend(true,$[nameSpace][pluginName].prototype,prototype);
+	/*$[nameSpace][pluginName].prototype = $.extend(
 		true,{},
-		basePlugin?new $.tk[basePlugin]():new $.toolkit.plugin(), //-- create a new class
+		new basePlugin(), //-- create a new class
 		//- basePlugin?$.tk[basePlugin].prototype:$.toolkit.plugin.prototype, //-- create a new class
 		//- $.toolkit.plugin.prototype, //-- extend it with base tk prototype
 		prototype //-- finally add plugin own methods
-	);
+	);*/
 
 	//-- expose plugin function to the world
 	$.fn[pluginName] = function(){

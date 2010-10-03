@@ -1,6 +1,7 @@
 /**
 *
 * @changelog
+* - 2010-09-26 - allow empty button in confirmbox
 * - 2010-08-11 - move exposeShadow creation to first showExpose() call
 */
 
@@ -251,10 +252,14 @@ $.toolkit('tk.confirmbox','dialogbox',{
 		}
 	},
 	_set_confirmLabel: function(str){
-		this._buttonBox.find('.tk-confirmbox-confirmButton').html(str);
+		this._buttonBox.find('.tk-confirmbox-confirmButton')
+			.html(str)
+			.toggle(str!='');
 	},
 	_set_cancelLabel: function(str){
-		this._buttonBox.find('.tk-confirmbox-cancelButton').html(str);
+		this._buttonBox.find('.tk-confirmbox-cancelButton')
+			.html(str)
+			.toggle(str!='');
 	}
 
 });

@@ -91,12 +91,13 @@ $.toolkit('tk.keypad',{
 			case 'focus':
 				if( self.options.autoShow){
 					if( self.options.unique){
-						$('.tk-keypad').hide(0);
+						$('.tk-keypad').not(self.elmt).stop(true,true).hide(0);
 					}
 					self.elmt.slideDown();
 				}
 				if( self.options.blockedInput){
-					self._target.blur();
+					//- self._target.blur();
+					event.preventDefault();
 					self.elmt.find('.'+self.options.buttonClass+':eq(0)').focus().blur();
 				}
 				break;
