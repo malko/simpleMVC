@@ -30,12 +30,8 @@ if( isset($_SESSION) )
 session_name(FRONT_NAME);
 session_start();
 
-if( DEVEL_MODE ){
-	$_SMVC_BENCH_ = array(
-		'start'=> microtime(true),
-		'initMem' => memory_get_usage(true)
-	);
-}
+//-initialize our own error handler
+smvcErrorHandler::init(DEVEL_MODE);
 
 #- if needed specified your default database connection (uncomment next two lines)
 #- db::setDefaultConnectionStr(DB_CONNECTION);

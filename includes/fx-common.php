@@ -21,7 +21,7 @@
 *            - 2008-03-23 - add abstractModels lookup to __autoload
 */
 
-#- definition des chemins communs
+#- define common paths
 define('LIB_DIR',dirname(__file__));
 
 #- load configurtations files
@@ -70,7 +70,7 @@ if( defined('DEVEL_MODE') && DEVEL_MODE){
 		register_shutdown_function('smvcPrintDevelBar');
 	}
 }
-#- show(JS_TO_HEAD,'exit');
+
 /** manage jsplugin pendings to always be included in the header */
 if( defined('JS_TO_HEAD') && JS_TO_HEAD){
 	ob_start();
