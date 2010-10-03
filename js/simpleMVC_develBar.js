@@ -79,12 +79,13 @@ var cookies={
 			.find('span.ui-icon')
 				.hover(function(){$(this).parent('h1').toggleClass('ui-state-hover');})
 				.css({cursor:"pointer"})
-				.click(function(){pannel.hide();setPanelCookie(); } )
+				.click(function(){pannel.hide();setPanelCookie(); return false;} )
 		;
 		bt.click(function(e){
 			$('.sMVCpannel').not(pannel).hide();
 			pannel.toggle();
 			setPanelCookie();
+			return false;
 		});
 	}
 
@@ -112,7 +113,7 @@ var cookies={
 	}else{
 		addPanel(btShow,showDiv,showed,true);
 		showed.css('margin','0 20px');
-		$('strong',showed).click(function(){$(this).siblings('pre').toggle();}).css({ cursor:'pointer'});
+		$('strong',showed).click(function(){$(this).siblings('pre').toggle(); return false;}).css({ cursor:'pointer'});
 		$('.toggle',showDiv).click(function(){
 			var titles = $('div.show strong');
 			var opened   = titles.siblings('pre:visible').length
@@ -121,6 +122,7 @@ var cookies={
 				titles.each(function(){ var t= $(this); if(t.siblings('pre:visible').length) t.click() });
 			else
 				titles.each(function(){ var t= $(this); if(t.siblings('pre:hidden').length) t.click() });
+			return false;
 		});
 	}
 
@@ -141,12 +143,13 @@ var cookies={
 		btDb.hide().remove();
 		dbDiv.hide().remove();
 	}else{
-		report.children('caption').click(); // open profiler table
 		addPanel(btDb,dbDiv,report,(dbMsgs.length ? $('tbody tr',report).length+'/'+dbMsgs.length : $('tbody tr',report).length/2));
 		if( dbMsgs.length){
-			dbDiv.append('<h2>DB::messages</h2>').append(dbMsgs.css('display','block'));
+			$('<div style="margin:1em;padding:.5em;" class="ui-state-highlight"><h2>DB::messages</h2></div>').appendTo(dbDiv).append(dbMsgs.css('display','block'));
 			$('h2',dbDiv).addClass('ui-widget-header').css('font-size','0.8em');
-
+			btDb.addClass('ui-state-error');
+		}else{
+			report.children('caption').click(); // open profiler table
 		}
 	}
 
@@ -172,6 +175,7 @@ var cookies={
 			display:'none'
 		}).addClass('ui-widget-content ui-button-none ui-corner-bottom ui-corner-top-left');
 		$('li',dataMenu).css({fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
+		$('.ui-button',dataMenu).click(function(r){dataMenu.hide();});;
 		btDataMenu.click(function(e){
 			//dbg($(this).position().left+$(this).width())
 			dataMenu.css({
@@ -179,6 +183,7 @@ var cookies={
 				//left:  $(this).position().left + $(this).width() - dataMenu.width(),
 				maxHeight:$(window).height()*0.9
 			}).toggle();
+			return false;
 		});
 	}
 
@@ -207,6 +212,18 @@ var cookies={
 			window._cssEditor.close();
 			delete window._cssEditor;
 		}
+		return false;
+	});
+	//-- show Session button
+	$('#sMVCshowSession').click(function(){
+		var relUrl = $(this).attr('rel');
+		if( window._session === undefined){
+			window._session = window.open(relUrl,'session','dependent=yes,titlebar=no,status=no,scrollbars=yes,menubar=no,location=yes,toolbar=no,height=600,width=800');
+		}else{
+			window._session.close();
+			delete window._session;
+		}
+		return false;
 	});
 	//-- toggle button
 	btToggle.click(function(){
@@ -220,17 +237,27 @@ var cookies={
 		$(this).button('option','icon',visible?'ui-icon-circle-triangle-w':'ui-icon-circle-triangle-e')
 		//this.innerHTML = visible?'&gt;':'&lt;';
 		cookies.set('SMVCDevToggle',visible?1:0);
+		return false;
 	});
-	if( cookies.get('SMVCDevToggle') == 1 && !btPhperr.is(':visible') ) // force opened when there's some php_errors
-		btToggle.click();
 
-	//-- no report to handle so just remove the bar
+	if( phped.length ){
+		if(! phperrDiv.is(':visible')){
+			btPhperr.click();
+		}
+	}else if( dbMsgs.length ){
+		btDb.click();
+	}else{
+		var openedPanel = cookies.get('SMVCDevBarPanel');
+		if( openedPanel ){
+			eval('bt'+openedPanel+'.click();');
+		}
+	}
+
+	if( cookies.get('SMVCDevToggle') == 1 ){ // toggle devel bar
+		btToggle.click();
+	}
+
 	if( $.isFunction($.fn.buttonset) ){
 		$('#sMVCtoolBar').buttonset();
 	}
-	var openedPanel = cookies.get('SMVCDevBarPanel');
-	if( openedPanel ){
-		eval('bt'+openedPanel+'.click();');
-	}
-
 });

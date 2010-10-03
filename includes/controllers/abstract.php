@@ -11,6 +11,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-09-22 - now session datas are editable in showSession
+*            - 2010-09-19 - add showSession method
 *            - 2010-07-01 - add clearSession method
 *            - 2010-06-24 - introduce method abstractController::_getActionCacheNameParameter() to better handle the unicity of cached pages
 *            - 2010-05-26 - change treatment of undefined action methods call with existing coresponding views
@@ -453,6 +455,9 @@ abstract class abstractController{
 			$controllerName = null;
 			$actionName = $dispatchString;
 		}
+		if( empty($actionName)){
+			$actionName = substr(DEFAULT_DISPATCH,strpos(DEFAULT_DISPATCH,':')+1);
+		}
 		if(empty($controllerName) || in_array($controllerName,array($this->getName(),get_class($this)),true)){
 			$this->$actionName();
 		}else{
@@ -490,6 +495,11 @@ abstract class abstractController{
 			}
 			$params = ((strpos($uri,'?')!==false)?((substr($uri,-1)!=='?')?'&amp;':'') :'?').$params;
 		}
+		//-- keep errors for next page
+		if( class_exists('smvcErrorHandler',false)){
+			smvcErrorHandler::store();
+		}
+
 		if(! $permanent){
 			header("location: $uri$params");
 		}else{
@@ -537,6 +547,34 @@ abstract class abstractController{
 	function clearSession(){
 		if( DEVEL_MODE )
 			$_SESSION = array();
+		return $this->redirect();
+	}
+	function showSession(){
+		if( DEVEL_MODE ){
+			simpleMVCdevelBar_viewHelper::$disable=true;
+			if( isset($_POST['SESSION']) ){
+				$s = json_decode($_POST['SESSION'],true);;
+				$_SESSION = $s;
+				$this->redirect();
+			}
+			echo '
+			<div style="text-align:center">
+			<div style="float:right";">
+				<a href="javascript:window.close();">Close</a>
+				<a href="'.$this->url(':clearSession').'" onclick="window.opener.location.href=this.href;window.close();">Clear session</a>
+			</div>
+			<h1 style="font-size:16px;border-bottom:solid silver 1px;">$_SESSION content</h1>
+			<pre style="text-align:left;font-size:12px;line-height:16px;">'.preg_replace("!<br\s*/?>(?:&nbsp;)*(array&nbsp;\()!i",'$1',highlight_string("<?php\n\$_SESSION = ".var_export($_SESSION,1),1)).'</pre>
+			<form action="'.$this->url('showSession').'" method="post" style="font-size:14px;border-top:solid silver 1px;padding-top:1em">
+			<h1 style="font-size:16px;">$_SESSION Modification</h1>
+			This is a json representation of you session data you can edit this and submit to modify $_SESSION content<br />
+			(Be warn that content must be valid json or you simply will erase your session data. and it will transform your json into an associative array that will simply replace your actual session datas)
+			<textarea rows="10" name="SESSION" style="width:100%">'.json_encode($_SESSION).'</textarea>
+			<input type="submit" name="submit" value="modify session datas">
+			</form>
+			</div>';
+			exit();
+		}
 		return $this->redirect();
 	}
 }
