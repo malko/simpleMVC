@@ -61,10 +61,10 @@ if( defined('DEVEL_MODE') && DEVEL_MODE){
 				return ob_end_flush();
 			}
 			$out = ob_get_clean();
-			if(preg_match('!</body>\s*!i',$out)){
-				echo preg_replace('!</body>\s*!i',$develBar.'$0',$out,1);
+			if( $tmp = strripos($out,'</body>') ){
+				echo substr_replace($out, $develBar, $tmp, 0);
 			}else{
-				echo "$out$develBar";
+				echo $out, $develBar;
 			}
 		}
 		register_shutdown_function('smvcPrintDevelBar');

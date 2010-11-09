@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-01-05 - add support for [double]quoted value
 *            - 2010-01-05 - add support for trailing comments
 *            - 2009-10-19 - bug correction in write_conf_file() when adding new vars on file not terminated by a new line
 *            - 2009-06-25 - bug correction (notice on undefined $var) in write_conf_file() when first lines are empties or comments
@@ -95,8 +96,9 @@ function parse_conf_file($file_path,$out = false){
 		if($preserve) continue;
 		$value = preg_replace($_search,$_replce,trim($value));
 
-		if(! in_array(strtolower($value),array('null','false','true')) )
-			$value = "'".($out?preg_replace('!(\\\\|\')!','\\\\\1',$value):$value)."'";
+		if(! in_array(strtolower($value),array('null','false','true')) ){
+			$value = preg_match('!^([\'"]).*\\1$!s',$value)?$value:"'".preg_replace('!(\\\\|\')!','\\\\\1',$value)."'";
+		}
 
 		$var = trim($var);
 		if(! $out){

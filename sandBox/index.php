@@ -76,6 +76,7 @@ abstractController::$defaultViewDirs  = array(
 #- abstractModel::$dfltFiltersDictionary='filters';
 
 # dispatching you don't need to edit following lines
+$actionParameters = array();
 if( USE_REWRITE_RULES ){
 	if((!isset($_SERVER['PATH_INFO'])) && isset($_SERVER['REDIRECT_QUERY_STRING']) ){
 		$_SERVER['PATH_INFO'] = preg_replace('!^([^\?&]+).*$!','\\1',$_SERVER['REDIRECT_QUERY_STRING']);
@@ -89,8 +90,11 @@ if( USE_REWRITE_RULES ){
 		$route = explode('/',substr($_SERVER['PATH_INFO'],1));
 		$_controller = count($route) ? array_shift($route) : null;
 		$_action = count($route) ? array_shift($route) : null;
-		while (count($route) > 1) {
-			$_GET[array_shift($route)] = array_shift($route);
+		if( count($route) ){
+			$actionParameters = $route;
+			while (count($route) > 1) {
+				$_GET[array_shift($route)] = array_shift($route);
+			}
 		}
 	}
 }
@@ -120,7 +124,7 @@ try{
 }
 #- action call
 try{
-  $controller->$_action();
+  call_user_func_array(array($controller,$_action),$actionParameters);
 }catch(Exception $e){
 	if( DEVEL_MODE )
 		show($e->getMessage(),$e->getTrace(),'color:maroon;exit');
