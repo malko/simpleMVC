@@ -137,7 +137,7 @@ cbRteLinkDialog=function(rte,range){
 		};
 		rteLinkDialog.appendTo('body')
 			.css({fontSize:'12px'})
-			.dialog({autoOpen:false,resizable:false,buttons:buttons,width:'300px',modal:true});
+			.dialog({autoOpen:false,resizable:false,buttons:buttons,width:'300px'});
 		$('label',rteLinkDialog).css({display:'block'})
 		$('input,select',rteLinkDialog).css({width:'230px'})
 		$('input#rteLinkHref',rteLinkDialog).filemanagerEntry(rteFmanagerOptions);

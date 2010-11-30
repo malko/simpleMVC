@@ -6,14 +6,17 @@
 *                                     - width (opt) the column width
 *                                     - sortmethod (opt) a function to call for sorting this column this is a basic sample for col 2:
 *                                                  function mysort(a,b){ if(a[2]>b[2]) return 1;	if(a[2]<b[2]) return -1; return 0;}
+*                                                  (you may use sortTable._SORTINGCOL instead of colId to make your method column independant )
 *                                     - unsortable (opt) boolean value set this to true if you don't want the column to be sortable
 *
 * @since 2006-08-24
 * @changelog
-*            - 2010-06-03 - add className options for headers as objects
-*            - 2009-09-01 - add arrowBefore and noArrow options
-*            - 2009-06-24 - add bodyRendering callback option
-*            - 2009-04-01 - add saveUserPrefs options to save user preferences by cookies
+* - 2010-10-14 - now header option sortmethod can take 'int' or 'float' as value to use default buil-in method for better comparison
+*              - moved _SORTINGCOL to sortTable property
+* - 2010-06-03 - add className options for headers as objects
+* - 2009-09-01 - add arrowBefore and noArrow options
+* - 2009-06-24 - add bodyRendering callback option
+* - 2009-04-01 - add saveUserPrefs options to save user preferences by cookies
 * @example
 * here's a very basic sample usage
 * first include this file:
@@ -43,8 +46,21 @@ window.onload = function(){
 * For the visual style just use CSS rules will be fine
 */
 // Global variable to know which col is sorting
-var _SORTINGCOL = false;
-sortTable = {
+(function(){
+
+var sortingMethods = {
+	'int':function(a,b){
+		var _a = parseInt(a[sortTable._SORTINGCOL],10), _b=parseInt(b[sortTable._SORTINGCOL],10);
+		return (_a>_b)?1:((_a<_b)?-1:0);
+	},
+	'float':function(a,b){
+		var _a = parseFloat(a[sortTable._SORTINGCOL],10), _b=parseFloat(b[sortTable._SORTINGCOL],10);
+		return (_a>_b)?1:((_a<_b)?-1:0);
+	}
+};
+
+window.sortTable = {
+	_SORTINGCOL: false, // Global variable to know which col is sorting
 	tables: {}, 	// tables object indexed by tables id
 	sortingCol:{},// list of column used for sort indexed by tables ids
 	sortingWay:{},// list ordering way used for sort indexed by tables ids
@@ -75,7 +91,7 @@ sortTable = {
 		%nbres(total of record in dataset) %tid (table id) %psizesel(manual page size selector) %nbpages(total page count)
 		%pstart(first record displayed on current page) %pend(last record displayed on current page) */
 		footerString: '<span style="float:right;" class="sorttable-pagesize-setting">afficher %psizesel lignes</span><div style="white-space:nowrap;" class="sorttable-pagenav-settings">%pnav</div>', //template string for footer rendering
-		pinputStr: 		'<input type="text" value="%pnum" onfocus="this.value=\'\';" onkeydown="if(event.keyCode == 13){sortTable.setPageNb(\'%tid\',this.value); return false;}" size="3" title="jump to page" style="text-align:center;">',
+		pinputStr: 		'<input type="text" value="%pnum" onfocus="this.value=\'\';" onkeydown="if(event.keyCode == 13){sortTable.setPageNb(\'%tid\',this.value);return false;}" size="3" title="jump to page" style="text-align:center;">',
 		// template string for page navigation rendering (MUSTN'T CONTAIN %pnav as it will be used to generate replacement string for %pnav)
 		navAttrs: {
 			first    : '<a href="%lnk" class="pagelnk"><<</a>',
@@ -93,12 +109,12 @@ sortTable = {
 		// optionnal function to call to show activity on long operation to the user receive tid and int/false as parameter true when starting activity false when finishing
 		// int will be 1 for rendering operation 2 for sorting operations
 		showActivity: function(tid,isWorking){
-			document.body.style.cursor = isWorking?'wait':'default';
-			var loading = document.getElementById('_SORTWORKING');
+			window.document.body.style.cursor = isWorking?'wait':'default';
+			var loading = window.document.getElementById('_SORTWORKING');
 			if(! loading ){
-				loading = document.createElement('div');
+				loading = window.document.createElement('div');
 				//~ document.getElementsByTagName('BODY')[0].appendChild(loading);
-				document.body.appendChild(loading);
+				window.document.body.appendChild(loading);
 				loading.id 							 = '_SORTWORKING';
 				loading.style.display    = 'none';
 				loading.style.background = '#f0f0ff';
@@ -108,15 +124,16 @@ sortTable = {
 				loading.style.left       = '0px';
 				loading.style.fontWeight = 'bold';
 				loading.innerHTML 			 = '<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;Working ...';
-				if( loading.style.opacity !== undefined)
+				if( loading.style.opacity !== undefined){
 					loading.style.opacity = '0.75';
-				else if(loading.style.filter !== undefined)
+				}else if(loading.style.filter !== undefined){
 					loading.style.filter = 'alpha(opacity=75);';
+				}
 			}
 			if(isWorking){
 				// get table size and position
-				var x = y = 0, e = document.getElementById(tid);
-				if(e.tBodies.length) e = e.tBodies[0];
+				var x =0, y = 0, e = window.document.getElementById(tid);
+				if(e.tBodies.length){ e = e.tBodies[0]; }
 				var w = e.offsetWidth, h = e.offsetHeight;
 				while (e!=null){ x+=e.offsetLeft; y+=e.offsetTop; e=e.offsetParent; }
 				loading.style.height = h+'px';
@@ -133,9 +150,10 @@ sortTable = {
 				return (result.length>1? unescape(result[1]): false);
 		},
 		set:function(name, value, expirationTime, path, domain, secure){
-				var time=new Date;
-				if(expirationTime)
+				var time=new Date();
+				if(expirationTime){
 						time.setTime(time.getTime()+(expirationTime*1000));
+				}
 				document.cookie=name+ '='+ escape(value)+ '; '+
 				(!expirationTime? '': '; expires='+time.toUTCString())+
 				'; path='+(path?path:'/')+ (!domain? '': '; domain='+domain)+ (!secure? '': '; secure');
@@ -161,8 +179,8 @@ sortTable = {
 		if( this._useQuickSort===0){
 			// we test how many comparisons are made to sort this array to determine the efficiency of the default implementation .sort() method
 			// here are some known results: IE6=>33, FF1.5=>24, Opera9.0=>18, konqeror3.4=>16
-			testarray = [1,2,3,4,5,6,7,8,9];
-			testarray.sort(function(a,b){sortTable._useQuickSort++;if(a>b) return 1;if(a<b) return -1;return 0;});
+			var testarray = [1,2,3,4,5,6,7,8,9];
+			testarray.sort(function(a,b){sortTable._useQuickSort++;if(a>b){ return 1;} if(a<b){ return -1;} return 0;});
 			this._useQuickSort = (this._useQuickSort > 25);
 		}
 
@@ -191,9 +209,9 @@ sortTable = {
 		this.options[tid] = options;
 		if( options.saveUserPrefs){
 			var cpageSize = this.cookies.get('sortTable_'+tid+'pageSize');
-			if( cpageSize) this.options[tid].pageSize = cpageSize;
+			if( cpageSize){ this.options[tid].pageSize = cpageSize;}
 			var cpageNb = this.cookies.get('sortTable_'+tid+'pageNb');
-			if( cpageNb) this.options[tid].pageNb = cpageNb;
+			if( cpageNb){ this.options[tid].pageNb = cpageNb;}
 			var csCol = this.cookies.get('sortTable_'+tid+'sortingCol');
 			var csWay = this.cookies.get('sortTable_'+tid+'sortingWay');
 			this.sortingWay[tid] = csWay!==false?(csWay=='asc'?'desc':'asc'):false;
@@ -231,7 +249,7 @@ sortTable = {
 		}
 		this.options[tid].pageSize = pageSize;
 		this.setPageNb(tid,this.options[tid].pageNb);
-		if( this.options[tid]['saveUserPrefs'] ){
+		if( this.options[tid].saveUserPrefs ){
 			this.cookies.set('sortTable_'+tid+'pageSize',pageSize);
 			this.cookies.set('sortTable_'+tid+'pageNb',this.options[tid].pageNb);
 		}
@@ -247,7 +265,7 @@ sortTable = {
 		var nbRes     = this.getDatas(tid).length;
 		var maxPageNb = Math.ceil(nbRes / this.options[tid].pageSize);
 		this.options[tid].pageNb = (pageNb>maxPageNb)?maxPageNb:pageNb;
-		if( this.options[tid]['saveUserPrefs'] ){
+		if( this.options[tid].saveUserPrefs ){
 			this.cookies.set('sortTable_'+tid+'pageNb',this.options[tid].pageNb);
 		}
 		// refresh display
@@ -279,7 +297,7 @@ sortTable = {
 		// get existing cell or create it
 		var cell = document.getElementById('th_'+col+'_'+tid);
 		if(! cell){
-			var cell = document.createElement("th");
+			cell = document.createElement("th");
 			cell.id = 'th_'+col+'_'+tid;
 			if(! unsortable){
 				cell.onclick = function(){sortTable.sort(tid,col);};
@@ -319,10 +337,12 @@ sortTable = {
 			var cell = this._renderTh(tid,i);
 			head.appendChild(cell);
 			if(typeof headers[i] == 'object'){
-				if( headers[i].width)
+				if( headers[i].width){
 					cell.width = headers[i].width;
-				if( headers[i].className)
+				}
+				if( headers[i].className){
 					cell.className = headers[i].className;
+				}
 			}
 		}
 	},
@@ -342,14 +362,15 @@ sortTable = {
 
 		// prepare some var for further replacement
 		//%pnav %psize %pinput %pnum %nbres %tid %psizesel
-		var pnav    = this._mk_pageNav(tid);
-		var pinput  = options.pinputStr;
-		var pnum    = Number(options.pageNb);
-		var psize   = Number(options.pageSize);
-		var nbres   = this.getDatas(tid).length;
-		var nbpages = Math.ceil(nbres / Math.max(1,psize));
-		var pstart  = psize*(pnum-1)+1;
-		var pend    = Math.min(pnum*psize,nbres);
+		var pnav    = this._mk_pageNav(tid)
+			, pinput  = options.pinputStr
+			, pnum    = Number(options.pageNb)
+			, psize   = Number(options.pageSize)
+			, nbres   = this.getDatas(tid).length
+			, nbpages = Math.ceil(nbres / Math.max(1,psize))
+			, pstart  = psize*(pnum-1)+1
+			, pend    = Math.min(pnum*psize,nbres)
+		;
 
 
 		// render the pageSize selector
@@ -400,12 +421,21 @@ sortTable = {
 	*   %startView and %endView
 	*/
 	_mk_pageNav: function(tid){
-		var options  = this.options[tid];
-		var navAttrs = options.navAttrs;
-		var pageNb   = Number(options.pageNb);
-		var pageSize = Number(options.pageSize);
-		var nbres      = this.getDatas(tid).length;
-		var plink    = 'javascript:sortTable.setPageNb(\''+tid+'\',%page);';
+		var options  = this.options[tid]
+			, navAttrs = options.navAttrs
+			, pageNb   = Number(options.pageNb)
+			, pageSize = Number(options.pageSize)
+			, nbres      = this.getDatas(tid).length
+			, plink    = 'javascript:sortTable.setPageNb(\''+tid+'\',%page);'
+			, first = ''
+			, prev = ''
+			, last = ''
+			, next = ''
+			, links = ''
+			, nblinks = ''
+			, slideEnd = ''
+			, slideStart = ''
+			;
 
 		if( nbres <= pageSize || ! ( nbres > 0 && pageSize > 0 && pageNb > 0 ) ){
 			return '';
@@ -413,7 +443,7 @@ sortTable = {
 		var nbpages = Math.ceil(nbres / Math.max(1,pageSize));
 
 		// extracting attributes (just for easier coding further (yes i'm lazy))
-		for(i in navAttrs){ eval('var '+i+'= navAttrs.'+i+';');	}
+		for(var i in navAttrs){ eval('var '+i+'= navAttrs.'+i+';');	}
 
 		// start & prev link
 		if( nbpages > 1 && pageNb != 1){
@@ -435,15 +465,15 @@ sortTable = {
 		var pageLinks = new Array();
 		var m = formatStr.match(/%(\d+)?links/)
 		if( m ){
-			var nblinks = m[1];
+			nblinks = m[1];
 			if(nblinks){ // range of pages link
 				var delta      = (nblinks%2?(nblinks-1):nblinks)/2;
-				var slideStart = Math.max(1,pageNb - delta - ((pageNb + delta) <= nbpages ? 0 : pageNb -(nbpages-delta)) );
-				var slideEnd   = Math.min(nbpages,pageNb + delta + (pageNb > delta ? 0: delta - pageNb + 1 ) );
+				slideStart = Math.max(1,pageNb - delta - ((pageNb + delta) <= nbpages ? 0 : pageNb -(nbpages-delta)) );
+				slideEnd   = Math.min(nbpages,pageNb + delta + (pageNb > delta ? 0: delta - pageNb + 1 ) );
 			}else{ // all pages links
 				nblinks    ='';
-				var slideStart = 1;
-				var slideEnd   = nbpages;
+				slideStart = 1;
+				slideEnd   = nbpages;
 			}
 
 			for(var i=slideStart; i<=slideEnd; i++){
@@ -452,9 +482,9 @@ sortTable = {
 				str = str.replace(/%page/g,i);
 				pageLinks.push(str);
 			}
-			var links = pageLinks.join(linkSep);
+			links = pageLinks.join(linkSep);
 		}else{
-			var links = nblinks = '';
+			links =''; nblinks = '';
 		}
 		// replace in template string
 		if(links)
@@ -489,12 +519,13 @@ sortTable = {
 		}
 
 		// now preparing the viewable rows
-		var pageSize = parseInt(options.pageSize);
-		var first    = pageSize * (options.pageNb -1);
-		var last     = first + pageSize;
-		var heads    = this.headers[tid];
-		var datas = this.getDatas(tid);
-		var bodyDatas = {};
+		var pageSize = parseInt(options.pageSize,10)
+			, first    = pageSize * (options.pageNb -1)
+			, last     = first + pageSize
+			, heads    = this.headers[tid]
+			, datas = this.getDatas(tid)
+			, bodyDatas = {}
+		;
 
 		for(var i=first;i < last; i++){
 			if(! datas[i]){
@@ -533,10 +564,12 @@ sortTable = {
 
 	_sort:function(tid,col){
 		// get some needed infos
-		var datas = this.getDatas(tid);
-		var o = this.sortingCol[tid];
-		var w = this.sortingWay[tid];
-		var forceResort = this.options[tid].forceResort;
+		var datas = this.getDatas(tid)
+			, o = this.sortingCol[tid]
+			, w = this.sortingWay[tid]
+			, forceResort = this.options[tid].forceResort
+			, sortMethod
+		;
 		// setting new values
 		w = ( o == col && w == 'asc')?'desc':'asc';
 		this.sortingCol[tid] = col;
@@ -550,20 +583,24 @@ sortTable = {
 		}
 
 		// set the sorting col for quick access in the sorting function
-		_SORTINGCOL = col;
+		sortTable._SORTINGCOL = col;
 
 		//-- optimise sorting on previoulsy sorted cols
 		if( o===col && ! forceResort){
 			datas.reverse();
 		}else{
+			sortMethod = ((typeof this.headers[tid][col] == 'object') && this.headers[tid][col].sortmethod)? this.headers[tid][col].sortmethod:this.__sort;
+			if( typeof sortMethod === 'string' && sortingMethods[sortMethod]){
+				sortMethod = sortingMethods[sortMethod];
+			}
 			// sort the data set
 			if(w == 'desc' && ! forceResort ){
 				datas.reverse(); // on already sort column only reverse the dataset
 			}else{
 				if(this._useQuickSort){
-					this.quicksort(datas,((typeof this.headers[tid][col] == 'object') && this.headers[tid][col].sortmethod)? this.headers[tid][col].sortmethod:this.__sort);
+					this.quicksort(datas,sortMethod);
 				}else{
-					datas.sort( ((typeof this.headers[tid][col] == 'object') && this.headers[tid][col].sortmethod)? this.headers[tid][col].sortmethod:this.__sort);
+					datas.sort( sortMethod );
 				}
 				if( w=='desc'){
 					datas.reverse();
@@ -573,7 +610,7 @@ sortTable = {
 
 		// redraw table rows
 		this._populate(tid);
-		if( this.options[tid]['saveUserPrefs'] ){
+		if( this.options[tid].saveUserPrefs ){
 			this.cookies.set('sortTable_'+tid+'sortingCol',this.sortingCol[tid]);
 			this.cookies.set('sortTable_'+tid+'sortingWay',this.sortingWay[tid]);
 		}
@@ -586,8 +623,8 @@ sortTable = {
 	* default sorting method
 	*/
 	__sort: function (a,b){
-		if(a[_SORTINGCOL]>b[_SORTINGCOL]) return 1;
-		if(a[_SORTINGCOL]<b[_SORTINGCOL]) return -1;
+		if(a[sortTable._SORTINGCOL]>b[sortTable._SORTINGCOL]){ return 1;}
+		if(a[sortTable._SORTINGCOL]<b[sortTable._SORTINGCOL]){ return -1;}
 		return 0;
 	},
 
@@ -607,11 +644,11 @@ sortTable = {
 		//  partition
 		do{
 			if(comp){
-				while (comp(a[i],x)==-1) i++;
-				while (comp(a[j],x)==1) j--;
+				while (comp(a[i],x)==-1){ i++;}
+				while (comp(a[j],x)==1){ j--;}
 			}else{
-				while (a[i] < x) i++;
-				while (a[j] > x) j--;
+				while (a[i] < x){ i++;}
+				while (a[j] > x){ j--;}
 			}
 			if (i<=j){
 				h=a[i]; a[i]=a[j]; a[j]=h;
@@ -620,7 +657,8 @@ sortTable = {
 		} while (i<=j);
 
 		//  recursion
-		if (lo<j) this._quicksort(a, lo, j,comp);
-		if (i<hi) this._quicksort(a, i, hi,comp);
+		if (lo<j){ this._quicksort(a, lo, j,comp);}
+		if (i<hi){ this._quicksort(a, i, hi,comp);}
 	}
-}
+};
+}());

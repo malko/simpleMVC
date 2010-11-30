@@ -1,4 +1,4 @@
-"use strict";
+$(function(){
 var styleClass = "ui-widget-content ui-corner-all";
 
 //-- make this an accordion
@@ -18,6 +18,7 @@ $("ul.sortable").sortable({
 	placeholder: "ui-state-highlight placeholder ui-corner-all",
 	forcePlaceholderSize:true
 }).find("li").addClass(styleClass);
+
 //-- add items to list of fields
 function listAddItem(fieldName,format){
 	var item = $('<li><input id="fields['+fieldName+']" name="fields['+fieldName+']" class="checkbox" type="checkbox" checked="checked" value="'+fieldName+'"/>'+
@@ -32,6 +33,21 @@ $("#listAddField").click(function(){
 		return;
 	}
 	listAddItem(fieldName,"");
+});
+$('#listItems .toggleItemFormat').click(function(){
+	var elmt = $(this), formatContainer = elmt.siblings('.formInput'), visible=formatContainer.is(':visible');
+	elmt
+		.toggleClass('ui-icon-circle-triangle-s',visible)
+		.toggleClass('ui-icon-circle-triangle-n',!visible)
+		;
+	formatContainer.toggle();
+}).each(function(){
+	if(! $(this).siblings('.formInput').find('input').val()){
+		$(this)
+			.addClass('ui-icon-circle-triangle-s')
+			.removeClass('ui-icon-circle-triangle-n')
+			.siblings('.formInput').hide();
+	}
 });
 
 //-- manage ordering and grouping of forms inputs
@@ -146,4 +162,5 @@ $("#forms input[id^=inputOptions]").keyup(function(){
 	}catch(e){
 		$(this).addClass("ui-state-error");
 	}
+});
 });

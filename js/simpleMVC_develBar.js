@@ -132,7 +132,7 @@ var cookies={
 		btPhperr.hide().remove();
 		phperrDiv.hide().remove();
 	}else{
-		phped.each(function(){this.innerHTML = this.innerHTML.replace(/(^<br\s*\/?>|<br\s*\/?>$)/,'');});
+		//phped.each(function(){this.innerHTML = this.innerHTML.replace(/(^<br\s*\/?>|<br\s*\/?>$)/,'');});
 		addPanel(btPhperr,phperrDiv,phped,true);
 	}
 
@@ -228,15 +228,15 @@ var cookies={
 	//-- toggle button
 	btToggle.click(function(){
 		dataMenu.hide();
-		var sibs = $(':button',toolBar).not(this);
-		var visible = btDataMenu.is(':visible');
-		if( visible)
+		var sibs = $(':button',toolBar).not(this)
+			, folded = btToggle.attr('folded')?true:false;//btDataMenu.is(':visible');
+		if( !folded){
 			sibs.attr('style','display:none!important');
-		else
+		}else{
 			sibs.show();
-		$(this).button('option','icon',visible?'ui-icon-circle-triangle-w':'ui-icon-circle-triangle-e')
-		//this.innerHTML = visible?'&gt;':'&lt;';
-		cookies.set('SMVCDevToggle',visible?1:0);
+		}
+		btToggle.attr('folded',folded?'':'true').button('option','icon',folded?'ui-icon-circle-triangle-e':'ui-icon-circle-triangle-w').mouseleave();
+		cookies.set('SMVCDevToggle',folded?0:1);
 		return false;
 	});
 
