@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-10-06 - add minified js deletetion on clearCache
 *            - 2010-09-22 - now session datas are editable in showSession
 *            - 2010-09-19 - add showSession method
 *            - 2010-07-01 - add clearSession method
@@ -540,8 +541,13 @@ abstract class abstractController{
 	}
 
 	function clearCache(){
-		if( DEVEL_MODE )
+		if( DEVEL_MODE ){
 			cacheManager::clear(0);
+			if( js_viewHelper::$autoMinify){
+				$fileCacheManager = new fileCacheBackend(js_viewHelper::$scriptRootDir.'/minified',false,'-min.js');
+				$fileCacheManager->clear(0);
+			}
+		}
 		return $this->redirect();
 	}
 	function clearSession(){

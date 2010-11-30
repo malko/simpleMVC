@@ -34,6 +34,7 @@ class js_viewHelper extends abstractViewHelper{
 	public static $registeredPlugins = array();
 	public static $scriptRootDir = ROOT_DIR;
 	public static $scriptRootUrl = ROOT_URL;
+	public static $autoMinify = false;
 
 	static function setRootPaths($dir=null,$url=null){
 		if( null !== $dir)
@@ -197,17 +198,48 @@ class js_viewHelper extends abstractViewHelper{
 	* @return string
 	*/
 	function getIncludes(){
-		$incStr = '';
+		$js=array();$css=array();$incs=array();
+		$useCompression = (self::$autoMinify && class_exists('cacheManager') && class_exists('jsMin') )?true:false;
 		foreach(self::$includedFiles as $k=>$v){
 			if( $v )#- avoid multiple time inclusion
 				continue;
-			if( preg_match('!\.js$!',$k) )
-				$incStr.= "<script src=\"$k\" type=\"text/javascript\"></script>\n";
-			if( preg_match('!\.css$!',$k) )
-				$incStr.= "<link type=\"text/css\" rel=\"stylesheet\" href=\"$k\" />\n";
+			//-- get separatly js/css files
+			if( preg_match('!\.js$!i',$k) ){
+				$js[]=$k;
+				#- $incStr.= "<script src=\"$k\" type=\"text/javascript\"></script>\n";
+			}else if( preg_match('!\.css$!i',$k) ){
+				$css[]=$k;
+				#- $incStr.= "<link type=\"text/css\" rel=\"stylesheet\" href=\"$k\" />\n";
+			}
 			self::$includedFiles[$k]=true;
 		}
-		return $incStr;
+		foreach($css as $v){
+			$incs[] = "<link type=\"text/css\" rel=\"stylesheet\" href=\"$v\" />";
+		}
+		if( ! empty($js)){
+			if(! $useCompression ){
+				foreach($js as $v){
+					$incs[] = "<script src=\"$v\" type=\"text/javascript\"></script>";
+				}
+			}else{
+				$cacheDir = self::$scriptRootDir.'/minified';
+				$cacheBackend = new fileCacheBackend($cacheDir,false,'-min.js');
+				$minifiedName = $js;
+				sort($minifiedName);// sort to avoid multiple name for same files includes
+				$minifiedName = md5(implode('',$minifiedName));
+				$cacheItem = $cacheBackend->getItem($minifiedName);
+				if(! $cacheItem->checkValididty()){
+					foreach($js as &$v){
+						$v = preg_replace('!^'.self::$scriptRootUrl.'!','',$v);
+						$v = JSMin::minify(file_get_contents(self::$scriptRootDir.'/'.$v));
+					}
+					$cacheItem->content = implode("\n",$js);
+					$cacheBackend->saveItem($cacheItem);
+				}
+				$incs[] = '<script src="'.str_replace($cacheDir,self::$scriptRootUrl.'/minified',$cacheBackend->getItemPath($cacheItem,true)).'" type="text/javascript"></script>';
+			}
+		}
+		return implode("\n",$incs);
 	}
 }
 
