@@ -1,6 +1,8 @@
 <?php
 /**
 * @since 2010-09-27
+* @changelog
+* - 2010-11-25 - add E_RECOVERABLE_ERROR
 */
 //-- error handling
 class smvcErrorHandler{
@@ -11,7 +13,7 @@ class smvcErrorHandler{
 		'cli'=> "%2\$s: %3\$s %4\$s %5\$s\n%6\$s'",
 		'default'=>'
 			<div class="php_error tk-border tk-content tk-state-%7$s">
-				<a href="#" onclick="var e = document.getElementById(\'smvcErrorHandler%1$s\');e.style.display=e.style.display==\'block\'?\'none\':\'block\';return false;" title="show context"><strong>%2$s</strong>: %3$s in <strong>%4$s</strong> on line <strong>%5$s</strong></a>
+				<div onclick="var e = document.getElementById(\'smvcErrorHandler%1$s\');e.style.display=e.style.display==\'block\'?\'none\':\'block\';return false;" title="show context" style="cursor:pointer"><strong>%2$s</strong>: %3$s in <strong>%4$s</strong> on line <strong>%5$s</strong></div>
 				<pre id="smvcErrorHandler%1$s" style="display:none;"><xmp>Context: %6$s</xmp></pre>
 			</div>',
 		'mail'=>'
@@ -60,6 +62,7 @@ class smvcErrorHandler{
 			$errors = self::getErrors();
 			foreach($errors as &$e){
 				$e['message'] = '[stored from previous http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'].'] => '.$e['message'];
+				unset($e['context']);
 			}
 			$_SESSION['smvcErrorHandlerStorage'] = isset($_SESSION['smvcErrorHandlerStorage'])?$_SESSION['smvcErrorHandlerStorage']+$errors:$errors;
 		}
@@ -72,7 +75,12 @@ class smvcErrorHandler{
 		switch ($no) {
 			case E_USER_ERROR:
 			case E_ERROR:
+			case E_COMPILE_ERROR:
 				$no = 'Fatal error';
+				$state = 'error';
+				break;
+			case E_RECOVERABLE_ERROR:
+				$no ="Fatal Recoverable error";
 				$state = 'error';
 				break;
 			case E_USER_WARNING:
@@ -111,14 +119,19 @@ class smvcErrorHandler{
 		if( null!== $lastError){
 			$this->handler($lastError['type'],$lastError['message'],$lastError['file'],$lastError['line']);
 		}
+		$hasErrors = (self::$instance && !empty(self::$instance->errors))?true:false;
+		if(! $hasErrors){
+			self::clear();
+			return;
+		}
 		if( constant('DEVEL_MODE') ){
 			echo $this->getErrors(PHP_SAPI==='cli'?'cli':'default');
 		}
 		if( constant('ERROR_REPORT_MAIL') ){
 			$pageUrl = 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-			$sender  = empty($_SERVER['SERVER_ADMIN'])?'smvcreporter@'.$_SERVER['SERVER_NAME']:$_SERVER['SERVER_ADMIN'];
+			$sender  = constant('ERROR_REPORT_MAIL_SENDER')?ERROR_REPORT_MAIL_SENDER:(empty($_SERVER['SERVER_ADMIN'])?'smvcreporter@'.$_SERVER['SERVER_NAME']:$_SERVER['SERVER_ADMIN']);
 			$body = 'Error page: <a href="'.$pageUrl.'">'.$pageUrl.'</a><br /><br />'.$this->getErrors('mail');
-			easymail::mailTpl(ERROR_REPORT_MAIL,"[$_SERVER[SERVER_NAME]] SMVC Error report",$body,empty($_SERVER['SERVER_ADMIN'])?'smvcreporter@'.$_SERVER['SERVER_NAME']:$_SERVER['SERVER_ADMIN']);
+			easymail::mailTpl(ERROR_REPORT_MAIL,"[$_SERVER[SERVER_NAME]] SMVC Error report",$body,$sender);
 		}
 		self::clear();
 	}
