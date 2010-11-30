@@ -10,42 +10,43 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
-*            - 2010-09-05 - add a try/catch on save
-*            - 2010-08-13 - now will conserve config defined inside class over thoose defined in simpleMVC_xxx_config
-*            - 2010-02-26 - little rewrite of list filters support
-*            - 2010-02-12 - bug correction for list configuration in configure action
-*            - 2010-02-08 - make it compatible with url,redirectAction and forward that dropped support for controllerName as second argument
-*            - 2010-01-19 - configure: add possibility to use groupMethod with only one fieldSet
-*                         - improve multilingual support
-*            - 2010-01-15 - bug correction on save
-*            - 2010-01-13 - add differents pageTitles for add and edit actions.
-*            - 2009-09-xx - first attempt for validation integration.
-*            - 2009-08-24 - add filters to moveUp/Down and [de]activate links
-*            - 2009-07-06 - now load config for each action
-*            - 2009-07-02 - add LIST_FILTER configuration
-*            - 2009-06-22 - add support for given modelCollection in extended listAction must be set as $this->_models_
-*            - 2009-06-04 - add model and config file edition
-*                         - all configuration methods are disabled when not in devel mode
-*            - 2009-06-02 - add configuration for allowedActions
-*                         - add support for confirmation fields and sprintFatas to langMsg methods
-*            - 2009-05-28 - ncancel:loading of config file for ACTION allowed and add allowed action property $allowedActions
-*            - 2009-05-05 - better admin forms generation (grouping/ordering inputs fields)
-*            - 2009-04-06 - add support for activable models
-*            - 2009-03-31 - autodetection of field that need to be loaded when loadDatas is empty
-*            - 2009-03-19 - rewrite support for orderable models
-*                         - set_layout now consider for adminmodelsModelType templates
-*            - 2009-03-13 - made some change to list configuration to support ordering and formatStr
-*                         - put configFile as protected instead of private to permitt extended class to access it
-*            - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
-*                         - better handling of editing langMessage from empty dictionnaries
-*            - 2009-03-08 - little modif in setDictName to check dictionnaries from generated with adminmodelsController
-*            - 2009-02-08 - add some automated support for orderable models
-*            - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
-*            - 2009-01-14 - new property $loadDatas to force loadDatas before rendering list.
-*            - 2009-01-05 - now listAction do a lookup on list headers using langManager::msg
-*            - 2008-09-11 - define dummy indexAction that forward to listAction
-*                         - remove setLayout from formAction
-*                         - list without listFields setted will ask value from model instead of taking it directly from model->datas
+* - 2010-11-25 - add a getFiltersArray() and prepareFilters() methods
+* - 2010-09-05 - add a try/catch on save
+* - 2010-08-13 - now will conserve config defined inside class over thoose defined in simpleMVC_xxx_config
+* - 2010-02-26 - little rewrite of list filters support
+* - 2010-02-12 - bug correction for list configuration in configure action
+* - 2010-02-08 - make it compatible with url,redirectAction and forward that dropped support for controllerName as second argument
+* - 2010-01-19 - configure: add possibility to use groupMethod with only one fieldSet
+*              - improve multilingual support
+* - 2010-01-15 - bug correction on save
+* - 2010-01-13 - add differents pageTitles for add and edit actions.
+* - 2009-09-xx - first attempt for validation integration.
+* - 2009-08-24 - add filters to moveUp/Down and [de]activate links
+* - 2009-07-06 - now load config for each action
+* - 2009-07-02 - add LIST_FILTER configuration
+* - 2009-06-22 - add support for given modelCollection in extended listAction must be set as $this->_models_
+* - 2009-06-04 - add model and config file edition
+*              - all configuration methods are disabled when not in devel mode
+* - 2009-06-02 - add configuration for allowedActions
+*              - add support for confirmation fields and sprintFatas to langMsg methods
+* - 2009-05-28 - ncancel:loading of config file for ACTION allowed and add allowed action property $allowedActions
+* - 2009-05-05 - better admin forms generation (grouping/ordering inputs fields)
+* - 2009-04-06 - add support for activable models
+* - 2009-03-31 - autodetection of field that need to be loaded when loadDatas is empty
+* - 2009-03-19 - rewrite support for orderable models
+*              - set_layout now consider for adminmodelsModelType templates
+* - 2009-03-13 - made some change to list configuration to support ordering and formatStr
+*              - put configFile as protected instead of private to permitt extended class to access it
+* - 2009-03-12 - bug correction in getting modelFilePath from model with uppercase letter in modelName
+*              - better handling of editing langMessage from empty dictionnaries
+* - 2009-03-08 - little modif in setDictName to check dictionnaries from generated with adminmodelsController
+* - 2009-02-08 - add some automated support for orderable models
+* - 2009-01-14 - new methods setDictName and langMsg to better handle langManager dictionnary lookup
+* - 2009-01-14 - new property $loadDatas to force loadDatas before rendering list.
+* - 2009-01-05 - now listAction do a lookup on list headers using langManager::msg
+* - 2008-09-11 - define dummy indexAction that forward to listAction
+*              - remove setLayout from formAction
+*              - list without listFields setted will ask value from model instead of taking it directly from model->datas
 */
 abstract class abstractAdminmodelsController extends abstractController{
 
@@ -144,13 +145,46 @@ abstract class abstractAdminmodelsController extends abstractController{
 		return $this->forward('list');
 	}
 
-	function filteredListAction(){
+
+	static function prepareFilters(array $filters=null,array $AuthorizedFilters=null){
 		$_filters = array();
-		foreach($_POST as $k=>$v){
-			if(strlen($v))
+		$filters = self::getFiltersArray($filters,$AuthorizedFilters);
+		foreach($filters as $k=>$v){
+			if( strlen($v) ){
 				$_filters[] = "$k,$v";
 		}
-		$_GET['_filters'] = implode(',',$_filters);
+		}
+		return implode(',',$_filters);
+	}
+	static function getFiltersArray(array $filters=null,array $AuthorizedFilters=null){
+		// manage user given filters
+		if(! is_array($filters) ){
+			$filters = array();
+		}else{
+			foreach($filters as $k=>$v){
+				if(! strlen($v) || ( $AuthorizedFilters!==null && ! in_array($k,$AuthorizedFilters,true)) )
+					unset($filters[$k]);
+			}
+		}
+		if( empty($_GET['_filters']))
+			return $filters;
+		//-- manage get ginven filters
+		$getFilters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
+		if( empty($getFilters))
+			return is_array($filters)?$filters:array();
+		$getFilters = array_combine($getFilters[0],$getFilters[1]);
+		if( $AuthorizedFilters !== null){
+			foreach($getFilters as $k=>$v){
+				if(! in_array($k,$AuthorizedFilters,true))
+					unset($getFilters[$k]);
+			}
+		}
+		return is_array($filters)?array_merge($getFilters,$filters):$getFilters;
+	}
+
+	function filteredListAction(){
+		//-- override _filters with thoose coming from post
+		$_GET['_filters'] = self::prepareFilters(self::getFiltersArray($_POST));
 		$this->forward('list');
 	}
 
@@ -165,53 +199,39 @@ abstract class abstractAdminmodelsController extends abstractController{
 				$this->listFields = array_combine($listKeys,$listKeys);
 				$this->listFormats=$listFields;
 			}
+
 			if( ( !empty($this->_modelConfig['LIST_FILTERS']) ) && ! empty($_GET['_filters']) ){
 				$dbAdapter = abstractModel::getModelDbAdapter($this->modelType);
-				$filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
-				if( ! empty($filters[0])){
+				#- $filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
+				$filters = self::getFiltersArray(null,empty($this->_modelConfig['LIST_FILTERS'])?array():array_keys($this->_modelConfig['LIST_FILTERS']));
+				if( ! empty($filters)){
 					$datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
-					#- $_dynamicFilters = array();
 					$conds = array();
-					foreach($filters[0] as $k=>$fields ){
-						if( empty($this->_modelConfig['LIST_FILTERS'][$fields]) ){ #- unauthorized filter just ignore it
-							unset($filters[0][$k],$filters[1][$k]);
+					foreach($filters as $field=>$filter ){
+						/*if( empty($this->_modelConfig['LIST_FILTERS'][$field]) ){ #- unauthorized filter just ignore it
+							unset($filters[$field]);
 							continue;
-						}
-						/* not sure there's a real interest for this
-						if( empty($datasDefs[$fields])){
-							$_dynamicFilters[$fields] = $filters[1][$k];
-							unset($filters[0][$k],$filters[1][$k]);
-							continue;
-						}
-						*/
-						switch($this->_modelConfig['LIST_FILTERS'][$fields]){
+						}*/
+						switch($this->_modelConfig['LIST_FILTERS'][$field]){
 							case 'like':
-								$conds[0] = (empty($conds)?'WHERE ':"$conds[0] AND ").$dbAdapter->protect_field_names($fields).' LIKE ?';
-								$conds[] = '%'.$filters[1][$k].'%';
+								$conds[0] = (empty($conds)?'WHERE ':"$conds[0] AND ").$dbAdapter->protect_field_names($field).' LIKE ?';
+								$conds[] = '%'.$filter.'%';
 								break;
 							default:
-								$conds[0] = (empty($conds)?'WHERE ':"$conds[0] AND ").$dbAdapter->protect_field_names($fields)."=?";
-								$conds[] = $filters[1][$k];
+								$conds[0] = (empty($conds)?'WHERE ':"$conds[0] AND ").$dbAdapter->protect_field_names($field)."=?";
+								$conds[] = $filter;
 								break;
 						}
 
 					}
 					if( !empty($conds)){
 						$this->_models_ = abstractModel::getFilteredModelInstances($this->modelType,$conds);
-						$this->fieldFilters = array_combine($filters[0],$filters[1]);
-						#- $this->fieldFilters = array_merge($_dynamicFilters,array_combine($filters[0],$filters[1]));
+						$this->fieldFilters = $filters;
 					}
-					/* not sure there's a real interest for this
-					if( count($_dynamicFilters) ){
-						$this->_models_ = abstractModel::getAllModelInstances($this->modelType);
-						foreach($_dynamicFilters as $k=>$v)
-							$this->_models_ = $this->_models_->filterBy($k,$v,'==');
-						if( empty($this->fieldFilters))
-							$this->fieldFilters = $_dynamicFilters;
-					}*/
 				}
 			}
 		}
+
 		$this->view->assign('_smvcAllowedAction',$this->_allowedActions);
 		$this->setDictName();
 		$supportedAddons = abstractModel::_modelGetSupportedAddons($this->modelType);
@@ -231,12 +251,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 
 
 		// List Filters for URLs
-		$filter = array();
-		if(!empty($this->fieldFilters)) {
-			foreach($this->fieldFilters as $name=>$value)
-				$filter[] = "$name,$value" ;
-		}
-		$filter = '/_filters/'.implode(',',$filter);
+		$filter = empty($this->fieldFilters)?'':'/_filters/'.self::prepareFilters($this->fieldFilters);
 
 
 		if( count($models) ){
@@ -301,8 +316,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	function addAction(){
 		$this->setDictName();
 		if(empty($this->fieldFilters) && !empty($_GET['_filters'])) {
-			$filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
-			$this->fieldFilters = array_combine($filters[0],$filters[1]);
+			$this->fieldFilters = self::getFiltersArray(null,empty($this->_modelConfig['LIST_FILTERS'])?array():array_keys($this->_modelConfig['LIST_FILTERS']));
 		}
 		if(!empty($this->fieldFilters))
 			$this->view->assign($this->fieldFilters) ;

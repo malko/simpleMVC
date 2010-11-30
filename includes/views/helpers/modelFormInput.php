@@ -4,18 +4,19 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
-*            - 2010-05-27 - forceEmptyChoice passed to false allow to remove the empty %s value for hasMany relations
-*            - 2010-05-17 - add forceEmptyChoice options for enum/sets
-*            - 2010-02-xx - related model field  supporting orderableModelAddon will be sort by orderableField if no sort options is given
-*            - 2010-02-09 - add sort options for hasOne relations too
-*            - 2009-10-12 - add support for controller define input types
-*            - 2009-09-04 - boolean values are now selectbuttonset by defaults
-*            - 2009-06-25 - add sort options for hasMany relations.
-*            - 2009-05-28 - now manage hasMany relations as well
-*            - 2009-05-11 - empty date/datetime/time values with no default are set to current date.
-*            - 2009-01-05 - add timepicker and datetimepicker detection
-*            - 2008-11-07 - add possibility to skip automated date type setting
-*            - 2008-10-30 - add svninfos and put it uptodate with local version
+* - 2010-10-05 - add possibility to display primaryKey fields
+* - 2010-05-27 - forceEmptyChoice passed to false allow to remove the empty %s value for hasMany relations
+* - 2010-05-17 - add forceEmptyChoice options for enum/sets
+* - 2010-02-xx - related model field  supporting orderableModelAddon will be sort by orderableField if no sort options is given
+* - 2010-02-09 - add sort options for hasOne relations too
+* - 2009-10-12 - add support for controller define input types
+* - 2009-09-04 - boolean values are now selectbuttonset by defaults
+* - 2009-06-25 - add sort options for hasMany relations.
+* - 2009-05-28 - now manage hasMany relations as well
+* - 2009-05-11 - empty date/datetime/time values with no default are set to current date.
+* - 2009-01-05 - add timepicker and datetimepicker detection
+* - 2008-11-07 - add possibility to skip automated date type setting
+* - 2008-10-30 - add svninfos and put it uptodate with local version
 * @svnInfos:
 *            - $LastChangedDate$
 *            - $LastChangedRevision$
@@ -46,6 +47,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 		if( (!empty($options['uneditable'])) && $modelName instanceof abstractModel ){
 			$options['disabled'] = "disabled";
 			unset($options['uneditable']);
+			$options['class'] = (empty($options['class'])?'':$options['class'].' ').'tk-state-disabled';
 		}
 		# commence par checker les relations
 		if( isset($relsDefs['hasOne'][$keyName]) ){
@@ -108,17 +110,22 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 						}
 					})');
 				}
-				foreach($choices as $ck=>$cv)
+				foreach($choices as $ck=>$cv){
 					$options['values'][$ck]=$cv->__toString();
+				}
 			}
-			if( ! isset($options['multiple']))
+			if( ! isset($options['multiple']) )
 				$options['multiple'] = 'multiple';
 			return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
 		}
 		if( $keyName === 'PK' || $keyName === abstractModel::_getModelStaticProp($modelName,'primaryKey') ){
-			if( ! $modelName instanceof abstractModel )
+			if( ! $modelName instanceof abstractModel ){
+				if( empty($options['type']) || $options['type']==='hidden' ){
 				return '';
-			return $this->formInput($keyName,$modelName->PK,'hidden');
+				}
+				return $this->formInput($keyName,'',$options['type'],$options);//$options['type']);;
+			}
+			return $this->formInput($keyName,$modelName->PK,empty($options['type'])?'hidden':$options['type']);
 		}
 		#- try to get def from datas array
 		if( empty($datasDefs[$keyName]) ){

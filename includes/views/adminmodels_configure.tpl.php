@@ -11,6 +11,7 @@
 	.editarea{ width:98%;height:350px;}
 	.sMVC_dataField{ vertical-align:middle !important; padding:.2em .4em; margin:0 ;}
 	.tk-inlineStack{ padding:.2em .4em;margin:0 .2em;}
+	.toggleItemFormat{ float:right;}
 </style>
 <h1><?php echo $this->modelType?> settings </h1>
 <div id="settings">
@@ -69,7 +70,7 @@
 			if( $this->listDatasDefs){
 				foreach($this->listDatasDefs as $fld){
 					$formatInput = $this->formInput("formatStr[$fld]",isset($this->listedFields[$fld])?htmlentities($this->listedFields[$fld]):null,'text',array('label'=>'format string','size'=>'50'));
-					echo $this->formInput("fields[$fld]",$fld,'checkbox',array('checked'=>isset($this->listedFields[$fld]),'label'=>$fld,'formatStr'=>'<li>%input %label'.$formatInput.'</li>'))."\n";
+					echo $this->formInput("fields[$fld]",$fld,'checkbox',array('checked'=>isset($this->listedFields[$fld]),'label'=>$fld ,'formatStr'=>'<li><span class="toggleItemFormat ui-icon ui-icon-circle-triangle-n">toggle</span> %input %label '.$formatInput.'</li>'))."\n";
 				}
 			}
 		?>

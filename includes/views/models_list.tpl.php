@@ -22,7 +22,7 @@ if( empty($this->fieldFilters) ){
 
 if( ! empty($this->_modelConfig['LIST_FILTERS']) && count(array_diff($this->_modelConfig['LIST_FILTERS'],array('hidden'))) ){
 	$datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
-	echo '<form  class="adminListFilters" method="post" action="'.$this->url('filteredList',array('modelType'=>$this->modelType)).'"><h2>Filters</h2>';
+	echo '<form  class="adminListFilters" method="post" action="'.$this->url('filteredList',array('modelType'=>$this->modelType)).'"><h2>'.langManager::msg('list_filters_title').'</h2>';
 	foreach($this->_modelConfig['LIST_FILTERS'] as $f=>$type){
 		$options=array(
 			'id' => "_modelFilter_$f",
@@ -46,7 +46,7 @@ if( ! empty($this->_modelConfig['LIST_FILTERS']) && count(array_diff($this->_mod
 		echo $this->modelFormInput($this->modelType,$f,$options);
 	}
 
-	echo '<button class="ui-button ui-button-search" id="adminListFiltersDo" type="submit">Filter</button></form>';
+	echo '<button class="ui-button ui-button-search" id="adminListFiltersDo" type="submit">'.langManager::msg('list_filters_button').'</button></form>';
 /*
 	$jsSelector = '#_modelFilter_'.implode(', #_modelFilter_',$this->_modelConfig['LIST_FILTERS']);
 	$this->_js_script('

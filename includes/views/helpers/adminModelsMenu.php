@@ -10,6 +10,9 @@ class adminModelsMenu_viewHelper extends abstractViewHelper{
 	function adminModelsMenu($id="sMVCmodelsList",$withConfigOption=false,$withRegenLink=false,$excluded=null){
 		#- recupere la liste des models
 		$modelDir = defined('MODELS_DIR')?MODELS_DIR:LIB_DIR.'/models';
+		if(! is_dir($modelDir)){
+			return '';
+		}
 		$models = array_map('basename',glob("$modelDir/*.php"));
 		$items = array();
 		$itemStr = '<li><div  class="ui-buttonset"><a href="'.$this->url('adminmodels:list',array('modelType'=>'%1$s'),true).'" class="ui-button" title="list">%1$s</a>'

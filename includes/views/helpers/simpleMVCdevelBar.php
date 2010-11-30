@@ -39,13 +39,13 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 
 		}
 		$this->button('.ui-button',array('checkButtonset'=>true));
-		return '<style type="text/css">#sMVCpannels .sMVCpannel,#sMVCmodelsList {display:none}</style><div id="sMVCtoolBar" class="ui-buttonset ui-buttonset-small"><button id="sMVCtoolBarToggle" class="ui-button ui-button-circle-triangle-w"></button>'
+		return '<style type="text/css">#sMVCpannels .sMVCpannel,#sMVCmodelsList {display:none}</style><div id="sMVCtoolBar" class="ui-buttonset ui-buttonset-small"><button id="sMVCtoolBarToggle" class="ui-button ui-button-circle-triangle-e"></button>'
 		.'<button id="sMVCmodels" class="ui-button ui-button-gear">Models</button><button id="sMVCshow" class="ui-button ui-button-info">Show </button>'
 		.'<button id="sMVCphperr" class="ui-button ui-button-alert tk-state-error ui-state-error">PHP Errors </button><button id="sMVCdb" class="ui-button ui-button-clock">Db::profiler</button>'
 		.'<button id="sMVCcssEditor" rel="'.ROOT_URL.'/js/dryCss/cssEditor.php?editorId='.$editorName.'" class="ui-button ui-button-tag" >cssEditor</button>'
 		#- .'<button onclick="window.location=\''.$this->url('pages:clearSession').'\';" id="sMVCclearSession" class="ui-button ui-button-person">Clear Session</button>'
 		.'<button rel="'.$this->url('pages:showSession').'" id="sMVCshowSession" class="ui-button ui-button-person">$_SESSION</button>'
-		.((defined('CACHE_MANAGER_ENABLE') && CACHE_MANAGER_ENABLE)?'<button onclick="window.location=\''.$this->url('pages:clearCache').'\';" id="sMVCclearcache" class="ui-button ui-button-trash">Clear Cache</button>':'')
+		.((constant('CACHE_MANAGER_ENABLE') || js_viewHelper::$autoMinify )?'<button onclick="window.location=\''.$this->url('pages:clearCache').'\';" id="sMVCclearcache" class="ui-button ui-button-trash">Clear Cache</button>':'')
 		.$benchInfos.'</div>
 			<div id="sMVCpannels"><div id="sMVCshow_div" class="sMVCpannel">
 				<h1><span class="toggle" style="cursor:pointer;font-weight:normal;float:right;" title="Expand/collapse all">[+/-]</span>Show</h1>

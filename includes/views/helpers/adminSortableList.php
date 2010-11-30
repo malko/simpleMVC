@@ -2,8 +2,9 @@
 /**
 * helper for administration lists
 * @changelog
-*            - 2010-03-16 - supress the lastest column when not editable and not deletable
-*            - 2009-05-28 - ncancel: added $editable and $deletable parameters.
+* - 2010-10-06 - make zebra style rowRendering active even when no editable/deletable
+* - 2010-03-16 - supress the lastest column when not editable and not deletable
+* - 2009-05-28 - ncancel: added $editable and $deletable parameters.
 */
 class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 
@@ -41,9 +42,9 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		$msgDel  = htmlentities(langManager::msg('Delete'),ENT_COMPAT,'utf-8');
 		$this->view->_js_script("
 			var options = {
-				".(($editable||$deletable)?"
 				rowRendering: function(row,data){
 					$(row).addClass(data.rowid%2?'row':'altrow');
+				".(($editable||$deletable)?"
 					var bcell  = row.cells[row.cells.length-1];
 					var itemId = data.data[data.data.length-1];
 					$(bcell).html('<div class=\"ui-buttonset ui-buttonset-tiny-i\">"
@@ -62,7 +63,7 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 						window.location = '".APP_URL.str_replace(array(':controller',':action',':id'),array("$controller","del","'+itemId+'"),self::$actionStr)."';
 						return true;
 					});":'')."
-				},":'')."
+				":'')."},
 				bodyRendering:function(body,data){
 					$('.ui-button',body).button({checkButtonset:true});
 				}

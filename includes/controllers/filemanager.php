@@ -12,6 +12,10 @@ class filemanagerController extends abstractController{
 	public $connector = null;
 
 	function init(){
+		if( DEVEL_MODE ){
+			parent::init(); // must init views to load current views dirs settings and be abble to properly disable develBar
+			simpleMVCdevelBar_viewHelper::$disable=true;
+		}
 		self::appendAppMsg('PLEASE DON\'T FORGET TO PROTECT YOUR FILEMANAGER CONNECTOR FOR OBVIOUS SECURITY REASONS','error');
 		echo '{"error":"PLEASE DON\'T FORGET TO PROTECT YOUR FILEMANAGER CONNECTOR FOR OBVIOUS SECURITY REASONS"}';
 		exit();

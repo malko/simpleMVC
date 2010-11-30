@@ -25,6 +25,11 @@ class jqueryToolkit_viewHelper extends jsPlugin_viewHelper{
 		)
 	);
 
+	function jqueryToolkit($pluginNames=null){
+		if( null !== $pluginNames)
+			$this->initPlugins($pluginNames);
+	}
+
 	function loadPlugin($pluginName){
 		static $loaded = array();
 		if( strpos($pluginName,'|') )

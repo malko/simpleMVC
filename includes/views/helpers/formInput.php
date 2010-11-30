@@ -4,19 +4,19 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
-*            - 2010-04-08 - change validable callbacks for confirmations to conform tk-validable plugin
-*            - 2010-02-12 - change validable callbacks for confirmations
-*            - 2009-10-22 - add support for validable options
-*            - 2009-09-04 - add support for selecbuttonset
-*            - 2009-06-02 - prefix confirm inputs with _smvc_
-*            - 2009-05-05 - add support for text/password confirm fields
-*            - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin
-*            - 2009-01-05 - add support for time picker and datetime picker
-*            - 2008-11-27 - better multiple select support
-*            - 2008-11-26 - add disabled optional attribute
-*            - 2008-11-07 - add codepress and skip types
-*                         - now radio and checkbox are contained in their label tag
-*            - 2008-10-30 - add static property $useFileEntry and svn infos
+* - 2010-04-08 - change validable callbacks for confirmations to conform tk-validable plugin
+* - 2010-02-12 - change validable callbacks for confirmations
+* - 2009-10-22 - add support for validable options
+* - 2009-09-04 - add support for selecbuttonset
+* - 2009-06-02 - prefix confirm inputs with _smvc_
+* - 2009-05-05 - add support for text/password confirm fields
+* - 2009-03-27 - replace use of fileEntry with filemanager_Entry plugin
+* - 2009-01-05 - add support for time picker and datetime picker
+* - 2008-11-27 - better multiple select support
+* - 2008-11-26 - add disabled optional attribute
+* - 2008-11-07 - add codepress and skip types
+*              - now radio and checkbox are contained in their label tag
+* - 2008-10-30 - add static property $useFileEntry and svn infos
 * @svnInfos:
 *            - $LastChangedDate$
 *            - $LastChangedRevision$
@@ -104,25 +104,18 @@ class formInput_viewHelper extends abstractViewHelper{
 						'label' => 'Confirmation',
 						'class' => $type.'Confirm ui-priority-secondary',
 						'id'    => 'formInputConfirm_'.$options['id'],
+						'rel'   => '#'.$options['id']
 					));
 					if( isset($options['confirmOpts']))
 						$confirmOpts = array_merge($confirmOpts,$options['confirmOpts']);
 
 					$confirm = $this->formInput("_smvc_confirm[$name]",$value,$type,$confirmOpts);
-					$this->validable("_smvc_confirm[$name]",array('rule'=>'formInputConfirm'),$validableForm);
-					$this->_js_scriptOnce("
-					window.formInputConfirm = function(val){
-						var m = this.id.match(/^formInputConfirm_(.*)/);
-						if(m &&  $('#'+m[1]).val()==val){
-							return true;
-						}
-						return false;
-					}
-					",'formInputCheckConfirm');
-					$this->js("
+					$this->_jqueryToolkit_loadPlugin('validable');
+					$this->_js_script("
+					$('input#$confirmOpts[id]').validable({rule:'confirm',required:-1});
 						$('input#$options[id]').bind('change keyup',function(){
-							$('input#$confirmOpts[id]').validable('set_required',$(this).val()!==''?true:false).validable('getState');
-						})
+						$('input#$confirmOpts[id]').validable('getState');
+					});
 					");
 				}
 				if($type==='txt')
@@ -319,7 +312,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	}
 
 	protected function getAttrStr(array $attrs,array $excludeAttrs=null){
-		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked','placeholder');
+		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked','placeholder','rel');
 		$attrStr= '';
 		foreach($attrs as $ok=>$ov){
 			if( is_array($excludeAttrs) && in_array($ok,$excludeAttrs) )
