@@ -8,17 +8,18 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
-*            - 2010-01-04 - add cli support for show
-*            - 2009-06-22 - autoloading viewHelpers will now check in active view setted _viewDirs
-*            - 2009-04-20 - now more show when not in DEVEL_MODE
-*            - 2009-03-16 - use spl_register_autoload for better autoload support when included in other application.
-*            - 2009-02-06 - move javascript and style from show to sMVCdevelBar
-*            - 2008-10-21 - autoload modification to check modelCollection extended classes in corresponding model file
-*            - 2008-09-12 - now try to load a specific config file for the current used front
-*            - 2008-05-06 - more understandable show output for trace
-*            - 2008-05-01 - add modelAddons lookup to __autoload
-*            - 2008-04-12 - new function html_substr and trace option for show
-*            - 2008-03-23 - add abstractModels lookup to __autoload
+* - 2010-09-28 - new error handling
+* - 2010-01-04 - add cli support for show
+* - 2009-06-22 - autoloading viewHelpers will now check in active view setted _viewDirs
+* - 2009-04-20 - now more show when not in DEVEL_MODE
+* - 2009-03-16 - use spl_register_autoload for better autoload support when included in other application.
+* - 2009-02-06 - move javascript and style from show to sMVCdevelBar
+* - 2008-10-21 - autoload modification to check modelCollection extended classes in corresponding model file
+* - 2008-09-12 - now try to load a specific config file for the current used front
+* - 2008-05-06 - more understandable show output for trace
+* - 2008-05-01 - add modelAddons lookup to __autoload
+* - 2008-04-12 - new function html_substr and trace option for show
+* - 2008-03-23 - add abstractModels lookup to __autoload
 */
 
 #- define common paths
@@ -44,8 +45,8 @@ if(get_magic_quotes_gpc()){
 
 #- display and prepare error to go into simpleMVC toolbar if we're on devel_mode
 if( defined('DEVEL_MODE') && DEVEL_MODE){
-	ini_set('error_prepend_string','<div class="php_error">'.preg_replace('!<br\s*/?>!','',ini_get('error_prepend_string')));
-	ini_set('error_append_string',preg_replace('!<br\s*/?>!','',ini_get('error_append_string')).'</div>');
+	#- ini_set('error_prepend_string','<div class="php_error">'.preg_replace('!<br\s*/?'.'>!','',ini_get('error_prepend_string')));
+	#- ini_set('error_append_string',preg_replace('!<br\s*/?'.'>!','',ini_get('error_append_string')).'</div>');
 	error_reporting(E_ALL | E_STRICT);
 	//-- devel bar management;
 	if( PHP_SAPI !== 'cli' ){
@@ -336,45 +337,19 @@ function show(){
 	$argc  = func_num_args();
 	$param = $args[$argc-1];
 	$halt  = false;
-
+	$getTrace  = false;
+	$separator = "\n".str_repeat('——',50)."\n";
 	if(is_string($param)){
 		if(preg_match('!(^|;)trace(;|$)!',$param))
-			$getTrace = array();
+			$getTrace = true;
 		if(preg_match('!(^|;)exit(;|$)!',$param))
 			$halt = true;
 		$color = match('!(?:^|;)color:([^;]+)(?:;|$)!',$param,1);
-		if( $color || $halt || isset($getTrace))
+		if( $color || $halt || $getTrace)
 			array_pop($args);
 	}
 	if(empty($color))
 		$color = 'red';
-
-	$trace = debug_backtrace();
-	if(isset($getTrace)){
-		$_trace = $trace;
-		array_shift($_trace);
-		foreach($_trace as $k=>$v){
-			if(isset($v['object']))
-				$v['object'] = get_class($v['object']);
-			$traceArgs = array();
-			if( isset($v['args']) ){
-				foreach($v['args'] as $ka=>$va){
-					if(is_object($va))
-						$a = 'instanceof '.get_class($va);
-					elseif(is_array($va))
-						$a = "Array(".count($va)." elements)";
-					else
-						$a = var_export($va,1);
-					$traceArgs[] = $a;
-				}
-			}
-			$traceArgs = count($traceArgs)?implode(", ",$traceArgs):'';
-			$traceFile = empty($v['file'])?'':'in '.str_replace(ROOT_DIR.'/','',$v['file'])." at line $v[line]\n";
-			@$getTrace[$k] = $traceFile.(($v['object']||$v['class'])?$v[$v['object']?'object':'class'].$v['type']:'')."$v[function]($traceArgs);";
-		}
-		$args[]="↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ FOLLOWING IS BACKTRACE LAST CALL FIRST ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓";
-		$args[]=implode("\n".str_repeat('__',50)."\n\n",$getTrace);
-	}
 
 	$str = array();
 	foreach($args as $arg){
@@ -387,18 +362,22 @@ function show(){
 		'/(?!<\s|^)Object\s*\*RECURSION\*\s*\n/', //-- reduce recursion to one line
 		'/(?!<\s|^)Array\s*\(\s*\)\n/', //-- reduce empty array to single line
 	);
+	$i=0;
 	$cleanReplace = array(
 		'str_repeat(" ",strlen("$1")/2);',
 		"$1 (#--> HIDDEN BY SHOW <--#)\n",
 		"Object (#--> RECURSION <--#)\n",
 		"Array()\n"
 	);
-	$str = preg_replace($cleanExps,$cleanReplace,implode("\n".str_repeat('--',50)."\n",$str));
+	$str = preg_replace($cleanExps,$cleanReplace,implode($separator,$str));
+	$trace = debug_backtrace(true);
+	if($getTrace){
+		$str.=$separator."↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ FOLLOWING IS BACKTRACE LAST CALL FIRST ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓$separator"
+		 .implode("$separator",formatted_backtrace("in %location:\n   %call(%_args)",1,null,$trace));
+	}
 	$preStyle = 'style="color:'.$color.';border:dashed '.$color.' 1px;max-height:350px;overflow:auto;margin-top:0;"';
 	$bStyle   = 'style="color:'.$color.';text-decoration:underline;margin-bottom:0"';
-	$trace = str_replace(ROOT_DIR.'/','',$trace[0]['file'])
-		.(empty($trace[1]['function'])? '' : ' in '.(isset($trace[1]['class'])?$trace[1]['class'].$trace[1]['type']:'').$trace[1]['function'].'()')
-		.':'.$trace[0]['line'];
+	$trace = formatted_backtrace("%location",0,0,$trace);
 
 	if( PHP_SAPI === 'cli' ){
 		require_once(LIB_DIR.'/db/scripts/libs/class-console_app.php');
@@ -412,11 +391,228 @@ function show(){
 		}
 		return false;
 	}
-	echo "<div class=\"show\" style=\"background:#F0F0F0;text-align:left;font-size:12px;\"><strong $bStyle>Show ( $trace )</strong><br /><pre $preStyle><xmp>$str</xmp></pre></div>";
+	echo "<div class=\"show\" style=\"background:#F0F0F0;text-align:left;font-size:12px;\"><strong $bStyle>Show ( $trace )</strong><br />"
+	#- ."<pre $preStyle>".highlight_string("<?php\n$str",1)."</pre></div>";
+	."<pre $preStyle><xmp>$str</xmp></pre></div>";
 	if($halt){
 		echo "<h5 style=color:red;text-align:center;>SCRIPT EXITED BY SHOW</h5>";
 		flush();
 		exit();
 	}
 	return false; # just for convenience
+}
+
+/*
+highlight.string	"#DD0000"	PHP_INI_ALL
+highlight.comment	"#FF8000"	PHP_INI_ALL
+highlight.keyword	"#007700"	PHP_INI_ALL
+highlight.bg	"#FFFFFF"	PHP_INI_ALL	Cette fonctionnalité obsolète sera certainement supprimée dans le futur.
+highlight.default	"#0000BB"	PHP_INI_ALL
+highlight.html	"#000000"	PHP_INI_ALL
+*/
+/**
+* pre formatted version of debug_backtrace.
+* @param string $formatString  string used to format the trace if null will use: "%location\n%call(%_args)"
+*                              replacement values are %file,%line,%object,%class,%function,%type,%args (@see debug_backtrace doc for more info)
+*                              added %call that will be replace by the object class name followed by the type and the method or the single function name
+*                              %location equal to "%file(%line)"
+*                              %_args that is a simplified representation of the parameters passed to call
+*                              %id is the id of the trace in the stack
+* @param int    $skippedLevel  number of level to remove from the begining of the stack (usefull to embed in more complex debug function call)
+* @param int    $maxDepth      optional limit of the output size. if value is 0 then will return the last call trace as a string
+* @param array  $trace         optional array to use instead of getting result of debug_backtrace (usefull to format exception trace)
+* @return array of string or single string if $maxDepth<=0
+*/
+function formatted_backtrace($formatString=null,$skippedLevel=0,$maxDepth=null,array $trace=null){
+	#- create format callback on first call
+	static $doReplace;
+	if(! isset($doReplace) ){
+		$doReplace = create_function(
+			'$str,array $replaces',
+			'$keys = array_keys($replaces);$vals = array_values($replaces);foreach($keys as $key=>$k)$keys[$key]="%$k";return str_replace($keys,$vals,$str);'
+		);
+	}
+	#- check format string
+	if( empty($formatString) ){
+		$formatString = "#%id %location: %call(%_args)";
+	}
+	#- prepare the trace stack we will use
+
+	$trace = null!==$trace?$trace:debug_backtrace(true);
+	$trace = array_slice($trace,$skippedLevel,$maxDepth>0?$maxDepth:count($trace));
+
+	$returnAsString = (null!==$maxDepth && $maxDepth<=0)?true:false;
+	if( empty($trace)){
+		return $returnAsString?'':array();
+	}
+	if( null !== $maxDepth){
+		$trace = array_slice($trace,0,$returnAsString?1:$maxDepth);
+	}
+	#- check for required additional treatments
+	$withArgs = (strpos($formatString,'%args')!==false?1:0)+(strpos($formatString,'%_args')!==false?2:0);
+
+	foreach($trace as $k=>$v){
+		$v['id'] = $k;
+		if(!isset($v['type'])){
+			$v['call'] = $v['function'];
+		}else if( isset($v['object']) ){
+			$v['call']   = get_class($v['object']).$v['type'].$v['function'];
+			$v['object'] = print_r($v['object'],1);
+		}else{
+			$v['call']   = $v['class'].$v['type'].$v['function'];
+			$v['object'] = '';
+		}
+		if(empty($v['file']) ){
+			$v['file'] = '';
+			$v['line'] = '';
+			$v['location'] = '[internal function]';
+		}else{
+			if( constant('ROOT_DIR') ){
+				$v['file'] = preg_replace(';^'.constant('ROOT_DIR').'/;','',$v['file']);
+			}
+			$v['location'] = "$v[file] at line $v[line]";
+		}
+
+		switch($withArgs){
+			case false:
+				unset($v['args']);
+				break;
+			case 1:
+				$v['args'] = print_r($v['args'],1);
+				break;
+			case 2:
+			case 3:
+				$v['_args'] = array();
+				if( !empty($v['args'])){
+					foreach($v['args'] as $ka=>$va){
+						switch(gettype($va)){
+							case 'array':
+								$a = "Array(".count($va)." elements)";break;
+							case 'object':
+								$a = 'Object(instanceOf '.get_class($va).')';break;
+							#- case 'string':
+								#- $a = var_export(strlen($va)<=55?$va:substr($va,0,27).'…'.substr($va,-27),1);break;
+							default:
+								$a = var_export($va,1);
+						}
+						$v['_args'][] = $a;
+					}
+				}
+				if( $withArgs===2){
+					unset($v['args']);
+				}else{
+					$v['args'] = print_r($v['args'],1);
+				}
+				$v['_args'] = implode(", ",$v['_args']);
+				break;
+		}
+		$trace[$k] = $doReplace($formatString,$v);
+	}
+	return $returnAsString?$trace[0]:$trace;
+}
+
+
+class profiler{
+	static public $stats = array();
+	static public $fullStackStats = array();
+	static private $startTime = 0;
+	static private $lastTime = 0;
+	static private $ticks = 0;
+
+	/** only static class not instanciable */
+	private function __construct(){}
+
+	/**
+	* start the profiling
+	* @param (int) $ticks declare the ticks directive with according ticks value
+	* @return nothing
+	*/
+	static function start($ticks=1){
+		register_tick_function(__class__.'::profile');
+		self::$startTime = self::$lastTime = microtime(true);
+		self::setTicks($ticks);
+	}
+	/**
+	* stop the profiling
+	*/
+	static function stop($ticks=0){
+		unregister_tick_function(__class__.'::profile');
+		self::setTicks($ticks);
+	}
+	/**
+	* same as using declare(ticks=$ticks) but will return previous ticks value
+	* @param int $ticks
+	* @return int previous ticks value.
+	*/
+	static function setTicks($ticks=0){
+		$res = self::$ticks;
+		self::$ticks = (int) $ticks;
+		eval('declare(ticks='.self::$ticks.');');
+		return $res;
+	}
+	/**
+	* profiling callback method used with register_tick_function
+	* this is not intended to be used manually.
+	*/
+	static function profile(){
+		$call = debug_backtrace(false);
+		if( count($call)===1 ) // avoid calling profile while already in it
+			return;
+		$now = microtime(true);
+		$t = $now - self::$lastTime ;
+		$call = formatted_backtrace('%call',1,null,$call);
+		foreach($call as $k=>$c){
+			#- $c = strip_tags($c);
+			if(!$k){
+				self::$stats[$c] = (isset(self::$stats[$c])?self::$stats[$c]:0)+$t;
+			}
+			self::$fullStackStats[$c] = (isset(self::$fullStackStats[$c])?self::$fullStackStats[$c]+$t:0);
+		}
+		self::$lastTime = $now;
+	}
+	/**
+	* return the statistics results of the profiling as an array
+	* @return array
+	*/
+	static function results($fullStackMode=false){
+		if( empty(self::$stats)){
+			return 'Profiler not initialized';
+		}
+		self::stop();
+		$tot = 0;
+		$stats = $fullStackMode?self::$fullStackStats : self::$stats;
+		if( isset($stats['TOTAL'])){
+			unset($stats['TOTAL']);
+		}
+		foreach($stats as $k=>$t){
+			#- $tot += $t;
+			$stats[$k] = round($t,4);
+		}
+		arsort($stats);
+		$stats['TOTAL'] = round(self::$lastTime-self::$startTime,4);
+		return $stats;
+	}
+	static function htmlResults($treshold=5){
+		$res = self::results();
+		$fullRes = self::results(true);
+		$tot = $res['TOTAL'];
+		foreach( $fullRes as $k=>$v){
+			if(! isset($res[$k])){
+				$color = '#ddf';
+				$real = "N/A";
+			}else{
+				$realPerc = (bcdiv($res[$k],$tot,4)*100);
+				$real = $res[$k]."µsec / $realPerc%";
+				$color = $realPerc>$treshold?'#fdd':'#dfd';
+			}
+			if($k === 'TOTAL')
+				$k .=' ( '.count($fullRes).' distinct locations)';
+			$out[] = "<tr style=\"background:$color;\"><th>$k</th><td>$v µsec / ".(bcdiv($v,$tot,2)*100)."%</td><td>$real</td></tr>";
+		}
+		return '<table border="1" cellspacing="0" cellpadding="2" align="center">
+			<thead><th>location</th><th>total running time</th><th>real inside time</th></thead>
+			'.implode("\n\t",$out).'
+			</table>';
+	}
+
 }
