@@ -3,9 +3,11 @@
 * @since 2009-11-19
 * @package cacheManager
 * @changelog
-*            - 2010-03-22 - add fileCacheBackend
-*                         - new methods removeMatchingItem()
-*            - 2010-02-10 - add methods cacheManager::(set|get)Backend()
+* - 2010-11-10 - cacheManager::setEnd() doesn't need name parameter any more as we use $cacheStack property to get it
+* - 2010-10-06 - fileCacheBackend now manage file extensions and constructor can take parameters
+* - 2010-03-22 - add fileCacheBackend
+*              - new methods removeMatchingItem()
+* - 2010-02-10 - add methods cacheManager::(set|get)Backend()
 */
 if(! defined('CACHE_MANAGER_DEFAULT_BACKEND'))
 	define('CACHE_MANAGER_DEFAULT_BACKEND','fileCacheBackend');
@@ -44,6 +46,8 @@ class cacheManager{
 	*/
 	static private $backend=null;
 
+	static private $cacheStack = array();
+
 	private function __construct(){}
 
 	/**
@@ -71,6 +75,7 @@ class cacheManager{
 	* cached items must be start/end in a FirstInLastOut order
 	*/
 	static function setStart($name){
+		array_push(self::$cacheStack,$name);
 		ob_start();
 	}
 	/**
@@ -79,7 +84,11 @@ class cacheManager{
 	* so the first started must be the last ended.
 	* In the same way you really should avoid (at least be carefull) to use output buffering inside the portion of code you try to cache.
 	*/
-	static function setEnd($name){
+	static function setEnd(){
+		if( empty(self::$cacheStack)){
+			throw new BadMethodCallException(__class__."::setEnd() called with no previous matching call to ".__class__."setStart() method");
+		}
+		$name = array_pop(self::$cacheStack);
 		return self::set($name,ob_get_clean());
 	}
 	/**
@@ -95,11 +104,9 @@ class cacheManager{
 		$maxAge = self::_ttl(null===$maxAge?self::$ttl : $maxAge);
 		$i = self::$backend->getItem($name);
 		#- check for validity
-		if( empty($i->cacheTime) && empty($i->content) )
+		if( ! $i->checkValididty($maxAge) ){
 			return cacheItem::dropInstance($name);
-		$time = strtotime($i->cacheTime) + $maxAge;
-		if( $time < time() )
-			return cacheItem::dropInstance($name);
+		}
 		return $i->content;
 	}
 	/**
@@ -114,7 +121,6 @@ class cacheManager{
 		self::init();
 		$i = cacheItem::getInstance($name);
 		$i->content = $content;
-		$i->cacheTime = date('Y-m-d H:i:s');
 		self::$backend->saveItem($i);
 		return $content;
 	}
@@ -165,6 +171,7 @@ class cacheManager{
 */
 interface cacheBackend{
 	function clear($olderThan=null);
+	/** must set the item->cacheTime */
 	function saveItem(cacheItem $item);
 	function removeItem($item);
 	function removeMatchingItem($exp);
@@ -172,23 +179,35 @@ interface cacheBackend{
 }
 
 class fileCacheBackend implements cacheBackend{
-	static public $cacheRootDir = CACHE_FILE_ROOT_DIR;
-	static public $useSubDirs = CACHE_FILE_USE_SUBDIRS;
+	static public $dfltCacheRootDir = CACHE_FILE_ROOT_DIR;
+	static public $dfltUseSubDirs = CACHE_FILE_USE_SUBDIRS;
 
+	protected $cacheRootDir = null;
+	protected $useSubDirs = null;
+	protected $fileSuffix = null;
 
-	function __construct(){
-		if(! is_dir(self::$cacheRootDir)){
+	/**
+	* return a fileCacheBackend instance
+	* @param string $cacheRootDir  null to use default or path to the root dir of cached files (omit trailing slash)
+	* @param bool   $useSubDirs    null to use default settings
+	* @param string $fileSuffix    string to append to the end of the files (may be used to specify file extension)
+	*/
+	function __construct($cacheRootDir=null,$useSubDirs=null,$fileSuffix=null){
+		$this->cacheRootDir = ( null !== $cacheRootDir )? $cacheRootDir : self::$dfltCacheRootDir;
+		$this->useSubDirs = ( null !== $useSubDirs)? $useSubDirs: self::$dfltUseSubDirs;
+		$this->fileSuffix = $fileSuffix;
+		if(! is_dir($this->cacheRootDir)){
 			$umask = umask(0);
-			$res= mkdir(self::$cacheRootDir,0755,true);
+			$res= mkdir($this->cacheRootDir,0755,true);
 			umask($umask);
 			if(! $res ){
-				throw new ErrorException("Can't create directory ".self::$cacheRootDir,0,E_USER_WARNING);
+				throw new ErrorException("Can't create directory ".$this->cacheRootDir,0,E_USER_WARNING);
 			}
 		}
 	}
 	function getItem($name){
 		$i = cacheItem::getInstance($name);
-		if(empty($i->cacheTime) && empty($i->content) ){
+		if( empty($i->cacheTime) && empty($i->content) ){
 			$path = $this->getItemPath($name);
 			if( file_exists($path) && $tmp = file_get_contents($path) ){
 				$i->content = $tmp;
@@ -202,7 +221,7 @@ class fileCacheBackend implements cacheBackend{
 		$tmp = $this->getItemPath($item);
 		if( is_file($tmp) )
 			unlink($tmp);
-		$tmp = $this->getItemPath($item,false).'/'.$item->name.'_'.preg_replace('!\D!','',$item->cacheTime);
+		$tmp = $this->getItemPath($item,false).'/'.$item->name.'_'.preg_replace('!\D!','',$item->cacheTime).$this->fileSuffix;
 		$umask = umask(0);
 		if(! is_dir(dirname($tmp))){
 			mkdir(dirname($tmp),0775,true);
@@ -223,7 +242,7 @@ class fileCacheBackend implements cacheBackend{
 		cacheItem::dropInstance($item);
 		if( is_file($tmp) ){
 			unlink($tmp);
-			if( self::$useSubDirs ){
+			if( $this->useSubDirs ){
 				$res = glob($tmp=dirname($tmp).'/*');
 				if( empty($res) )
 					rmdir(dirname($tmp));
@@ -234,7 +253,7 @@ class fileCacheBackend implements cacheBackend{
 		}
 	}
 	function removeMatchingItem($exp){
-		$files = glob(self::$cacheRootDir.'/*'.(self::$useSubDirs?'/*/*':''));
+		$files = glob($this->cacheRootDir.'/*'.($this->useSubDirs?'/*/*':''));
 		cacheItem::clearMemory(null,$exp);
 		foreach($files as $f){
 			if( preg_match($exp,basename($f)))
@@ -243,7 +262,7 @@ class fileCacheBackend implements cacheBackend{
 		return true;
 	}
 	function clear($olderThan=null){
-		$files = glob(self::$cacheRootDir.'/*'.(self::$useSubDirs?'/*/*':''));
+		$files = glob($this->cacheRootDir.'/*'.($this->useSubDirs?'/*/*':'').$this->fileSuffix);
 		$olderThan=date('Y-m-d H:i:s',time()-(int) $olderThan);
 		cacheItem::clearMemory($olderThan);
 		foreach($files as $f){
@@ -255,7 +274,7 @@ class fileCacheBackend implements cacheBackend{
 	}
 
 	protected function getFileTime($filePath){
-		preg_match('!^.*_(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$!',$filePath,$m);
+		preg_match('!^.*_(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)'.str_replace('.','\.',$this->fileSuffix).'$!',$filePath,$m);
 		return "$m[1]-$m[2]-$m[3] $m[4]:$m[5]:$m[6]";
 	}
 
@@ -267,18 +286,19 @@ class fileCacheBackend implements cacheBackend{
 		}
 	}
 
-	protected function getItemPath($item,$full=true){
-		if( $item instanceof $item)
+	function getItemPath($item,$full=true){
+		if( $item instanceof $item){
 			$item = $item->name;
-		if(! self::$useSubDirs ){
-			$path = preg_replace('!/$!','',self::$cacheRootDir);
+		}
+		if(! $this->useSubDirs ){
+			$path = preg_replace('!/$!','',$this->cacheRootDir);
 		}else{
 			list(,$subPath1,$subPath2) = array_pad(preg_split('//',substr(preg_replace('![^a-zA-Z0-9_]!','_',$item),0,2),3),3,'_');
-			$path  = preg_replace('!/$!','',self::$cacheRootDir)."/$subPath1/$subPath2";
+			$path  = preg_replace('!/$!','',$this->cacheRootDir)."/$subPath1/$subPath2";
 		}
 		if(! $full)
 			return $path;
-		$tmp = glob("$path/$item*");
+		$tmp = glob("$path/$item*".$this->fileSuffix);
 		if( empty($tmp) )
 			return $path;
 		return $tmp[0];
@@ -458,5 +478,20 @@ class cacheItem{
 		if(! isset($this->datas[$k]))
 			return $k==='datas'?$this->datas:false;
 		return $this->datas[$k];
+	}
+	/**
+	* check that this is a valid cache item
+	* @param int $maxAge the maximum age expressed in seconds of the item to be valid
+	* @return bool
+	*/
+	function checkValididty($maxAge=null){
+		#- check for validity
+		if( empty($this->cacheTime) && empty($this->content) ){
+			return false;
+		}
+		if( null !== $maxAge && (strtotime($this->cacheTime) + $maxAge) < time()){
+			return false;
+		}
+		return true;
 	}
 }
