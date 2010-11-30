@@ -105,7 +105,7 @@ class orderableModelAddon extends modelAddon{
 				else
 					$datas[$m[$gField]]++;
 				$rowData[$oField]=$datas[$m[$gField]];
-				$dummy->dbAdapter->update($dummy->tableName,$rowData,array("WHERE $dummy->primaryKey=?",$v));
+				$dummy->dbAdapter->update($dummy->tableName,$rowData,array("WHERE $dummy->primaryKey=?",$m[$dummy->primaryKey]));
 			}
 		}
 	}

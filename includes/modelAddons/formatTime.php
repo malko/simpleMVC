@@ -15,9 +15,12 @@ class formatTimeModelAddon extends modelAddon{
 		'seconds' => '',
 		'sec'     => '',
 		'years'   => '',
+		'last year' => '',
 		'months'  => '',
+		'last month' => '',
 		'days'    => '',
 		'weeks'   => '',
+		'last week' => '',
 		'today'   => '',
 		'yesterday' => ''
 	);
@@ -118,14 +121,15 @@ class formatTimeModelAddon extends modelAddon{
 		if( $date ){
 			preg_match('!(\d\d\d\d)-(\d\d)-(\d\d)!',$date,$match);
 			list(,$y,$m,$d) = array_map('intval',$match);
-			if( ($tmp = date('Y')-$y)>1 ){
-				return $tmp.' '.self::$locals['years'];
-			}else if( ($tmp = date('m')-$m) >1 ){
-				return $tmp.' '.self::$locals['months'];
+			if( ($tmp = date('Y')-$y)>=1 ){
+				return $tmp===1? self::$locals['last year'] : $tmp.' '.self::$locals['years'];
+			}else if( ($tmp = date('m')-$m) >=1 ){
+				return $tmp===1? self::$locals['last month'] :$tmp.' '.self::$locals['months'];
 			}else{
 				$tmp = date('d')-$d;
 				if( $tmp >= 7 ){
-					return ($tmp=round($tmp/7)).' '.($tmp>1? self::$locals['weeks'] : self::_single(self::$locals['weeks']));
+					$tmp = round($tmp/7);
+					return $tmp===1?self::$locals['last week'] : $tmp.' '.self::$locals['weeks'];
 				}else if( $tmp > 1){
 					return $tmp.' '.self::$locals['days'];
 				}else if( $tmp == 1 ){
