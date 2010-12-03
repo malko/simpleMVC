@@ -1,8 +1,16 @@
 <?php
 /**
-* @changelog - 2010-09-22 - add getter for ratio
-*                         - add some resampled paramters for copy methods
-*                         - now resize methods will respect original ratio when height or width is passed to null
+* @changelog 
+* - 2010-12-02 - add $transparentBackground to getNew() method
+*              - add chainedMethods alphablending,savealpha,truecolortopalette
+*              - add fill() method
+*              - rewrite greyScale(),negative() methods to use imagefilter
+*              - colorScale() is totally rewrited
+*              - add $copyType parameter to copyTo()
+*              - _read_color can now handle hex colors with only 3 (or 4 with alpha) values like #f00 for red
+* - 2010-09-22 - add getter for ratio
+*              - add some resampled paramters for copy methods
+*              - now resize methods will respect original ratio when height or width is passed to null
 */
 class gdImage{
 
@@ -12,6 +20,12 @@ class gdImage{
 
 	protected $_resource = null;
 	protected $_src = null;
+
+	static private $_chainedMethods=array(
+		'alphablending',
+		'savealpha',
+		'truecolortopalette',
+	);
 
 	static private $_getter=array(
 		'colorstotal' => 'imagecolorstotal',
@@ -42,9 +56,13 @@ class gdImage{
 		$i = new gdImage();
 		return $i->load($src);
 	}
-	static function getNew($w,$h=null,$trueColor=true){
+	static function getNew($w,$h=null,$trueColor=true,$transBackground=true){
 		$i = new gdImage();
-		return $i->init($w,null!==$h?$h:$w,$trueColor);
+		$i->init($w,null!==$h?$h:$w,$trueColor);
+		if( $transBackground ){
+			$i->fill();
+		}
+		return $i;
 	}
 
 	function load($src){
@@ -160,7 +178,7 @@ class gdImage{
 		}
 		if( isset($destroy))
 			$this->destroy();
-		return is_resource($res)?new gdImage($res):$res;
+		return in_array(strtolower($m),self::$_chainedMethods,true)?$this:(is_resource($res)?new gdImage($res):$res);
 	}
 
 	function __get($key){
@@ -180,7 +198,13 @@ class gdImage{
 	}
 
 	###--- MANIPULATION FUNCTIONS ---###
-
+	function fill($x=0,$y=0,$c='#0000007f'){
+		if( is_array($c) || (is_string($c) && $c[0] === '#') ){
+			$c = $this->colorallocatealpha($c);
+		}
+		imagefill($this->_resource,$x,$y,$c);
+		return $this;
+	}
 	function colorallocate($c=null){
 		if( func_num_args() >=3 ){
 			$c = array();
@@ -204,11 +228,15 @@ class gdImage{
 	function colorset($i,$c=null){
 		if( func_num_args() >=4 ){
 			$c = array();
-			list($i,$c[0],$c[1],$c[2]) = func_get_args();
+			if( func_num_args()>=5)
+				list($i,$c[0],$c[1],$c[2],$c[3]) = func_get_args();
+			else
+				list($i,$c[0],$c[1],$c[2]) = func_get_args();
 		}else{
 			if(null!==$c)
 				$c = self::_read_color($c);
 		}
+		#- return isset($c[3])?imagecolorset($this->_resource,$i,$c[0],$c[1],$c[2],$c[3]):imagecolorset($this->_resource,$i,$c[0],$c[1],$c[2]);
 		return imagecolorset($this->_resource,$i,$c[0],$c[1],$c[2]);
 	}
 	/**
@@ -216,68 +244,29 @@ class gdImage{
 	* @return $this for method chaining
 	*/
 	function greyscale(){
-		if( $this->istruecolor){
-			$w = $this->width;
-			$h = $this->height;
-			$colours = array();
-			for ($x=0; $x<$w; $x++){
-				for ($y=0; $y<$h; $y++){
-					$rgb = $this->colorat($x,$y);
-					$rgb = array(($rgb >> 16) & 0xFF, ($rgb >> 8) & 0xFF, $rgb & 0xFF,($rgb & 0x7F000000) >> 24);
-					if( $rgb[3] > 126)
-						continue;
-					$c = ($rgb[0] + $rgb[1] + $rgb[2]) / 3;
-					if(! isset($colours[$c]) )
-						$colours[$c] = $this->colorallocatealpha(array($c,$c,$c,$rgb[3]));
-					$this->setpixel($x,$y,$colours[$c]);
-				}
-			}
-		}else{
-			$nbColors = $this->colorstotal;
-			for($i=0; $i<$nbColors; $i++){
-				$c = $this->colorsforindex($i);
-				$c = ($c["red"]+$c["green"]+$c["blue"])/3;
-				$this->colorset($i,$c,$c,$c);
-			}
-		}
+		imagefilter($this->_resource,IMG_FILTER_GRAYSCALE);
 		return $this;
 	}
 	function colorScale($color){
+		imagefilter($this->_resource,IMG_FILTER_GRAYSCALE);
 		$color = self::_read_color($color);
-		$end = 255;//($color[0]+$color[1]+$color[2])/3<127?255:0;
-		$diffs = array(
-			$end - $color[0],
-			$end - $color[1],
-			$end - $color[2],
-		);
-		if( $this->istruecolor){
-			$w = $this->width;
-			$h = $this->height;
-			$colours = array();
-			for ($x=0; $x<$w; $x++){
-				for ($y=0; $y<$h; $y++){
-					$rgb = $this->colorat($x,$y);
-					$rgb = array(($rgb >> 16) & 0xFF, ($rgb >> 8) & 0xFF, $rgb & 0xFF,($rgb & 0x7F000000) >> 24);
-					if( $rgb[3] > 126)
-						continue;
-					$c = ($rgb[0] + $rgb[1] + $rgb[2]) / 3;
-					if(! isset($colours[$c]) ){
-						for($i=0;$i<3;$i++)
-							$colours[$c][$i] = intval($color[$i]+$diffs[$i]*$c/255);
-						$colours[$c] = $this->colorallocatealpha(array($colours[$c][0],$colours[$c][1],$colours[$c][2],$rgb[3]));
-					}
-					$this->setpixel($x,$y,$colours[$c]);
-				}
-			}
-		}else{
+		$luminance=($color[0]+$color[1]+$color[2])/3;
+		$brightnessCorrection = $luminance/3;
+		if( $luminance < 127 ){
+			$brightnessCorrection -= 127/3;
+		}
+		if(! $this->istruecolor ){
 			$nbColors = $this->colorstotal;
 			for($i=0; $i<$nbColors; $i++){
-				$c = $this->colorsforindex($i);
-				$factor = ($c["red"]+$c["green"]+$c["blue"])/3;
-				for($y=0;$y<3;$y++)
-					$c[$y] = intval($color[$y]+$diffs[$y]*$factor/255);
-				$this->colorset($i,$c[0],$c[1],$c[2]);
+				$c = array_values($this->colorsforindex($i));
+				for($y=0;$y<3;$y++){
+					$c[$y] = max(0,min(255,$c[$y]+($color[$y]-$luminance)+$brightnessCorrection));
+				}
+				$this->colorset($i,$c);
 			}
+		}else{
+			imagefilter($this->_resource,IMG_FILTER_COLORIZE,$color[0]-$luminance,$color[1]-$luminance,$color[2]-$luminance,isset($color[3])?$color[3]:null);
+			imagefilter($this->_resource,IMG_FILTER_BRIGHTNESS,$brightnessCorrection);
 		}
 		return $this;
 	}
@@ -419,12 +408,24 @@ class gdImage{
 	* @param mixed $to can be filename, resource or gdImage object
 	* @return gdImage $to;
 	*/
-	function copyTo($to,$toX=0,$toY=0,$fromX=0,$fromY=0,$width=null,$height=null){
+	function copyTo($to,$toX=0,$toY=0,$fromX=0,$fromY=0,$width=null,$height=null,$copyType=null){
 		if(! $to instanceof self){
 			$i = new gdImage();
 			$to = $i->load($to);
 		}
-		$res = imagecopy($to->output(null),$this->_resource,$toX,$toY ,$fromX,$fromY,null!==$width?$width:$this->width, null!==$height?$height:$this->height);
+		switch($copyType){
+			case 'merge':
+				$res = imagecopymerge($to->output(null),$this->_resource,$toX,$toY ,$fromX,$fromY,null!==$width?$width:$this->width, null!==$height?$height:$this->height,100);
+				break;
+			case 'resampled':
+				$res =  imagecopyresampled($to->output(null),$this->_resource,$toX,$toY, $fromX,$fromY, null!==$width?$width:$this->width, null!==$height?$height:$this->height,null!==$width?$width:$this->width, null!==$height?$height:$this->height);
+				break;
+			case 'resized':
+				$res = imagecopyresized($to->output(null),$this->_resource,$toX,$toY ,$fromX,$fromY,null!==$width?$width:$this->width, null!==$height?$height:$this->height,null!==$width?$width:$this->width, null!==$height?$height:$this->height);
+				break;
+			default:
+				$res = imagecopy($to->output(null),$this->_resource,$toX,$toY ,$fromX,$fromY,null!==$width?$width:$this->width, null!==$height?$height:$this->height);
+		}
 		return $to;
 	}
 	/**
@@ -493,17 +494,7 @@ class gdImage{
 	* @return this for method chaining
 	*/
   function negative(){
-		if( $this->istruecolor){
-			$this->truecolortopalette(self::$useDithering,256);
-		}
-		$nbcolors = $this->colorstotal;
-		for($i=0;$i<$nbcolors;$i++){
-			$c = $this->colorsforindex($i);
-			$r              = min(255,255-$c["red"]);
-			$g              = min(255,255-$c["green"]);
-			$b              = min(255,255-$c["blue"]);
-			$this->colorset($i,$r,$g,$b);
-		}
+		imagefilter($this->_resource,IMG_FILTER_NEGATE);
 		return $this;
 	}
 	function Sepia(){
@@ -538,6 +529,8 @@ class gdImage{
           if($rgb[$i]<0)$rgb[$i]=0;
           if($rgb[$i]>255)$rgb[$i]=255;
         }
+				if( isset($c[3]) )
+					$rgb[3] = $c[3];
       }
     }elseif(is_bool($c) || null===$c){
 			return array(0,0,0);
@@ -545,11 +538,24 @@ class gdImage{
       $c = trim($c);
       if($c[0]==='#') # avoid the #
         $c = substr($c,1);
+			$cLength = strlen($c);
       # check validity of the color or consider it as black
-      if(strlen($c)!=6 || !preg_match("!^[0-9a-fA-F]+$!",$c))
+			if((! in_array($cLength,array(3,4,6,8))) || !preg_match("!^[0-9a-fA-F]+$!",$c))
         return array(0,0,0);
       # get decimal values for each channel
-      for($i=0;$i<3;$i++)$rgb[$i] = hexdec('0X'.substr($c,$i*2,2));
+			if( $cLength > 4){
+				$c = explode("\n",chunk_split($c,2,"\n"));
+				array_pop($c);
+				foreach($c as $k=>$v){
+					$rgb[$k] = hexdec("0X$v");
+				}
+			}else{
+				$c = explode("\n",chunk_split($c,1,"\n"));
+				array_pop($c);
+				foreach($c as $k=>$v){
+					$rgb[$k] = hexdec("0X$v$v");
+				}
+			}
     }else{
       return array(0,0,0);;
     }
