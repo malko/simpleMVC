@@ -126,7 +126,7 @@
 				}
 				if( e.type==='mousedown' || (e.type==='keydown' && (e.keyCode===$.ui.keyCode.ENTER || e.keyCode===$.ui.keyCode.SPACE || e.keyCode===$.ui.keyCode.NUMPAD_ENTER)) ){
 					elmt.addClass($.ui.button.classes.stateDown);
-					if( e.type==='keydown'){
+					if( e.type==='keydown' && this.tagName !== 'A' && this.tagName!=='BUTTON'){
 						if(! ($.browser.opera && e.keyCode===$.ui.keyCode.ENTER)){ // i Hate this dirty browser detection but not doing this goes to weird behaviour on opera.
 							self.element.click();
 						}
