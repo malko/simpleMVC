@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2010-12-08 - redirect now check REFERER to be in the application path
 *            - 2010-10-06 - add minified js deletetion on clearCache
 *            - 2010-09-22 - now session datas are editable in showSession
 *            - 2010-09-19 - add showSession method
@@ -484,7 +485,7 @@ abstract class abstractController{
 	*/
 	public function redirect($uri=null,$params=null,$permanent=false,$keepGoing=false){
 		if( null === $uri ){
-			$uri = isset($_SERVER['HTTP_REFERER'])?$_SERVER['HTTP_REFERER']:$this->url(DEFAULT_DISPATCH);
+			$uri = (isset($_SERVER['HTTP_REFERER']) && false!==strpos($_SERVER['HTTP_REFERER'],ROOT_URL))?$_SERVER['HTTP_REFERER']:$this->url(DEFAULT_DISPATCH);
 		}
 		if(! is_null($params) ){
 			if(is_array($params)){
@@ -533,7 +534,7 @@ abstract class abstractController{
 	function msgRedirect($msg,$state='error',$dispatchString=null,$params=null){
 		self::appendAppMsg($msg,$state);
 		if( $dispatchString===null && $state==='error'){
-			if( isset($_SERVER['HTTP_REFERER']) )
+			if( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'],ROOT_URL)!==false )
 				return  $this->redirect($_SERVER['HTTP_REFERER'],$params);
 			$dispatchString = ERROR_DISPATCH;
 		}

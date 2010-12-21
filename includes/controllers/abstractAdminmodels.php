@@ -665,7 +665,11 @@ abstract class abstractAdminmodelsController extends abstractController{
 				return $this->forward('configure');
 			foreach($_POST['msgs'][$l] as $id=>$msg)
 				$dict[$id] = strlen($msg)?$msg:'--UNSET--'; // unset empty values
-			write_conf_file(APP_DIR."/locales/$l/adminmodels_$this->modelType",$dict,true);
+			if( is_file(APP_DIR."/locales/$l/adminmodels_$this->modelType") && ! is_writable(APP_DIR."/locales/$l/adminmodels_$this->modelType")){
+				self::appendAppMsg(APP_DIR."/locales/$l/adminmodels_$this->modelType is not writable.",'error');
+			}else{
+				write_conf_file(APP_DIR."/locales/$l/adminmodels_$this->modelType",$dict,true);
+			}
 		}
 		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'messages'));
 	}
@@ -743,10 +747,12 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$dictFile = $dictDir.'/adminmodels_'.$this->modelType;
 		if( ! is_dir($dictDir) ){ #- check directory exists
 			$success = mkdir($dictDir,0777,true); #- create dir recursively
-			if(! $success)
+			if(! $success){
 				return ! self::appendAppMsg(" can't create directory $dictDir",'error');
-			chmod(dirname($dictDir),0777); #- chmod doesn't bother about umask settings
-			chmod($dictDir,0777); #- chmod doesn't bother about umask settings
+			}else{
+				chmod(dirname($dictDir),0777); #- chmod doesn't bother about umask settings
+				chmod($dictDir,0777); #- chmod doesn't bother about umask settings
+			}
 		}
 		if(! is_file($dictFile) ){ # check file exists and try to create it
 			$success = touch($dictFile);
