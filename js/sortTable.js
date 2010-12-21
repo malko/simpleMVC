@@ -375,7 +375,7 @@ window.sortTable = {
 
 		// render the pageSize selector
 		if(options.userPageSize){
-			var psizesel = '<select name="pageselector%tid" id="pageselector%tid" onchange="sortTable.setPageSize(\'%tid\',this.value);">';
+			var psizesel = '<select name="pageselector%tid" id="pageselector%tid" onchange="sortTable.setPageSize(\'%tid\',this.value);" tabindex="-1">';
 			var lb='';var val='';
 			var curval = psize==nbres?'all':psize; // used to compare with the all value
 			for(var i=0;i<options.userPageSize.length;i++){

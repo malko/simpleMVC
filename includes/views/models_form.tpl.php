@@ -93,10 +93,12 @@ if(! empty($this->inputOpts)){
 	<div class="ui-buttonset" style="margin:0.2em 0;">
 		<?php
 			$backAction = "window.location='".(( empty($this->_modelConfig['ACTION']) || $this->_modelConfig['ACTION']['list'] )?$this->listUrl:$this->url(DEFAULT_DISPATCH))."';";
-			echo '<button type="button" onclick="'.$backAction.'" class="ui-button ui-button-arrowreturnthick-1-w">'.langManager::msg('back',null,$this->_langManagerDicName).'</button>';
+			echo '<button type="button" onclick="'.$backAction.'" class="ui-button ui-button-arrowreturnthick-1-w" tabindex="1">'.langManager::msg('back',null,$this->_langManagerDicName).'</button>';
 		?>
 		<button type="submit" class="ui-button ui-button-disk"><?php echo langManager::msg('save',null,$this->_langManagerDicName); ?></button>
 	</div>
 </div>
 
 </form>
+<?php
+$this->js('$(".adminForm :input:not(:disabled,:hidden):first").focus();','jquery');

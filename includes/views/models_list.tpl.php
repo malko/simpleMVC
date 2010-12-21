@@ -74,7 +74,8 @@ if($this->_smvcAllowedAction!==null){
 if(!empty($add)){
 	echo '
 	<div style="text-align:right;">
-		<a href="'.$this->url('add',array('modelType'=>$this->modelType,'_filters'=>$filters),true).'" class="ui-button ui-button-circle-plus"> '.langManager::msg('Add new item',null,$this->_langManagerDicName).'.</a>
+		<a href="'.$this->url('add',array('modelType'=>$this->modelType,'_filters'=>$filters),true).'" class="ui-button ui-button-circle-plus" id="adminListAddNew"> '.langManager::msg('Add new item',null,$this->_langManagerDicName).'.</a>
 	</div>';
+	$this->js('$("#adminListAddNew").button().focus();','jquery');
 }
 echo $this->adminSortableList($this->listDatas,$this->listHeaders,'id',$edit,$del);
