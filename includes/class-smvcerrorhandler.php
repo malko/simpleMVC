@@ -2,6 +2,7 @@
 /**
 * @since 2010-09-27
 * @changelog
+* - 2010-12-08 - make context a string so it can be kept accross redirection
 * - 2010-11-25 - add E_RECOVERABLE_ERROR
 */
 //-- error handling
@@ -22,6 +23,7 @@ class smvcErrorHandler{
 				<pre><xmp>Context:%6$s</xmp></pre>
 			</div>'
 	);
+	static $contextFormatCb = 'smvc_print_r';
 	static function init($ignoreNativeHandler=false){
 		if(! self::$instance){
 			self::$instance = new smvcErrorHandler();
@@ -45,7 +47,7 @@ class smvcErrorHandler{
 		$errors = self::$instance->errors;
 		if( null !== $formatType && isset(self::$formatStrings[$formatType])){
 			foreach($errors as $k=>&$e){
-				$e = sprintf(self::$formatStrings[$formatType],$k,$e['type'],$e['message'],$e['file'],$e['line'],print_r($e['context'],1),$e['state']);
+				$e = sprintf(self::$formatStrings[$formatType],$k,$e['type'],$e['message'],$e['file'],$e['line'],call_user_func(self::$contextFormatCb,$e['context'],true),$e['state']);
 			}
 			return implode($formatType==='cli'?"\n":"\n<br />",$errors);
 		}
@@ -62,7 +64,6 @@ class smvcErrorHandler{
 			$errors = self::getErrors();
 			foreach($errors as &$e){
 				$e['message'] = '[stored from previous http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'].'] => '.$e['message'];
-				unset($e['context']);
 			}
 			$_SESSION['smvcErrorHandlerStorage'] = isset($_SESSION['smvcErrorHandlerStorage'])?$_SESSION['smvcErrorHandlerStorage']+$errors:$errors;
 		}
@@ -106,7 +107,7 @@ class smvcErrorHandler{
 				$state = 'error';
 				break;
 		}
-		$this->errors[] = array('type'=>$no,'message'=>$str,'file'=>$file,'line'=>$line,'context'=>$context,'state'=>$state);
+		$this->errors[] = array('type'=>$no,'message'=>$str,'file'=>$file,'line'=>$line,'context'=>call_user_func(self::$contextFormatCb,$context,true),'state'=>$state);
 		return $this->ignoreNativeHandler;
 	}
 
