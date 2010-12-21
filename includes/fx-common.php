@@ -353,23 +353,10 @@ function show(){
 
 	$str = array();
 	foreach($args as $arg){
-    $str[]= preg_replace('!^\r?\n!m','',print_r($arg,1));
+    $str[]= smvc_print_r($arg,1);
 	}
 
-	$cleanExps = array(
-		'!^([\t ]+)!me', //-- reduce tab size
-		'!((db|dbprofiler|mysqli?db|sqlitedb3?) Object)\n(\s+)\(.*?\n\3\)\n!si', //-- avoid dbs object printing
-		'/(?!<\s|^)Object\s*\*RECURSION\*\s*\n/', //-- reduce recursion to one line
-		'/(?!<\s|^)Array\s*\(\s*\)\n/', //-- reduce empty array to single line
-	);
-	$i=0;
-	$cleanReplace = array(
-		'str_repeat(" ",strlen("$1")/2);',
-		"$1 (#--> HIDDEN BY SHOW <--#)\n",
-		"Object (#--> RECURSION <--#)\n",
-		"Array()\n"
-	);
-	$str = preg_replace($cleanExps,$cleanReplace,implode($separator,$str));
+	$str = implode($separator,$str);
 	$trace = debug_backtrace(true);
 	if($getTrace){
 		$str.=$separator."↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ FOLLOWING IS BACKTRACE LAST CALL FIRST ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓$separator"
@@ -401,7 +388,27 @@ function show(){
 	}
 	return false; # just for convenience
 }
-
+function smvc_print_r($var,$return=false,$avoidedObjects=''){
+	$res = print_r($var,true);
+	$cleanExps = array(
+		'!^\r?\n!m',
+		'!^([\t ]+)!me', //-- reduce tab size
+		'!((db|dbprofiler|mysqli?db|sqlitedb3?'.($avoidedObjects?"|$avoidedObjects":'').') Object)\n(\s+)\(.*?\n\3\)\n!si', //-- avoid dbs object printing
+		'/(?!<\s|^)Object\s*\*RECURSION\*\s*\n/', //-- reduce recursion to one line
+		'/(?!<\s|^)Array\s*\(\s*\)\n/', //-- reduce empty array to single line
+	);
+	$cleanReplace = array(
+		'',
+		'str_repeat(" ",strlen("$1")/2);',
+		"$1 (#--> HIDDEN BY SMVC_PRINT_R <--#)\n",
+		"Object (#--> RECURSION <--#)\n",
+		"Array()\n"
+	);
+	$res = preg_replace($cleanExps,$cleanReplace,$res);
+	if( $return )
+		return $res;
+	echo $res;
+}
 /*
 highlight.string	"#DD0000"	PHP_INI_ALL
 highlight.comment	"#FF8000"	PHP_INI_ALL
