@@ -27,6 +27,7 @@ define('LIB_DIR',dirname(__file__));
 
 #- load configurtations files
 require LIB_DIR.'/fx-conf.php';
+require LIB_DIR.'/smvc/shutdownManager.php';
 
 if( defined('FRONT_NAME') && file_exists(CONF_DIR.'/'.FRONT_NAME.'_config.php') ) #- specific front config
 	parse_conf_file(CONF_DIR.'/'.FRONT_NAME.'_config.php');
@@ -68,14 +69,15 @@ if( defined('DEVEL_MODE') && DEVEL_MODE){
 				echo $out, $develBar;
 			}
 		}
-		register_shutdown_function('smvcPrintDevelBar');
+		#- register_shutdown_function('smvcPrintDevelBar');
+		smvcShutdownManager::register('smvcPrintDevelBar');
 	}
 }
 
 /** manage jsplugin pendings to always be included in the header */
 if( defined('JS_TO_HEAD') && JS_TO_HEAD){
 	ob_start();
-	function smvcJsPendingToHEader(){
+	function smvcJsPendingToHeader(){
 		if(! class_exists('baseView',false)){
 			return ob_end_flush();
 		}
@@ -94,7 +96,8 @@ if( defined('JS_TO_HEAD') && JS_TO_HEAD){
 			echo $out.$jsHelper->getPending();
 		}
 	}
-	register_shutdown_function('smvcJsPendingToHEader');
+	#- register_shutdown_function('smvcJsPendingToHeader');
+	smvcShutdownManager::register('smvcJsPendingToHeader');
 }
 //*/
 
@@ -150,8 +153,8 @@ function smvcAutoload($className){
 	foreach($dirs as $dir){
 		$cname = $className;
 		do{
-			$_dbg[] = array("$dir/$cname.php","$dir/class-".strtolower($cname).'.php');
-			if( is_file($classFile = "$dir/$cname.php") || is_file($classFile = "$dir/class-".strtolower($cname).'.php') ){
+			$_dbg[] = array("$dir/".strtolower(substr($cname,0,1)).substr($cname,1).'.php',"$dir/class-".strtolower($cname).'.php');
+			if(is_file($classFile = "$dir/".strtolower(substr($cname,0,1)).substr($cname,1).'.php') || is_file($classFile = "$dir/class-".strtolower($cname).'.php') ){
 				require $classFile;
 				return true;
 			}
@@ -516,110 +519,4 @@ function formatted_backtrace($formatString=null,$skippedLevel=0,$maxDepth=null,a
 		$trace[$k] = $doReplace($formatString,$v);
 	}
 	return $returnAsString?$trace[0]:$trace;
-}
-
-
-class profiler{
-	static public $stats = array();
-	static public $fullStackStats = array();
-	static private $startTime = 0;
-	static private $lastTime = 0;
-	static private $ticks = 0;
-
-	/** only static class not instanciable */
-	private function __construct(){}
-
-	/**
-	* start the profiling
-	* @param (int) $ticks declare the ticks directive with according ticks value
-	* @return nothing
-	*/
-	static function start($ticks=1){
-		register_tick_function(__class__.'::profile');
-		self::$startTime = self::$lastTime = microtime(true);
-		self::setTicks($ticks);
-	}
-	/**
-	* stop the profiling
-	*/
-	static function stop($ticks=0){
-		unregister_tick_function(__class__.'::profile');
-		self::setTicks($ticks);
-	}
-	/**
-	* same as using declare(ticks=$ticks) but will return previous ticks value
-	* @param int $ticks
-	* @return int previous ticks value.
-	*/
-	static function setTicks($ticks=0){
-		$res = self::$ticks;
-		self::$ticks = (int) $ticks;
-		eval('declare(ticks='.self::$ticks.');');
-		return $res;
-	}
-	/**
-	* profiling callback method used with register_tick_function
-	* this is not intended to be used manually.
-	*/
-	static function profile(){
-		$call = debug_backtrace(false);
-		if( count($call)===1 ) // avoid calling profile while already in it
-			return;
-		$now = microtime(true);
-		$t = $now - self::$lastTime ;
-		$call = formatted_backtrace('%call',1,null,$call);
-		foreach($call as $k=>$c){
-			#- $c = strip_tags($c);
-			if(!$k){
-				self::$stats[$c] = (isset(self::$stats[$c])?self::$stats[$c]:0)+$t;
-			}
-			self::$fullStackStats[$c] = (isset(self::$fullStackStats[$c])?self::$fullStackStats[$c]+$t:0);
-		}
-		self::$lastTime = $now;
-	}
-	/**
-	* return the statistics results of the profiling as an array
-	* @return array
-	*/
-	static function results($fullStackMode=false){
-		if( empty(self::$stats)){
-			return 'Profiler not initialized';
-		}
-		self::stop();
-		$tot = 0;
-		$stats = $fullStackMode?self::$fullStackStats : self::$stats;
-		if( isset($stats['TOTAL'])){
-			unset($stats['TOTAL']);
-		}
-		foreach($stats as $k=>$t){
-			#- $tot += $t;
-			$stats[$k] = round($t,4);
-		}
-		arsort($stats);
-		$stats['TOTAL'] = round(self::$lastTime-self::$startTime,4);
-		return $stats;
-	}
-	static function htmlResults($treshold=5){
-		$res = self::results();
-		$fullRes = self::results(true);
-		$tot = $res['TOTAL'];
-		foreach( $fullRes as $k=>$v){
-			if(! isset($res[$k])){
-				$color = '#ddf';
-				$real = "N/A";
-			}else{
-				$realPerc = (bcdiv($res[$k],$tot,4)*100);
-				$real = $res[$k]."µsec / $realPerc%";
-				$color = $realPerc>$treshold?'#fdd':'#dfd';
-			}
-			if($k === 'TOTAL')
-				$k .=' ( '.count($fullRes).' distinct locations)';
-			$out[] = "<tr style=\"background:$color;\"><th>$k</th><td>$v µsec / ".(bcdiv($v,$tot,2)*100)."%</td><td>$real</td></tr>";
-		}
-		return '<table border="1" cellspacing="0" cellpadding="2" align="center">
-			<thead><th>location</th><th>total running time</th><th>real inside time</th></thead>
-			'.implode("\n\t",$out).'
-			</table>';
-	}
-
 }

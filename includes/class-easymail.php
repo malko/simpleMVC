@@ -7,17 +7,17 @@
 * @todo allow extended mail address form (user display name <useradress@domain.com>)
 * @todo make some modification on set_address_header to better handle multiple values
 * @changelog
-*            - 2010-03-25 - add dontSend parameter to mailTpl() method
-*            - 2009-01-28 - better automated html to plain-text conversion
-*            - 2008-09-15 - clean_header() now replace words instead of whole string (was problematic with string that contains '?')
-*            - 2008-08-26 - add static property $xmailer
-*            - 2008-08-25 - better html to plain text transformation when setting body type as both
-*            - 2008-03-11 - correct a bug in quoted printable when using mbstring.func_overload with MB_OVERLOAD_STRING and UTF8
-*            - 2008-03-07 - clean header will now encode the whole string instead of each special chars separatly
-*            - 2008-02-29 - optimisitation in check_adress set regexp only once.
-*                         - many code cleaning to work properly with static methods in php5
-*            - 2007-09-26 - new parameter cleanTO on send method
-*            - 2007-09-18 - add header encoding on clean header
+* - 2010-03-25 - add dontSend parameter to mailTpl() method
+* - 2009-01-28 - better automated html to plain-text conversion
+* - 2008-09-15 - clean_header() now replace words instead of whole string (was problematic with string that contains '?')
+* - 2008-08-26 - add static property $xmailer
+* - 2008-08-25 - better html to plain text transformation when setting body type as both
+* - 2008-03-11 - correct a bug in quoted printable when using mbstring.func_overload with MB_OVERLOAD_STRING and UTF8
+* - 2008-03-07 - clean header will now encode the whole string instead of each special chars separatly
+* - 2008-02-29 - optimisitation in check_adress set regexp only once.
+*              - many code cleaning to work properly with static methods in php5
+* - 2007-09-26 - new parameter cleanTO on send method
+* - 2007-09-18 - add header encoding on clean header
 */
 
 class easymail{
