@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+* - 2011-01-04 - add autocomplete=off for password fields if not set
 * - 2010-04-08 - change validable callbacks for confirmations to conform tk-validable plugin
 * - 2010-02-12 - change validable callbacks for confirmations
 * - 2009-10-22 - add support for validable options
@@ -97,6 +98,9 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'passwordConfirm':
 				if( isset($options['label']) && ! isset($options['placeholder'])){
 					$options['placeholder'] = strip_tags($options['label']);
+				}
+				if( in_array($type,array('passwordConfirm','password'),true) && ! isset($options['autocomplete']) ){
+					$options['autocomplete'] = 'off';
 				}
 				if(strpos($type,'Confirm')){ //-- manage confirmation if required
 					$type = str_replace('Confirm','',$type);
@@ -312,7 +316,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	}
 
 	protected function getAttrStr(array $attrs,array $excludeAttrs=null){
-		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked','placeholder','rel');
+		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked','placeholder','rel','autocomplete');
 		$attrStr= '';
 		foreach($attrs as $ok=>$ov){
 			if( is_array($excludeAttrs) && in_array($ok,$excludeAttrs) )
