@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+* - 2011-01-04 - bug correction regarding loosing primaryKey value when saving with a mismatch confirm field
 * - 2010-11-25 - add a getFiltersArray() and prepareFilters() methods
 * - 2010-09-05 - add a try/catch on save
 * - 2010-08-13 - now will conserve config defined inside class over thoose defined in simpleMVC_xxx_config
@@ -386,13 +387,16 @@ abstract class abstractAdminmodelsController extends abstractController{
 			$this->_isAllowedAction_('list',false);
 			return $this->redirectAction('list',array('modelType'=>$this->modelType,'embed'=>(empty($_GET['embed'])?'':'on')));
 		}
-
+		$modelPKName = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 		if(isset($_POST['_smvc_confirm']) ){ # manage confirm fields
 			foreach($_POST['_smvc_confirm'] as $k=>$v){
 				if( ! (isset($_POST[$k]) && $_POST[$k] === $v) ){
 					self::appendAppMsg($this->langMsg("field %s mismatch it's confirmation",array($k,$v)),'error');
 					unset($_POST['_smvc_confirm']);
 					$this->view->assign($_POST);
+					if( isset($_POST[$modelPKName])){
+						$this->view->_model_ = $model;
+					}
 					return $this->forward('form');
 				}
 				unset($_POST['_smvc_confirm'][$k]);
@@ -401,7 +405,6 @@ abstract class abstractAdminmodelsController extends abstractController{
 		}
 
 		#- get instance
-		$modelPKName = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 		if(! isset($_POST[$modelPKName]) ){
 			$this->_isAllowedAction_('add');
 			$model = abstractModel::getModelInstanceFromDatas($this->modelType,$_POST);
