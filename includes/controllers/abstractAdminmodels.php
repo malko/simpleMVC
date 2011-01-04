@@ -395,7 +395,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 					unset($_POST['_smvc_confirm']);
 					$this->view->assign($_POST);
 					if( isset($_POST[$modelPKName])){
-						$this->view->_model_ = $model;
+						$this->view->_model_ = abstractModel::getModelInstance($this->modelType,$_POST[$modelPKName]);
 					}
 					return $this->forward('form');
 				}
