@@ -10,6 +10,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2011-02-23 - allow escaped = inside keys
+*            - 2010-02-08 - keep escaped # inside values
 *            - 2010-01-05 - add support for [double]quoted value
 *            - 2010-01-05 - add support for trailing comments
 *            - 2009-10-19 - bug correction in write_conf_file() when adding new vars on file not terminated by a new line
@@ -69,12 +71,14 @@ function parse_conf_file($file_path,$out = false){
 		'!%%!',                                 # doubled %
 		"!\\\\\s*\r?\n!",                       # multiline escapment
 		"/(?<!\\\\)#.*$/",                      # trailing comments
+		"/\\\\#/",                              # escaped sharp
 	);
 	$_replce = array(
 		"isset(\$out_['\\2'])?\$out_['\\2']:(defined('\\2')?\\2:'\\0');",
 		'%',
 		"\n",
 		'',
+		'#',
 	);
 
 	# parse conf file
@@ -85,7 +89,7 @@ function parse_conf_file($file_path,$out = false){
 		if($preserve && preg_match("!^\s*(.*?)(\\\\?)\s*$!",$line,$match)){ # continue line
 			$value .= "\n$match[1]";
 			$preserve = ($match[2]!=='\\'?false:true);
-		}elseif(preg_match("!^\s*([^#=]+)=(.*?)(\\\\?)\s*$!",$line,$match)){ # read line
+		}elseif(preg_match("/^\s*((?:[^#=]+|\\\\=)+)(?<!\\\\)=(.*?)(\\\\?)\s*$/",$line,$match)){ # read line
 			$var  = trim($match[1]);
 			$value= $match[2];
 			$preserve = ($match[3]!=='\\'?false:true);
@@ -100,7 +104,7 @@ function parse_conf_file($file_path,$out = false){
 			$value = preg_match('!^([\'"]).*\\1$!s',$value)?$value:"'".preg_replace('!(\\\\|\')!','\\\\\1',$value)."'";
 		}
 
-		$var = trim($var);
+		$var = trim(str_replace('\=','=',$var));
 		if(! $out){
 			if( ! defined($var) )
 				eval("define('$var',$value);");
@@ -191,6 +195,8 @@ function array2file($arr,$file){
 */
 function _write_conf_line($var,$value=null,$oldline=null){
 	$commented = (substr_count($value,'--COMMENT--')?true:false);
+	if( strpos($var,"=")!==false)	
+		$var = preg_replace('/(?<!\\\\)=/','\=',$var);
 	if( is_bool($value) )
 		$value = $value?'true':'false';
 	elseif( $value===null)
