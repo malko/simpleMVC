@@ -16,9 +16,9 @@ class smvcProfiler{
 	* @return nothing
 	*/
 	static function start($ticks=1){
-		register_tick_function(__class__.'::profile');
 		self::$startTime = self::$lastTime = microtime(true);
 		self::setTicks($ticks);
+		register_tick_function(__class__.'::profile');
 	}
 	/**
 	* stop the profiling
@@ -48,7 +48,7 @@ class smvcProfiler{
 			return;
 		$now = microtime(true);
 		$t = $now - self::$lastTime ;
-		$call = formatted_backtrace('%call',1,null,$call);
+		self::formatted_backtrace($call);
 		foreach($call as $k=>$c){
 			#- $c = strip_tags($c);
 			if(!$k){
@@ -64,7 +64,7 @@ class smvcProfiler{
 	*/
 	static function results($fullStackMode=false){
 		if( empty(self::$stats)){
-			return 'Profiler not initialized';
+			return 'Profiler not initialized or less than '.self::$ticks.' tick'.(self::$ticks>1?'s':'').' emitted';
 		}
 		self::stop();
 		$tot = 0;
@@ -82,25 +82,41 @@ class smvcProfiler{
 	}
 	static function htmlResults($treshold=5){
 		$res = self::results();
+		if( ! is_array($res) ){
+			return $res;
+		}
 		$fullRes = self::results(true);
 		$tot = $res['TOTAL'];
+		$fullTotal = $fullRes['TOTAL'];
+		unset($fullRes['TOTAL']);
 		foreach( $fullRes as $k=>$v){
 			if(! isset($res[$k])){
 				$color = '#ddf';
 				$real = "N/A";
 			}else{
 				$realPerc = (bcdiv($res[$k],$tot,4)*100);
-				$real = $res[$k]."µsec / $realPerc%";
+				$real = $res[$k]."sec / $realPerc%";
 				$color = $realPerc>$treshold?'#fdd':'#dfd';
 			}
-			if($k === 'TOTAL')
-				$k .=' ( '.count($fullRes).' distinct locations)';
-			$out[] = "<tr style=\"background:$color;\"><th>$k</th><td>$v µsec / ".(bcdiv($v,$tot,2)*100)."%</td><td>$real</td></tr>";
+			$out[] = "<tr style=\"background:$color;\"><th>$k</th><td>$v sec / ".(bcdiv($v,$tot,2)*100)."%</td><td>$real</td></tr>";
 		}
 		return '<table border="1" cellspacing="0" cellpadding="2" align="center">
 			<thead><th>location</th><th>total running time</th><th>real inside time</th></thead>
+			<tfoot><tr><td>TOTAL ('.count($fullRes).'distinct locations)</td><td>'.$fullTotal.' sec</td><td>'.$res['TOTAL'].' sec</td></tr></tfoot>
 			'.implode("\n\t",$out).'
 			</table>';
 	}
-
+	static function formatted_backtrace(&$trace){
+		$trace = array_slice($trace,1);
+		foreach($trace as $k=>$v){
+			if(!isset($v['type'])){
+				$trace[$k] = $v['function'];
+			}else if( isset($v['object']) ){
+				$trace[$k]   = get_class($v['object']).$v['type'].$v['function'];
+			}else{
+				$trace[$k]   = $v['class'].$v['type'].$v['function'];
+			}
+		}
+		$trace = array_unique($trace);
+	}
 }
