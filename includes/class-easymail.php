@@ -7,6 +7,7 @@
 * @todo allow extended mail address form (user display name <useradress@domain.com>)
 * @todo make some modification on set_address_header to better handle multiple values
 * @changelog
+* - 2011-01-14 - bug correction in check_address that reject some valid adresses (2 chars local or domain part)
 * - 2010-03-25 - add dontSend parameter to mailTpl() method
 * - 2009-01-28 - better automated html to plain-text conversion
 * - 2008-09-15 - clean_header() now replace words instead of whole string (was problematic with string that contains '?')
@@ -72,14 +73,14 @@ class easymail{
 		if( ! isset($exp) ){
 			$quotable       = '@,"\[\]\\x5c\\x00-\\x20\\x7f-\\xff';
 			$local_quoted   = '"(?:[^"]|(?<=\\x5c)"){1,62}"';
-			$local_unquoted =  '(?:[^'.$quotable.'\.]|\\x5c(?=['.$quotable.']))'
+			$local_unquoted =  '(?:(?:[^'.$quotable.'\.]|\\x5c(?=['.$quotable.']))'
 											 .'(?:[^'.$quotable.'\.]|(?<=\\x5c)['.$quotable.']|\\x5c(?=['.$quotable.'])|\.(?=[^\.])){1,62}'
-											 .'(?:[^'.$quotable.'\.]|(?<=\\x5c)['.$quotable.'])';
+											 .'(?:[^'.$quotable.'\.]|(?<=\\x5c)['.$quotable.'])|[^'.$quotable.'\.]{2})';
 			$local          = '('.$local_unquoted.'|'.$local_quoted.')';
 
 			$_0_255         = '(?:[0-1]?\d?\d|2[0-4]\d|25[0-5])';
 			$domain_ip      = '\['.$_0_255.'(?:\.'.$_0_255.'){3}\]';
-			$domain_name    = '(?:[a-z0-9][a-z0-9-]{1,61}[a-z0-9]\.?)+\.[a-z]{2,6}';
+			$domain_name    = '(?:[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.?|[a-zA-Z0-9]{2})+\.[a-zA-Z]{2,6}';
 
 			$exp = "!^(?:$local_unquoted|$local_quoted)@(?:$domain_name|$domain_ip)$!";
 		}
