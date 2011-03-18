@@ -8,6 +8,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+* - 2011-01-06 - little rework on autoloading
 * - 2010-09-28 - new error handling
 * - 2010-01-04 - add cli support for show
 * - 2009-06-22 - autoloading viewHelpers will now check in active view setted _viewDirs
@@ -136,10 +137,10 @@ function smvcAutoload($className){
 		}else{ #- default look for models
 			if( preg_match('!Collection$!',$className) ) #- modelCollection must be looked in models files
 				$className = preg_replace('!Collection$!','',$className);
-			if( defined('MODELS_DIR') )
-				$dirs = array_merge($dirs,explode(',',MODELS_DIR));
 			$dirs[] = LIB_DIR.'/models';
 			$dirs[] = ROOT_DIR.'/models';
+			if( defined('MODELS_DIR') )
+				$dirs = array_merge($dirs,explode(',',MODELS_DIR));
 		}
 		#- add path corresponding to front controllers
 		if( FRONT_NAME !== 'default' ){
@@ -153,16 +154,27 @@ function smvcAutoload($className){
 	foreach($dirs as $dir){
 		$cname = $className;
 		do{
-			$_dbg[] = array("$dir/".strtolower(substr($cname,0,1)).substr($cname,1).'.php',"$dir/class-".strtolower($cname).'.php');
-			if(is_file($classFile = "$dir/".strtolower(substr($cname,0,1)).substr($cname,1).'.php') || is_file($classFile = "$dir/class-".strtolower($cname).'.php') ){
-				require $classFile;
-				return true;
+			$classFiles = array(
+				"$dir/$cname.php",
+				"$dir/class-".strtolower($cname).'.php'
+			);
+			if( preg_match('/^[A-Z]/',$cname) )
+				array_splice($classFiles,1,0,"$dir/".strtolower(substr($cname,0,1)).substr($cname,1).'.php');
+			if( defined('DEVEL_MODE') && DEVEL_MODE )
+				$_dbg[] = $classFiles;
+			foreach($classFiles as $classFile){
+				if( is_file($classFile)){
+					require $classFile;
+					return true;
+				}
 			}
 			$split = preg_split('!(?<=[a-z])(?=[A-Z])|_!',$cname,2);
 			if(! isset($split[1]) )
 				break;
 			list($_dir,$cname) = $split;
 			$dir .= "/$_dir";
+			if(! is_dir($dir))
+				break;
 		}while($cname);
 	}
 	if( defined('DEVEL_MODE') && DEVEL_MODE)
@@ -269,7 +281,7 @@ function html_substr($htmlStr,$start=0,$length=null,$appendStr='...'){
 					}
 					continue;
 				}else{
-					if( $tagStack[0]===$tag ){
+					if( isset($tagStack[0]) && $tagStack[0]===$tag ){
 						array_shift($tagStack);
 					}elseif($k = array_search($tag,$tagStack,true)){
 						unset($tagStack[$k]);
@@ -360,7 +372,7 @@ function show(){
 	}
 
 	$str = implode($separator,$str);
-	$trace = debug_backtrace(true);
+	$trace = debug_backtrace();
 	if($getTrace){
 		$str.=$separator."↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ FOLLOWING IS BACKTRACE LAST CALL FIRST ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓$separator"
 		 .implode("$separator",formatted_backtrace("in %location:\n   %call(%_args)",1,null,$trace));
@@ -448,7 +460,7 @@ function formatted_backtrace($formatString=null,$skippedLevel=0,$maxDepth=null,a
 	}
 	#- prepare the trace stack we will use
 
-	$trace = null!==$trace?$trace:debug_backtrace(true);
+	$trace = null!==$trace?$trace:debug_backtrace();
 	$trace = array_slice($trace,$skippedLevel,$maxDepth>0?$maxDepth:count($trace));
 
 	$returnAsString = (null!==$maxDepth && $maxDepth<=0)?true:false;
