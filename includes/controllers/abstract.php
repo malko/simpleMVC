@@ -488,14 +488,15 @@ abstract class abstractController{
 			$uri = (isset($_SERVER['HTTP_REFERER']) && false!==strpos($_SERVER['HTTP_REFERER'],ROOT_URL))?$_SERVER['HTTP_REFERER']:$this->url(DEFAULT_DISPATCH);
 		}
 		if(! is_null($params) ){
+			static $argSeparator = ini_get('arg_separator.output');
 			if(is_array($params)){
 				foreach($params as $k=>$v){
 					if(strlen($v)===0) continue;
 					$Qstr[] = urlencode($k).'='.urlencode($v);
 				}
-				$params = implode('&amp;',$Qstr);
+				$params = implode($argSeparator,$Qstr);
 			}
-			$params = ((strpos($uri,'?')!==false)?((substr($uri,-1)!=='?')?'&amp;':'') :'?').$params;
+			$params = ((strpos($uri,'?')!==false)?((substr($uri,-1)!=='?')?$argSeparator:'') :'?').$params;
 		}
 		//-- keep errors for next page
 		if( class_exists('smvcErrorHandler',false)){
@@ -514,7 +515,7 @@ abstract class abstractController{
 		}
 		if($keepGoing)
 			return true; #- convenience to easily skip chaining default postActions
-		exit();
+		smvcShutdownManager::shutdown(0,true);
 	}
 	/**
 	* like redirect but in a more easyer way.
@@ -540,6 +541,8 @@ abstract class abstractController{
 		}
 		return $this->redirectAction($dispatchString,$params);
 	}
+
+	###--- DEVEL_MODE SPECIFIC METHODS ---###
 
 	function clearCache(){
 		if( DEVEL_MODE ){
@@ -568,7 +571,7 @@ abstract class abstractController{
 			<div style="text-align:center">
 			<div style="float:right";">
 				<a href="javascript:window.close();">Close</a>
-				<a href="'.$this->url(':clearSession').'" onclick="window.opener.location.href=this.href;window.close();">Clear session</a>
+				<a href="'.$this->url(':clearSession').'">Clear session</a>
 			</div>
 			<h1 style="font-size:16px;border-bottom:solid silver 1px;">$_SESSION content</h1>
 			<pre style="text-align:left;font-size:12px;line-height:16px;">'.preg_replace("!<br\s*/?>(?:&nbsp;)*(array&nbsp;\()!i",'$1',highlight_string("<?php\n\$_SESSION = ".var_export($_SESSION,1),1)).'</pre>
@@ -580,8 +583,15 @@ abstract class abstractController{
 			<input type="submit" name="submit" value="modify session datas">
 			</form>
 			</div>';
-			exit();
+			smvcShutdownManager::shutdown(0,true);
 		}
 		return $this->redirect();
+	}
+	function saveDicFormInputs(){
+		if(! DEVEL_MODE )
+			return $this->redirect();
+		#- delegate to the langManager the saving process and return to previous page
+		langManager::saveDicFormInputs($_POST);
+		$this->redirect();
 	}
 }

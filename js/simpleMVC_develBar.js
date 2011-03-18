@@ -39,9 +39,10 @@ var cookies={
 		, showDiv = $('#sMVCshow_div')
 		, btPhperr  = $('#sMVCphperr')
 		, phperrDiv = $('#sMVCphperr_div')
-		, showDiv = $('#sMVCshow_div')
 		, btDb  = $('#sMVCdb')
 		, dbDiv = $('#sMVCdb_div')
+		, btLang  = $('#sMVClangmanager')
+		, langDiv = $('#sMVClangmanager_div')
 		, btDataMenu  = $('#sMVCmodels')
 		, dataMenu = $('ul#sMVCmodelsList')
 		, btToggle = $('#sMVCtoolBarToggle')
@@ -98,6 +99,8 @@ var cookies={
 			visiblePanel = 'Phperr';
 		else if( dbDiv.is(':visible') )
 			visiblePanel = 'Db';
+		else if( langDiv.is(':visible') )
+			visiblePanel = 'Lang';
 		if( visiblePanel !== 'none' ){
 			cookies.set('SMVCDevBarPanel',visiblePanel);
 		}else{
@@ -143,11 +146,12 @@ var cookies={
 		btDb.hide().remove();
 		dbDiv.hide().remove();
 	}else{
-		addPanel(btDb,dbDiv,report,(dbMsgs.length ? $('tbody tr',report).length+'/'+dbMsgs.length : $('tbody tr',report).length/2));
+		addPanel(btDb,dbDiv,report,($('tbody tr',report).length/2) + (dbMsgs.length ?'/'+dbMsgs.length : ''));
 		if( dbMsgs.length){
 			$('<div style="margin:1em;padding:.5em;" class="ui-state-highlight"><h2>DB::messages</h2></div>').appendTo(dbDiv).append(dbMsgs.css('display','block'));
 			$('h2',dbDiv).addClass('ui-widget-header').css('font-size','0.8em');
-			btDb.addClass('ui-state-error');
+			if( dbMsgs.filter(':contains([ERROR])').length )
+				btDb.addClass('ui-state-error');
 		}else{
 			report.children('caption').click(); // open profiler table
 		}
@@ -175,7 +179,7 @@ var cookies={
 			display:'none'
 		}).addClass('ui-widget-content ui-button-none ui-corner-bottom ui-corner-top-left');
 		$('li',dataMenu).css({fontSize:'12px',padding:'2px'}).filter(':last').css({fontStyle:'italic',border:'none'});
-		$('.ui-button',dataMenu).click(function(r){dataMenu.hide();});;
+		$('.ui-button',dataMenu).click(function(){dataMenu.hide();});;
 		btDataMenu.click(function(e){
 			//dbg($(this).position().left+$(this).width())
 			dataMenu.css({
@@ -186,21 +190,6 @@ var cookies={
 			return false;
 		});
 	}
-
-	/*/-- Manage DynCss
-	simpleMVCDynCssAppend= function(e){
-		if( ! $('#sMVCcss').length){ //- create elements
-			btCss = $('<button id="sMVCcss" class="ui-button">DynCss</button></div>').appendTo(toolBar).button()
-			btCss.parent('.ui-buttonset').buttonset('propagateSettings');//.css(toolBarButtonStyle);
-			if(! btDataMenu.is(':visible') )
-				btCss.attr('style','display:none!important');
-			cssDiv= $('<div id="sMVCcss_div" class="sMVCpannel"><h1>jqueryDynCss generated</h1>').appendTo('#sMVCpannels');
-			addPanel(btCss,cssDiv);
-		}
-		$('<pre style="text-align:left;"></pre>').html(e.innerHTML).appendTo(cssDiv);
-		if( cookies.get('SMVCDevToggle') != 1)
-			btCss.hide();
-	};*/
 
 	//-- Manage cssEditor button
 	$('#sMVCcssEditor').click(function(){
@@ -214,6 +203,30 @@ var cookies={
 		}
 		return false;
 	});
+
+	//-- Manage langManager form
+	var langForms = $('form[id^=langManagerForm_]');
+	if( langForms.length==0){
+		btLang.hide().remove();
+		langDiv.hide().remove();
+	}else{
+		addPanel(btLang,langDiv,langForms);
+		langForms.css({textAlign:'right',lineHeight:"1.4em",margin:'1em'})
+			.submit(function(){ btLang.click();return true;})
+		;
+		langForms.find('fieldset').css({textAlign:'left',margin:'1em'}).addClass('tk-border tk-corner');
+		langForms.find('label').css({
+			verticalAlign:'top',
+			marginRight:'1em',
+			width:'20%',
+			float:'left',
+			clear:'left'
+		});
+		langForms.find('textarea').css({
+			width:'77%'
+		});
+	}
+
 	//-- show Session button
 	$('#sMVCshowSession').click(function(){
 		var relUrl = $(this).attr('rel');
@@ -242,10 +255,10 @@ var cookies={
 
 	if( phped.length ){
 		if(! phperrDiv.is(':visible')){
-			btPhperr.click();
+			phperrDiv.toggle();
 		}
-	}else if( dbMsgs.length ){
-		btDb.click();
+	}else if( dbMsgs.filter(':contains([ERROR])').length ){
+		dbDiv.toggle();
 	}else{
 		var openedPanel = cookies.get('SMVCDevBarPanel');
 		if( openedPanel ){
