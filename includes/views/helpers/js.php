@@ -179,7 +179,7 @@ class js_viewHelper extends abstractViewHelper{
 			return $success;
 		}
 		#- check paths
-		if(! $absolutePath ){
+		if(! ($absolutePath || strpos($file,'http')!==false) ){
 			if( ! is_file(self::$scriptRootDir.'/'.$file) ){
 				if( defined('DEVEL_MODE') && DEVEL_MODE )
 					show(__class__.'::'.__function__."($file) file not found!",'trace');
@@ -204,12 +204,12 @@ class js_viewHelper extends abstractViewHelper{
 			if( $v )#- avoid multiple time inclusion
 				continue;
 			//-- get separatly js/css files
-			if( preg_match('!\.js$!i',$k) ){
-				$js[]=$k;
-				#- $incStr.= "<script src=\"$k\" type=\"text/javascript\"></script>\n";
-			}else if( preg_match('!\.css$!i',$k) ){
+			if( preg_match('!\.css$!i',$k) ){
 				$css[]=$k;
 				#- $incStr.= "<link type=\"text/css\" rel=\"stylesheet\" href=\"$k\" />\n";
+			}else{ // if( preg_match('!\.js$!i',$k) ){ default to javascript
+				$js[]=$k;
+				#- $incStr.= "<script src=\"$k\" type=\"text/javascript\"></script>\n";
 			}
 			self::$includedFiles[$k]=true;
 		}

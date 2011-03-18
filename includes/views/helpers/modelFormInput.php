@@ -98,7 +98,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				if( isset($options['forceEmptyChoice']) && $options['forceEmptyChoice']===false){
 					unset($options['forceEmptyChoice']);
 				}else{
-					$options['values'][0] = langManager::msg('empty %s value',array(langManager::msg($keyName)));
+					$options['values'][0] = langManager::msg('empty %s value',array(langManager::msg($keyName,null,$this->view->_langManagerDicName)),$this->view->_langManagerDicName);
 				}
 				if( isset($options['type']) && strpos($options['type'],'check') === 0){
 					$this->view->_js_script('

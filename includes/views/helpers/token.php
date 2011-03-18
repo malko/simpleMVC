@@ -8,12 +8,15 @@
 *
 */
 class token_viewHelper extends abstractViewHelper{
-	static public $md5Salt = '&)çà,xw:!;<';
+	static public $md5Salt = null;
 	static public $maxTTL = 1800; // seconds
 	static public $autoClear = true;
 
 	function __construct(viewInterface $view){
 		parent::__construct($view);
+		if( null === self::$md5Salt ){
+			throw new RuntimeException("You must initialize your token_viewHelper::md5Salt");
+		}
 		if( self::$autoClear ){
 			$this->clear(self::$maxTTL);
 		}

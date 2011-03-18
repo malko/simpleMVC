@@ -6,7 +6,7 @@
 * @class jqueryui_viewHelper
 */
 class jqueryui_viewHelper extends jsPlugin_viewHelper{
-	static public $customThemeName = 'redmond';
+	static public $customThemeName = '';
 	static public $uiVersion = '1.7.2';
 	public $requiredFiles = array(
 		'js/jqueryPlugins/bgiframe/jquery.bgiframe.min.js',
@@ -19,6 +19,8 @@ class jqueryui_viewHelper extends jsPlugin_viewHelper{
 	function init(){
 		if( self::$customThemeName ){
 			$this->_js_includes('js/css/'.self::$customThemeName.'/jquery-ui-'.self::$uiVersion.'.custom.css');
+		}else{
+			$this->_js_includes('js/css/base/ui.all.css');
 		}
 		$this->_js_script('$.ui.dialog.defaults.bgiframe = true;');
 	}

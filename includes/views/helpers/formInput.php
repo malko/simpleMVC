@@ -71,16 +71,25 @@ class formInput_viewHelper extends abstractViewHelper{
 		$labelStr = (isset($options['label'])?"<label for=\"$options[id]\"".(empty($options['labelClass'])?'':' class="'.$options['labelClass'].'"').">$options[label]</label>":'');
 
 		#- check for some validable options.
-		$validableOptsNames = array('required','help','minlength','maxlength','rule','useIcon','stateElmt');
+		$validableOptsNames = array(
+			'required'=>true,
+			'help'=>false,
+			'minlength'=>false,
+			'maxlength'=>true,
+			'rule'=>false,
+			'useIcon'=>false,
+			'stateElmt'=>false
+		);
 		$supportMaxlength = array('txt','text','pass','password','txtConfirm','passwordConfirm');
 		$validableOpts = array();
 		$validableForm = $this->view->getController() instanceof modelsController?'form.adminForm':'form';
-		foreach($validableOptsNames as $key){
+		foreach($validableOptsNames as $key=>$passedOName){
 			if( $key==="maxlength" && in_array($type,$supportMaxlength) )
 				continue;
 			if( isset($options[$key])){
 				$validableOpts[$key] = $options[$key];
-				unset($options[$key]);
+				if(! $passedOName )
+					unset($options[$key]);
 			}
 		}
 		if( !empty($validableOpts)){
@@ -96,6 +105,11 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'txtConfirm':
 			case 'textConfirm':
 			case 'passwordConfirm':
+			/** HTML 5 SPEC * /
+			case 'email':
+			case 'url':
+			case 'color':
+			case 'search':*/
 				if( isset($options['label']) && ! isset($options['placeholder'])){
 					$options['placeholder'] = strip_tags($options['label']);
 				}
@@ -114,8 +128,8 @@ class formInput_viewHelper extends abstractViewHelper{
 						$confirmOpts = array_merge($confirmOpts,$options['confirmOpts']);
 
 					$confirm = $this->formInput("_smvc_confirm[$name]",$value,$type,$confirmOpts);
-					$this->_jqueryToolkit_loadPlugin('validable');
-					$this->_js_script("
+					$this->view->_jqueryToolkit_loadPlugin('validable');
+					$this->view->_js_script("
 					$('input#$confirmOpts[id]').validable({rule:'confirm',required:-1});
 						$('input#$options[id]').bind('change keyup',function(){
 						$('input#$confirmOpts[id]').validable('getState');
@@ -175,7 +189,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				$opts = '';
 				if( $type==='selectbuttonset'){
 					$this->view->helperLoad('button');
-					$this->_js_scriptOnce("$('.formInput select.ui-selectbuttonset').selectbuttonset();",'formInputSelectButtonSetLoader');
+					$this->view->_js_scriptOnce("$('.formInput select.ui-selectbuttonset').selectbuttonset();",'formInputSelectButtonSetLoader');
 					$options['class'] = 'ui-selectbuttonset'.(empty($options['class'])?'':" $options[class]");
 					if(! empty($validableOpts)){
 						$this->validable($name,array('helpTrigger'=>"#$options[id] ~ .ui-buttonset .ui-button",'helpAfter'=>"#$options[id] ~ .ui-buttonset"),$validableForm);
@@ -279,7 +293,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				}
 				return $this->formatInput(
 					$labelStr,
-					$this->_datepicker_withTime($name,$value,empty($options['pickerOpts'])?null:$options['pickerOpts']),
+					$this->view->_datepicker_withTime($name,$value,empty($options['pickerOpts'])?null:$options['pickerOpts']),
 					$options['formatStr']
 				);
 				break;//--dummy break
@@ -292,7 +306,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				if( $type==='fileentry' || ( $type=='file' && self::$useFileEntry ) ){
 					if( !empty($validableOpts))
 						$this->validable($name,array('helpAfter'=>"#bt$options[id]"),$validableForm);
-					$inputStr = $this->_filemanager_entry($name,$value,$options);
+					$inputStr = $this->view->_filemanager_entry($name,$value,$options);
 				}else{
 					$inputStr = "<input type=\"file\" name=\"$name\" ".$this->getAttrStr($options)." />";
 					if( $type==='fileextended' && $value){
@@ -316,13 +330,21 @@ class formInput_viewHelper extends abstractViewHelper{
 	}
 
 	protected function getAttrStr(array $attrs,array $excludeAttrs=null){
-		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked','placeholder','rel','autocomplete');
+		$attrNames = array('class','size','maxlength','rows','cols','id','value','onchange','multiple','style','disabled','checked','placeholder','rel','autocomplete','required');
 		$attrStr= '';
 		foreach($attrs as $ok=>$ov){
 			if( is_array($excludeAttrs) && in_array($ok,$excludeAttrs) )
 				continue;
-			if( in_array($ok,$attrNames) && $ov!==null && $ov !=='')
-				$attrStr.=" $ok=\"".preg_replace('/(?<!\\\\)"/','\"',$ov).'"';
+			if( in_array($ok,$attrNames) && $ov!==null && $ov !==''){
+				switch($ok){
+					case 'required':
+						if( $ov > 0)
+							$attrStr.=' required';
+						break;
+					default:
+						$attrStr.=" $ok=\"".preg_replace('/(?<!\\\\)"/','\"',$ov).'"';
+				}
+			}
 		}
 		return $attrStr;
 	}

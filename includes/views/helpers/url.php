@@ -16,6 +16,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2011-02-08 - add $rewriteUseKeys property and $forcedRewriteUseKeys parameter
 *            - 2010-04-09 - make wordCleaner a static method
 *            - 2010-02-08 - drop support for second $controllerName parameter now only support dipatchString as first parameter
 *            - 2009-06-23 - wordCleaner() add html_entity_decode charset parameter and remove utf8_decode
@@ -39,6 +40,7 @@ class url_viewHelper extends abstractViewHelper{
 	/** if true then empty vars are removed from generated url */
 	static public $keepEmptyVars = false;
 	static public $wordCleanerSkippedChars = '-/';//'\\+';
+	static public $rewriteUseKeys = true;
 	public $view = null;
 
 	public function __construct(viewInterface $view){
@@ -69,7 +71,7 @@ class url_viewHelper extends abstractViewHelper{
 	* @param string $appUrl     allow you to set the base url to use in place of default APP_URL it's usefull to prepare links for other apps
 	* @return string target URL.
 	*/
-	function url($dispatchString,$params=null,$alreadyEncoded=false,$appUrl=null){
+	function url($dispatchString,$params=null,$alreadyEncoded=false,$appUrl=null,$forcedRewriteUseKeys=null){
 		if( strpos($dispatchString,':')!==false){ # manage $action as a full dispatch string
 			list($controller,$action)=explode(':',$dispatchString,2);
 		}else{
@@ -104,11 +106,12 @@ class url_viewHelper extends abstractViewHelper{
 					$params = array_map('urlencode',$params);
 
 				$kv_sep = (self::$useRewriteRules)?'/':'=';
+				$useKeys = self::$useRewriteRules?($forcedRewriteUseKeys!==null?$forcedRewriteUseKeys:self::$rewriteUseKeys):true;
 				$ignoredKey = array('ctrl','action','');
 				foreach($params as $k=>$v){
 					if( in_array($k,$ignoredKey,true) || (empty($v) && ! self::$keepEmptyVars) )
 						continue;
-					$Qstr[] = $k.$kv_sep.$v;
+					$Qstr[] = ($useKeys?"$k$kv_sep":'').$v;
 				}
 				if( isset($params['']))
 					$Qstr[] = self::wordCleaner($params['']);
