@@ -23,7 +23,7 @@ class smvcErrorHandler{
 				<pre><xmp>Context:%6$s</xmp></pre>
 			</div>'
 	);
-	static $contextFormatCb = 'smvc_print_r';
+	static $contextFormatCb = 'print_r';
 	static function init($ignoreNativeHandler=false){
 		if(! self::$instance){
 			self::$instance = new smvcErrorHandler();

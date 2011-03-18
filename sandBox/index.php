@@ -32,6 +32,7 @@ session_start();
 
 //-initialize our own error handler
 smvcErrorHandler::init(DEVEL_MODE);
+smvcErrorHandler::$contextFormatCb='smvc_print_r';
 
 #- if needed specified your default database connection (uncomment next two lines)
 #- db::setDefaultConnectionStr(DB_CONNECTION);
@@ -60,6 +61,8 @@ abstractController::$defaultViewDirs  = array(
 #- first set directories for dictionaries lookUp
 #- abstractController::$appMsgUseLangManager = true;
 #- langManager::$acceptedLanguages = array('fr','en');
+#- if( DEVEL_MODE )
+#- 	langManager::collectFailures(true);
 #-langManager::$localesDirs = array(
 #-	ROOT_DIR.'/locales',
 #-	APP_DIR.'/locales',
