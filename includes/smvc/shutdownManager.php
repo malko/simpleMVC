@@ -40,22 +40,29 @@ class smvcShutdownManager{
 	* @param callback $callBack the callback to register, if already registered then it
 	* @param int      $priority the priority level of the callback (higher level means later call)
 	* @param mixed    $param    you can add as many optionnal parameter as  you want to the callback
+	* @return int     internal callback id
 	*/
 	static public function register($callBack,$priority=0){
 		if(! self::$_registered ){
-			register_shutdown_function(__class__.'::_registered_shutdown');
+			register_shutdown_function(array(__class__,'_registered_shutdown'));
 			self::$_registered = true;
 		}
 		$params = func_get_args();
 		self::$_registeredCallbacks[++self::$_id] = array($callBack,(int) $priority,self::$_id,array_slice($params,2));
+		return self::$_id;
 	}
 
 	/**
 	* unregister previously registered callback
 	* @param callback $callBack the callback to unregister (or the callback id returned by register method )
+	*                           /!\ if null is given then will unregister all previously registered callback.
 	* @return bool return true if successfully removed else return false
 	*/
 	static public function unregister($callBack){
+		if( is_null($callBack) ){
+			self::$_registeredCallbacks  = array();
+			return true;
+		}
 		if( is_int($callBack) ){
 			if( !isset(self::$_registered[$callBack]))
 				return false;
@@ -74,7 +81,7 @@ class smvcShutdownManager{
 	/**
 	* shutdown the script by calling exit.
 	* @param mixed $status may be a string as in die or a status code (@see exit)
-	* @param boo   $byPassCallBacks if true then will do a normal exit without calling any of the registered callbacks
+	* @param bool  $byPassCallBacks if true then will do a normal exit without calling any of the registered callbacks
 	*/
 	static public function shutdown($status=0,$byPassCallBacks=false){
 		self::$_byPassCallBacks = $byPassCallBacks;
@@ -91,7 +98,7 @@ class smvcShutdownManager{
 		if( self::$_byPassCallBacks )
 			return;
 		#- first sort the stack
-		uasort(self::$_registeredCallbacks,__class__.'::_compare');
+		uasort(self::$_registeredCallbacks,array(__class__,'_compare'));
 		foreach( self::$_registeredCallbacks as $cb){
 			call_user_func_array($cb[0],$cb[3]);
 		}
