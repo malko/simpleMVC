@@ -14,6 +14,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2011-01-27 - add doctype option with html5 doctype as default value
+*            - 2011-01-17 - avoid multiple instance of same rte
 *            - 2009-10-12 - now attach rteInstance to the element
 *                         - allow call of static methods val, and toggleEditMode
 *            - 2009-07-22 - better hasSelection detection
@@ -141,6 +143,9 @@
 				}
 				return instance;
 			}
+			if(elmt.get(0).rteInstance){
+				return;
+			}
 			var self = this;
 			elmt.get(0).rteInstance = self;
 			self.opts     = $.extend({}, $.fn.rte.defaults, options);
@@ -217,7 +222,7 @@
 				else// IE
 					this.editable = this.iframe.contentWindow.document;
 				this.editable.open();
-				this.editable.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"<style>td{border:solid black 1px !important;}</style></head><body class='frameBody' style='height:100%;width:100%;margin:0;'>"+this.content+"</body></html>");
+				this.editable.write(this.opts.doctype+'<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><head>'+css+"<style>td{border:solid black 1px !important;}</style></head><body class='frameBody' style='text-align:left;height:100%;width:100%;margin:0;'>"+this.content+"</body></html>");
 				this.editable.close();
 				this.editable.contentEditable = 'true';
 				this.editable.designMode = 'on';
@@ -230,19 +235,20 @@
 			this.textarea.wrap('<div class="rte" id="RTE_'+this.id+'"></div>').before(this.iframe);
 			$(this.iframe).before(this.toolbar);
 			this.container = $('#RTE_'+this.id);
-			var height = this.opts.height!=0 ? this.opts.height : (parseInt(this.textarea.height())+parseInt(this.toolbar.outerHeight()));
-			var width  = this.opts.width!=0 ? this.opts.width : this.textarea.outerWidth();
+			var height = this.opts.height!=0 ? this.opts.height : parseInt(this.textarea.outerHeight(true)+this.toolbar.outerHeight(true));
+			var width  = this.opts.width!=0 ? this.opts.width : this.textarea.outerWidth(true);
 			this.container.width(width+'px')
 				.height( height+'px')
 				.css('text-align','center');
-			height -= parseInt(this.toolbar.outerHeight());
+			height = this.container.innerHeight()-this.toolbar.outerHeight(true);
+			width = this.container.innerWidth();
 			$(this.iframe).width(width).height(height+'px');
 			/*this.container.width((this.opts.width!=0 ? this.opts.width : this.textarea.width())+'px')
 				.height( height+'px')
 				.css('text-align','center');
 			height -= parseInt(this.toolbar.height());
 			$(this.iframe).height(height+'px');*/
-			$(this.textarea).height(height+'px');
+			$(this.textarea).width(width).height(height+'px');
 			return this;
 		},
 		_initToolBar: function(){
@@ -518,6 +524,7 @@
 			['H5','Title 5'],
 			['H6','Title 6']
 		],
+		doctype: '<!DOCTYPE HTML>', // time to get html5 as default doc type
 		/**
 		* classOptions is a list of format tags with specified class like this
 		* array[ 'tagName:className','display label']
