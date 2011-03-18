@@ -52,6 +52,25 @@ class datepicker_viewHelper extends  jsPlugin_viewHelper{
 		return 	'<input type="text" id="'.$idElement.'" name="'.$idElement.'" value="'.$value.'" />';
 	}
 
+
+	function inline($idElement,$value='',$datePickerOptionStr=null){
+		if( empty($datePickerOptionStr) ){
+			$datePickerOptionStr = '';
+		}elseif(is_array($datePickerOptionStr)){
+			$datePickerOptionStr = self::_optionString($datePickerOptionStr);
+		}
+		if( empty($value) || $value==='0000-00-00')
+			$value = date('Y-m-d');
+		$this->_js_script('
+		$("#'.$idElement.'").datepicker('.$datePickerOptionStr.')
+			.next(".ui-datepicker-trigger").addClass("ui-button ui-button-i-calendar").css("padding","0");
+		');
+
+		return 	'<div id="'.$idElement.'" name="'.$idElement.'"></div>';
+	}
+
+
+
 	/**
 	* @return
 	* @param string $idElement name/id of the created elemenet
