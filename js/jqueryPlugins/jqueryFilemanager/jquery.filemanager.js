@@ -465,11 +465,14 @@ function show(){
 			var fm = $('#'+data.fmanager).data('filemanager');
 			var loading = fm.loading;
 
-			loading.html('');
-			fm.loading = null;
-			// display error if required
+			if( loading !== null){
+				loading.html('');
+				fm.loading = null;
+				// display error if required
+			}
 			if( data.error ){
-				loading.remove();
+				if( loading)
+					loading.remove();
 				if( fm.langMsgs(data.error))
 					data.error = fm.langMsgs(data.error);
 				return fm.dialog.displayError(data.error);
@@ -480,6 +483,9 @@ function show(){
 				if( ! i.match(/^\d+$/))	return; //skip named elements
 				fm.createItem(data[i]).appendTo(loading);
 			});
+			if( ! loading ){
+				return false;
+			}
 			loading.removeClass('loading');
 			loading.parent('li').removeClass('collapsed').addClass('expanded');
 			if( fm.folderLoaded)
