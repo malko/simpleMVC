@@ -21,6 +21,7 @@ if(! empty($this->inputOpts)){
 <h1><?php echo $this->pageTitle ?></h1>
 <form action="<?php echo $this->actionUrl ?>" method="post" class="adminForm"<?php echo $encType?' enctype="multipart/form-data"':''?>>
 <?php
+	$this->js('$(".adminForm :input:not(:disabled,:hidden):first").focus();','jquery');
 	if( !empty($this->datasDefs) ){
 		$inputOpts = array(
 			'formatStr'=>'<tr class="formInput"><td>%label</td><td>%input</td></tr>'
@@ -100,5 +101,3 @@ if(! empty($this->inputOpts)){
 </div>
 
 </form>
-<?php
-$this->js('$(".adminForm :input:not(:disabled,:hidden):first").focus();','jquery');

@@ -212,13 +212,12 @@
 		<div class="ui-widget-content ui-corner-all" id="formAddFieldList" style="padding:.4em;">
 			add relation fields :
 			<?php
-
-				if( $hasOnes = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne')) ){
+				if( $hasOnes = array_diff(array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasOne')),$this->datasDefs)){
 					echo '<span class="tk-border tk-corner tk-inlineStack">'
 						.implode('</span><span class="tk-border tk-corner tk-inlineStack">',$hasOnes)
 						.'</span>';
 				}
-				if( $hasManys = array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasMany')) ){
+				if( $hasManys = array_diff(array_keys(abstractModel::_getModelStaticProp($this->modelType,'hasMany')),$this->datasDefs) ){
 					echo '<span class="tk-border tk-corner tk-inlineStack">'
 						.implode('</span><span class="tk-border tk-corner tk-inlineStack">',$hasManys)
 						.'</span>';

@@ -5,7 +5,25 @@ var styleClass = "ui-widget-content ui-corner-all";
 var formsIds = {string: 0, actions: 1, list: 2, filters: 3, forms: 4, messages: 5, config: 6, model: 7};
 var activeForm =  window.location.href.match(/#\/?(\w+)/);
 activeForm = (null !== activeForm && activeForm.length) ? formsIds[activeForm[1]]: 1;
-$("#settings").accordion({header: "h3", autoHeight: false, animated: false, active: activeForm, collapsible: true});
+$("#settings").accordion({
+	header: "h3",
+	autoHeight: false,
+	animated: false,
+	active: activeForm,
+	collapsible: true,
+	change:function(e,ui){
+		var pane=ui.newHeader.find('a').attr('name');
+		$('#sMVCtoolBar #sMVCmodelsList a[title=configure]').each(function(){
+			$(this).attr('href',$(this).attr('href').replace(/(\/#\/[^\/]+)?$/,pane?'/#/'+pane:""));
+		});
+	}
+});
+// init confgure buttons
+setTimeout(function(){
+$('#sMVCtoolBar #sMVCmodelsList a[title=configure]').each(function(){
+	var p = window.location.href.replace(/.*?(\/#\/[^\/]+)?$/,'$1');
+	$(this).attr('href',$(this).attr('href').replace(/(\/#\/[^\/]+)?$/,p?p:""));
+})},1000);
 
 // make fieldname clickable to ease _toStr setting
 $(".sMVC_dataField").click(function (){
