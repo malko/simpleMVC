@@ -12,12 +12,12 @@ class multilingualModel extends BASE_multilingualModel{
 class multilingualModelAddon extends modelAddon{
 
 	/**
-	* format string for localized field names, placholders are:
+	* format string for localized field names, placeholders are:
 	* - :name fieldName (the fieldName without the localised part (ex: name)
 	* - :lc the langcode as return by the langmanager
 	* - :Lc the langcode first letter upperCase
-	* - :LC the langcode in all uppercase
-	* this may be ovveride in the model that implement this addon directly.
+	* - :LC the langcode all in uppercase
+	* this may be overide in the model that implement this addon directly.
 	*/
 	static public $_multilingualFieldScheme = ':name_:lc'; // sprintf will receive current lang as 1st param and fieldName as second
 	static private $_internals = array();

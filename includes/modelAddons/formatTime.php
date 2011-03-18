@@ -75,7 +75,7 @@ class formatTimeModelAddon extends modelAddon{
 	}
 
 	static function formatTime($time,$shortFormat=false,$noSeconds=false){
-		if(! preg_match('!^(.*)(\d\d):(\d\d)(?::(\d\d))?\s*$!',$time,$t) )
+		if(! preg_match('!^(.*?)(\d\d):(\d\d)(?::(\d\d))?\s*$!',$time,$t) )
 			return $time;
 		array_shift($t);
 		$prefix = array_shift($t);
