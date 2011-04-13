@@ -2,6 +2,7 @@
 * define filemanager, filemanagerButton, filemanagerEntry plugins
 * @require jquery.ui >= 1.7
 * @changelog
+*           - 2011-03-18 - bug correction in css selector that don't work with latest jquery version
 *           - 2010-06-09 - better management of filemanager button dialog size
 *           - 2009-10-22 - now filemanagerEntry() trigger a change event when a file is selected
 *           - 2009-04-02 - resize rootList when container is scrolled to keep a info buttons clickable
@@ -167,8 +168,8 @@ function show(){
 			fm.container.data('filemanager',fm);
 			fm.opts = $.extend({}, $.fn.filemanager.defaults, opts);
 			// first check for css and required script presence if not there then load them
-			var basepath = $('script[src$=/jquery.filemanager.js]').attr('src').replace(/jquery\.filemanager\.js$/,'');
-			if(! $('link[href$=/jquery.filemanager.css]').length )
+			var basepath = $('script[src$="/jquery.filemanager.js"]').attr('src').replace(/jquery\.filemanager\.js$/,'');
+			if(! $('link[href$="/jquery.filemanager.css"]').length )
 				$('<link rel="stylesheet" type="text/css" href="'+basepath+'jquery.filemanager.css" charset="utf-8" />').appendTo('head');
 			if(! $('script[src$="'+fm.opts.ajaxUpload+'"]').length )
 				$('<script type="text/javascript" src="'+basepath+fm.opts.ajaxUpload+'" charset="utf-8"></script>').appendTo('head');
