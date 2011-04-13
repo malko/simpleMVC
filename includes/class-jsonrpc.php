@@ -1,12 +1,19 @@
 <?php
+
+/** internal exception thrown by jsonRPC */
+class jsonRpcException extends Exception{}
+
+/** exception to throw in your methods to be treated as jsonRPC error response */
+class jsonRpcMethodException extends jsonRpcException{}
+
 /**
 * class to ease creation of jsonRPC services
 * @author jgotti at modedemploi dot fr
 * @licence LGPL
 * @since 2011-02-25
 */
-class jsonRpcException extends Exception{}
 class jsonRPC{
+	static public $falseIsError=true;
 	private $callback = null;
 	private $methods = array();
 	private $processingRequest = null;
@@ -119,7 +126,7 @@ class jsonRPC{
 				if( is_object($r) )
 					$responses[] = $r;
 			}
-			return $response;
+			return $responses;
 		}
 		$this->processingRequest = $request;
 		# -check method validity
@@ -145,6 +152,10 @@ class jsonRPC{
 		#- call request method
 		try{
 			$response->result = call_user_func_array($this->methods[$request->method],$request->params);
+		}catch(jsonRpcMethodException $e){
+			$e = $this->error(-32099,"method result error",$e->getMessage());
+			$this->processingRequest =null;
+			return $e;
 		}catch(Exception $e){
 			$e = $this->error(-32098,"Server method error",$e->getMessage());
 			$this->processingRequest =null;
@@ -153,7 +164,7 @@ class jsonRPC{
 		if( $response->result === null && ! $request->id ){
 			$this->processingRequest =null;
 			return null;
-		}else if( $response->result === false){
+		}else if( self::$falseIsError && $response->result === false){
 			$e = $this->error("SERVER_ERROR");
 			$this->processingRequest =null;
 			return $e;

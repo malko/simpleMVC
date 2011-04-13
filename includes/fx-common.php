@@ -87,7 +87,7 @@ if( defined('JS_TO_HEAD') && JS_TO_HEAD){
 			return ob_end_flush();
 		}
 		$jsHelper = $view->helperLoaded('js',true);
-		if( (! $jsHelper instanceof viewHelperInterface) || empty(js_viewHelper::$pendingScript) ){
+		if(! $jsHelper instanceof viewHelperInterface){
 			return ob_end_flush();
 		}
 		$out = ob_get_clean();
