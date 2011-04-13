@@ -13,7 +13,7 @@ class jsonRpcMethodException extends jsonRpcException{}
 * @since 2011-02-25
 */
 class jsonRPC{
-	static public $falseIsError=true;
+	static public $falseIsError=false;
 	private $callback = null;
 	private $methods = array();
 	private $processingRequest = null;
@@ -216,8 +216,12 @@ class jsonRPC{
 	}
 
 	function response($response){
+		static $notNull;
+		if( ! isset($notNull) ){
+			$notNull = create_function('$v','return $v!==null?true:false;'); 
+		}
 		header('Content-type: application/'.($this->callback?'javascript':'json'));
-		$response = json_encode(array_filter((array) $response));
+		$response = json_encode(array_filter((array) $response,$notNull));
 		echo $this->callback?"$this->callback($response);":$response;
 		exit;
 	}
