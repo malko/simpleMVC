@@ -488,7 +488,9 @@ abstract class abstractController{
 			$uri = (isset($_SERVER['HTTP_REFERER']) && false!==strpos($_SERVER['HTTP_REFERER'],ROOT_URL))?$_SERVER['HTTP_REFERER']:$this->url(DEFAULT_DISPATCH);
 		}
 		if(! is_null($params) ){
-			static $argSeparator = ini_get('arg_separator.output');
+			static $argSeparator;
+			if(! isset($argSeparator))
+				$argSeparator = ini_get('arg_separator.output');
 			if(is_array($params)){
 				foreach($params as $k=>$v){
 					if(strlen($v)===0) continue;
