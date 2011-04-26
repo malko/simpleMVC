@@ -131,7 +131,7 @@ class fileManager{
 	public function listSetFilter($filterName,$filterExp=null){
 		if( null === $filterExp ){
 			if( isset($this->_listFilters[$filterName]) )
-				usnet($this->_listFilters[$filterName]);
+				unset($this->_listFilters[$filterName]);
 			return $this;
 		}
 		$this->_listFilters[$filterName] = $filterExp;
