@@ -11,9 +11,12 @@ class jsonRpcMethodException extends jsonRpcException{}
 * @author jgotti at modedemploi dot fr
 * @licence LGPL
 * @since 2011-02-25
+* @changelog 
+*            - 2011-04-27 - add $autoCleanMagicQuotes property
 */
 class jsonRPC{
 	static public $falseIsError=false;
+	static public $autoCleanMagicQuotes = true;
 	private $callback = null;
 	private $methods = array();
 	private $processingRequest = null;
@@ -98,17 +101,25 @@ class jsonRPC{
 	}
 
 	function getRequest(){
-		if( isset($_REQUEST['jsonrpc']) ){
-			$request = (object) array_merge(array('id'=>null,'method'=>null,'params'=>null),(array) json_decode($_REQUEST['jsonrpc']));
+		$request = $_REQUEST;
+		if( self::$autoCleanMagicQuotes && get_magic_quotes_gpc() ){
+			static $cleanMQ;
+			if( !isset($cleanMQ)){
+				$cleanMQ = create_function('&$v,$k','$v=stripslashes($v);');
+			}
+			array_walk_recursive($request,$cleanMQ);
+		}
+		if( isset($request['jsonrpc']) ){
+			$request = (object) array_merge(array('id'=>null,'method'=>null,'params'=>null),(array) json_decode($request['jsonrpc']));
 		}elseif(isset($_REQUEST['method'])){
-			$params = isset($_REQUEST['params'])?(is_array($_REQUEST['params'])?$_REQUEST['params']:json_decode($_REQUEST['params'])):null;
+			$params = isset($request['params'])?(is_array($request['params'])?$request['params']:(array)json_decode($request['params'])):null;
 			$request = (object) array(
-				'id' => empty($_REQUEST['id'])?null:$_REQUEST['id'],
-				'method'=>$_REQUEST['method'],
-				'params'=>(isset($_REQUEST['params']) && null===$params)?$_REQUEST['params']:$params,
+				'id' => empty($request['id'])?null:$request['id'],
+				'method'=>$request['method'],
+				'params'=>(isset($request['params']) && null===$params)?(array)$request['params']:$params,
 			);
 		}elseif( strlen($rawDatas = file_get_contents('php://input')) ){
-			$request = json_decode($rawDatas);
+			$request = json_decode(get_magic_quotes_gpc()?stripslashes($rawDatas):$rawDatas);
 			if( null === $request)
 				return $this->response($this->error('PARSE_ERROR'));
 		}else{
