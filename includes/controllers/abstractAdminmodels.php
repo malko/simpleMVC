@@ -786,7 +786,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 		#- set dicName
 		list($c,$a) = abstractController::getCurrentDispatch(true);
 		$m = $this->modelType;
-		if( $this instanceof adminmodelsController && $this->getName()!='adminmodels')
+		if( $this instanceof abstractAdminmodelsController && $this->getName()!='adminmodels')
 			$this->_langManagerDicName = $c."_$m"."$a|$c"."_$m|adminmodels_$m|$c"."_$a"."|$c|default";
 		else
 			$this->_langManagerDicName = $c."_$m"."$a|$c"."_$m|$c"."_$a"."|$c|default";

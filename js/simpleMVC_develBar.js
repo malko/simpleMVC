@@ -6,7 +6,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
-*            - 2009-02-10 - add support for DynCss
+*            - 2011-04-28 - auto reload session panel
 *            - 2009-02-07 - cookies path set to slash as default
 *            - 2009-01-14 - add quick cookie management to keep trace of last opened panel
 */
@@ -137,6 +137,14 @@ var cookies={
 	}else{
 		//phped.each(function(){this.innerHTML = this.innerHTML.replace(/(^<br\s*\/?>|<br\s*\/?>$)/,'');});
 		addPanel(btPhperr,phperrDiv,phped,true);
+		if( typeof console !== 'undefined' && console.info && console.warn && console.error){
+			phped.each(function(){
+				var	e = $(this)
+					, logType=e.attr('class').replace(/^.*?(?:tk-state-(warn|error|info).*?)?$/,'$1')
+				;
+				console[logType||'log']('[smvc PHP] '+e.find('div:first').text());
+			})
+		}
 	}
 
 	//-- Manage DB::profiler reports display
@@ -232,12 +240,17 @@ var cookies={
 		var relUrl = $(this).attr('rel');
 		if( window._session === undefined){
 			window._session = window.open(relUrl,'session','dependent=yes,titlebar=no,status=no,scrollbars=yes,menubar=no,location=yes,toolbar=no,height=600,width=800');
+			cookies.set('SMVCSessionPanel','opened');
 		}else{
 			window._session.close();
 			delete window._session;
+			cookies.del('SMVCSessionPanel');
 		}
 		return false;
 	});
+	if( cookies.get('SMVCSessionPanel')){
+		window._session = window.open($('#sMVCshowSession').attr('rel'),'session');
+	}
 	//-- toggle button
 	btToggle.click(function(){
 		dataMenu.hide();

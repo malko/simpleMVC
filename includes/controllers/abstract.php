@@ -569,10 +569,17 @@ abstract class abstractController{
 				$_SESSION = $s;
 				$this->redirect();
 			}
-			echo '
+			echo '<!DOCTYPE HTML>
+			<html>
+			<head>
+				<script type="text/javascript">
+					window.onclose = function(){document.cookie="SMVCSessionPanel=; path=/; expires=Thu, 01-Jan-70 00:00:01 GMT";};
+				</script>
+			</head>
+			<body>
 			<div style="text-align:center">
 			<div style="float:right";">
-				<a href="javascript:window.close();">Close</a>
+				<a href="javascript:document.cookie=\'SMVCSessionPanel=; path=/; expires=Thu, 01-Jan-70 00:00:01 GMT\';window.close();">Close</a>
 				<a href="'.$this->url(':clearSession').'">Clear session</a>
 			</div>
 			<h1 style="font-size:16px;border-bottom:solid silver 1px;">$_SESSION content</h1>
@@ -584,7 +591,7 @@ abstract class abstractController{
 			<textarea rows="10" name="SESSION" style="width:100%">'.json_encode($_SESSION).'</textarea>
 			<input type="submit" name="submit" value="modify session datas">
 			</form>
-			</div>';
+			</div></body></html>';
 			smvcShutdownManager::shutdown(0,true);
 		}
 		return $this->redirect();
