@@ -8,6 +8,7 @@
 * @todo make some modification on set_address_header to better handle multiple values
 * @changelog
 * - 2011-04-14 - bug correction in check_address that reject some valid adresses (1 chars local or domain part, xn-- TLDs, no more than 63 chars in domain part (this last one was buggy) )
+*              - change version numbering to majorRelease-dateLastModification
 * - 2011-01-14 - bug correction in check_address that reject some valid adresses (2 chars local or domain part)
 * - 2010-03-25 - add dontSend parameter to mailTpl() method
 * - 2009-01-28 - better automated html to plain-text conversion
@@ -26,7 +27,7 @@ class easymail{
 
 	static public $dfltHeaderCharset = 'UTF-8';
 	static public $preferedEncoding  = 'quoted-printable';
-	static public $xmailer = "EasyMail0.9.5b";
+	static public $xmailer = "EasyMail 1-110414";
 	#- ~ static public $preferedEncoding  = '7bit';
 
 	function easymail($TO=null,$SUBJECT=null){
