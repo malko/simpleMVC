@@ -4,7 +4,12 @@
 * example:
 * class model extends BASE_model{
 * 	static $filters=array(
-* 		'filter1|filter2|filter3....'
+* 		'fieldName'=>array(
+*				'filter1',
+*				array('filter2'[,$params][,'error message'])
+*			)
+*			'__msg__'=>array(
+*				'fieldName'=>'default error message for the field'
 * 	);
 * }
 * 
@@ -13,12 +18,17 @@
 * @since 2011-04
 * @author Jonathan Gotti <jgotti at jgotti dot net>
 * @license lgpl / mmit
+* @changelog
+*            - 2011-05-10 - total rewrite of filtersModelAddons seems more logical this way
 */
 class filtersModelAddon extends modelAddon{
 	
 	static private $internal;
 	static public $defaultSalt = 'salt';
-	static private $registered = array();
+	static private $registered = array(
+		'uppercase'=>array('strtoupper')
+		,'lowercase'=>array('strtolower')
+	);
 	
 	function __construct(abstractModel $modelInstance,$PK=null){
 		parent::__construct($modelInstance,$PK);
@@ -31,7 +41,9 @@ class filtersModelAddon extends modelAddon{
 		#- get the filters property and override all fields concerned
 		$filters = array_keys(abstractModel::_getModelStaticProp($this->modelName, 'filters'));
 		foreach($filters as $f){
-			self::$internal[$this->modelName][]='filter'.$f;
+			if( $f === '__msg__')
+				continue;
+			self::$internal[$this->modelName][]='filter'.(is_array($f)?$f[0]:$f);
 		}
 	}
 	static private function _initFilters(){
@@ -40,7 +52,7 @@ class filtersModelAddon extends modelAddon{
 			return;
 		$methods = get_class_methods(__class__);
 		foreach($methods as $f){
-			if(substr($f,0,1)==='_' || method_exists('modelAddon', $f)){
+			if(substr($f,0,1)==='_' || method_exists('modelAddon', $f) || $f==='register'){
 				continue;
 			}
 			self::$registered[$f] = array(array(__class__,$f),null);
@@ -72,38 +84,32 @@ class filtersModelAddon extends modelAddon{
 		if(! isset($mfilters[$key])){
 			return $a;
 		}
-		
-		$filters = explode('|',$mfilters[$key][0]);
-		foreach($filters as $k=>$f){
-			$func = isset(self::$registered[$f])?self::$registered[$f][0]:$f;
-			if(! is_callable($func)){
+		$filters = $mfilters[$key];
+		foreach( $filters as $filter){
+			if( is_string($filter) ){
+				$fName = $filter; $args = array(); $msg=null;
+			}else{
+				$fName = isset($filter[0])?$filter[0]:null;
+				$args = isset($filter[1])?(array) $filter[1]:array();
+				$msg = isset($filter[2])?$filter[2]:array();
+			}
+			$func = isset(self::$registered[$fName])?self::$registered[$fName][0]:(strpos($fName,'::')?explode('::',$fName,2):$fName);
+			if(! is_callable($func))
 				throw new BadFunctionCallException(__class__." unknown filter '$f'");
-			}
-			$args = isset($mfilters[$key][$f])?$mfilters[$key][$f]:(isset($mfilters[$key][$k+1])?$mfilters[$key][$k+1]:array());
-			if( ! is_array($args) ){
-				$args = array($args);
-			}
 			array_unshift($args,$a);
 			$a = call_user_func_array($func,$args);
 			if( false===$a){
-				#- check for message
-				$filterMsg=null;
-				if( isset($mfilters[$key]['messages'])){
-					if( isset($mfilters[$key]['messages'][$f]) ){
-						$filterMsg=$mfilters[$key]['messages'][$f];
-					}else if( isset($mfilters[$key]['messages'][$k]) ){
-						$filterMsg=$mfilters[$key]['messages'][$k];
+				if(! $msg ){
+					if( isset($mfilters['__msg__'][$key]) ){
+						$msg = $mfilters['__msg__'][$key];
+					}else{
+						$msg = isset(self::$registered[$fName],self::$registered[$fName][1]) ?
+							self::$registered[$fName][1]
+							: '%4$s: invalid %1$s::%2$s value %3$s'
+						;
 					}
 				}
-				if( $filterMsg===null ){
-					$filterMsg = isset($mfilters['messages'][$f]) ?
-						$mfilters['message'][$f]
-						:( isset(self::$registered[$f]) ? self::$registered[$f][1] : null );
-				}
-				$this->modelInstance->appendFilterMsg(
-					is_null($filterMsg)?'%4$s: invalid %1$s::%2$s value %3$s':$filterMsg,
-					array($this->modelName,$key,$_a,$f)
-				);
+				$this->modelInstance->appendFilterMsg($msg,array($this->modelName,$key,$_a,$fName));
 				return false;
 			}
 		}
@@ -111,16 +117,25 @@ class filtersModelAddon extends modelAddon{
 	}
 	
 	//** common filters **//
-	public function minlength($v,$min){
+	static public function minlength($v,$min){
 		return strlen($v)<$min?false:$v;
 	}
-	public function match($v,$exp){
+	static public function maxlength($v,$max){
+		return strlen($v)>$max?false:$v;
+	}
+	static public function match($v,$exp){
 		return preg_match($exp,$v)?$v:false;
 	}
-	public function dontmatch($v,$exp){
+	static public function dontmatch($v,$exp){
 		return preg_match($exp,$v)?false:$v;
 	}
-	public function md5($v,$salt=null){
-		return md5($v.($salt===null?self::$defaultSalt:$salt));
+	static public function md5($v,$salt=null){
+		return hash_hmac('md5',$v,$salt===null?self::$defaultSalt:$salt);
+	}
+	static function mail($v){
+		return easymail::check_address($v)?$v:false;
+	}
+	static function ucfirst($v){
+		return strtolower(substr($v,0,1)).substr($v,1);
 	}
 }
