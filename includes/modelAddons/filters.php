@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
 * modelAddon to extend old fashioned models $filters property.
 * example:
@@ -12,13 +12,15 @@
 *				'fieldName'=>'default error message for the field'
 * 	);
 * }
-* 
-* 
+*
+*
 * @class filtersModelAddon
 * @since 2011-04
 * @author Jonathan Gotti <jgotti at jgotti dot net>
 * @license lgpl / mmit
 * @changelog
+*            - 2011-05-13 - allow callback to return true to keep old value
+*                         - allow to prefix callback with '!' to reverse the filter result
 *            - 2011-05-10 - total rewrite of filtersModelAddons seems more logical this way
 */
 class filtersModelAddon extends modelAddon{
@@ -93,12 +95,25 @@ class filtersModelAddon extends modelAddon{
 				$args = isset($filter[1])?(array) $filter[1]:array();
 				$msg = isset($filter[2])?$filter[2]:array();
 			}
+			if( $fName[0] !== '!' ){
+				$reverse = false;
+			}else{
+				$reverse = true;
+				$fName = substr($fName,1);
+			}
 			$func = isset(self::$registered[$fName])?self::$registered[$fName][0]:(strpos($fName,'::')?explode('::',$fName,2):$fName);
+			if( is_array($func) && $func[0]==='self'){
+				$func[0] = $this->modelInstance;
+			}
+			
 			if(! is_callable($func))
 				throw new BadFunctionCallException(__class__." unknown filter '$f'");
 			array_unshift($args,$a);
-			$a = call_user_func_array($func,$args);
-			if( false===$a){
+			$ret = call_user_func_array($func,$args);
+			if( $reverse ){
+				$ret = $ret?false:true;
+			}
+			if( false===$ret){
 				if(! $msg ){
 					if( isset($mfilters['__msg__'][$key]) ){
 						$msg = $mfilters['__msg__'][$key];
@@ -111,6 +126,8 @@ class filtersModelAddon extends modelAddon{
 				}
 				$this->modelInstance->appendFilterMsg($msg,array($this->modelName,$key,$_a,$fName));
 				return false;
+			}else if($ret !== true){
+				$a = $ret;
 			}
 		}
 		return $a;
@@ -123,6 +140,14 @@ class filtersModelAddon extends modelAddon{
 	static public function maxlength($v,$max){
 		return strlen($v)>$max?false:$v;
 	}
+	static public function range($v,$min,$max){
+		$l = preg_match('/[^0-9\.]/',$v)? strlen($v) : $v;
+		if( $min > $l || $max < $l ){
+			return false;
+		}
+		return true;
+	}
+
 	static public function match($v,$exp){
 		return preg_match($exp,$v)?$v:false;
 	}
