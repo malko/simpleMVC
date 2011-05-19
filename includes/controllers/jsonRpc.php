@@ -6,6 +6,8 @@ class jsonRpcController extends abstractController{
 
 	function init(){
 		parent::init();
+		jsonRpc::$falseIsError=false;
+		jsonRPC::$autoCleanMagicQuotes=false;
 		$this->jsonRpc = new jsonRPC();
 		$className = get_class($this);
 		$rclass = new ReflectionClass($className);
@@ -17,6 +19,12 @@ class jsonRpcController extends abstractController{
 			}
 		}
 		$this->jsonRpc->bindClass($this,empty($this->bindedMethods)?null:$this->bindedMethods);
+	}
+	//-- return the jqueryProxy javascript --//
+	protected function indexAction($proxyname=null){
+		$proxyname = $proxyname?preg_replace('![^a-zA-Z0-9_]!','',$proxyname):$this->getName();
+		smvcShutdownManager::unregister(null);
+		return $this->jsonRpc->jqueryProxy($proxyname,$this->url(':'));
 	}
 
 	function __call($m,$a=null){

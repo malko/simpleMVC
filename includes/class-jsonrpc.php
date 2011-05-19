@@ -1,17 +1,21 @@
 <?php
 
 /** internal exception thrown by jsonRPC */
-class jsonRpcException extends Exception{}
+class jsonRpcException extends Exception{
+	protected  $code = 32098;
+}
 
 /** exception to throw in your methods to be treated as jsonRPC error response */
-class jsonRpcMethodException extends jsonRpcException{}
+class jsonRpcMethodException extends jsonRpcException{
+	protected  $code = 32099;
+}
 
 /**
 * class to ease creation of jsonRPC services
 * @author jgotti at modedemploi dot fr
 * @licence LGPL
 * @since 2011-02-25
-* @changelog 
+* @changelog
 *            - 2011-04-27 - add $autoCleanMagicQuotes property
 */
 class jsonRPC{
@@ -163,8 +167,8 @@ class jsonRPC{
 		#- call request method
 		try{
 			$response->result = call_user_func_array($this->methods[$request->method],$request->params);
-		}catch(jsonRpcMethodException $e){
-			$e = $this->error(-32099,"method result error",$e->getMessage());
+		}catch(jsonRpcException $e){
+			$e = $this->error($e->getCode(),$e instanceof jsonRpcMethodException ?"method result error":"Server method error",$e->getMessage());
 			$this->processingRequest =null;
 			return $e;
 		}catch(Exception $e){
@@ -229,7 +233,7 @@ class jsonRPC{
 	function response($response){
 		static $notNull;
 		if( ! isset($notNull) ){
-			$notNull = create_function('$v','return $v!==null?true:false;'); 
+			$notNull = create_function('$v','return $v!==null?true:false;');
 		}
 		header('Content-type: application/'.($this->callback?'javascript':'json'));
 		$response = json_encode(array_filter((array) $response,$notNull));
@@ -254,16 +258,20 @@ class jsonRPC{
 					$doc[$m]['params'][$k]['default'] = $v->getDefaultValue();
 				}
 			}
-			if( $comment = $ref->getDocComment())
+			if( $comment = $ref->getDocComment()){
 				$doc[$m]['comment'] = preg_replace(array('!^(\s*/\*|\s*\*|\s*\*+/)!m','!^\*\s*|\s*/?$!'),'',$comment);
+			}
 		}
 		return $doc;
 	}
 
-	function jqueryProxy($proxyName='jsonrpc'){
+	function jqueryProxy($proxyName='jsonrpc',$endPoint=null){
+		if( null === $endPoint ){
+			$endPoint = (stripos($_SERVER['SERVER_PROTOCOL'],'HTTPS')!==false?'https':'http').'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'];
+		}
 		header('Content-type: application/javascript');
 		echo "(function($){var RID = '".$proxyName."0';function generateId(){return (RID = RID.replace(/\d+$/,function(m){return parseInt(m,10)+1;}));}"
-			,"window.$proxyName={endpoint:'".(stripos($_SERVER['SERVER_PROTOCOL'],'HTTPS')!==false?'https':'http').'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."',"
+			,"window.$proxyName={\n\tendpoint:'".$endPoint."'\n\t,"
 			,"callbacks:{},"
 			,"
 			request: function(method,params,success,error){
@@ -276,15 +284,16 @@ class jsonRPC{
 				if( ! (r && r.id && this.callbacks[r.id])){
 					return false;
 				}
-				var cbs=this.callbacks[r.id],cb = r.result?(cbs[0]?cbs[0]:false):(cbs[1]?cbs[1]:false),r=r.result?r.result:(r.error?r.error:r);
+		var cbs=this.callbacks[r.id],cb = r.error?(cbs[1]?cbs[1]:false):(cbs[0]?cbs[0]:false),res=(typeof r.result !== 'undefined')? r.result : (r.error?r.error:null);
 				delete this.callbacks[r.id];
 				if($.isFunction(cb)){
-					return cb(r);
+			return cb(res);
 				}else if( cb) {
-					return (new Function('r','return '+cb+'(r);'))(r);
+			return (new Function('r','return '+cb+'(r);'))(res);
 				}
 				return false;
-			}};})(jQuery);";
+	}};
+})(jQuery);";
 		exit(0);
 	}
 
