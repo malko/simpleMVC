@@ -16,11 +16,14 @@ class jsonRpcMethodException extends jsonRpcException{
 * @licence LGPL
 * @since 2011-02-25
 * @changelog
+*            - 2011-05-30 - add htmDiscovery method and some more information on parameters discovery
+*                         - add a $noCache property
 *            - 2011-04-27 - add $autoCleanMagicQuotes property
 */
 class jsonRPC{
 	static public $falseIsError=false;
 	static public $autoCleanMagicQuotes = true;
+	static public $noCache = false;
 	private $callback = null;
 	private $methods = array();
 	private $processingRequest = null;
@@ -40,6 +43,7 @@ class jsonRPC{
 			$this->callback = $_GET['callback'];
 		}
 		$this->bindMethod('discovery',array($this,'discovery'))
+			->bindMethod('htmlDiscovery',array($this,'htmlDiscovery'))
 			->bindMethod('jqueryProxy',array($this,'jqueryProxy'));
 		set_error_handler(array($this,'phpErrorHandler'));
 	}
@@ -235,6 +239,10 @@ class jsonRPC{
 		if( ! isset($notNull) ){
 			$notNull = create_function('$v','return $v!==null?true:false;');
 		}
+		if( jsonRPC::$noCache ){
+			header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+			header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // set a past date
+		}
 		header('Content-type: application/'.($this->callback?'javascript':'json'));
 		$response = json_encode(array_filter((array) $response,$notNull));
 		echo $this->callback?"$this->callback($response);":$response;
@@ -249,6 +257,8 @@ class jsonRPC{
 			}
 			$ref = is_array($cb)?new ReflectionMethod($cb[0],$cb[1]):new ReflectionFunction($cb);
 			$doc[$m]['params'] = $ref->getParameters();
+			if( $comment = $ref->getDocComment())
+				$doc[$m]['comment'] = preg_replace(array('!^(\s*/\*|\s*\*|\s*\*+/)!m','!^\*\s*|\s*/?$!'),'',$comment);
 			foreach($doc[$m]["params"] as $k=>$v){
 				$doc[$m]['params'][$k] = array_filter(array(
 					'name'=>$v->name,
@@ -257,12 +267,40 @@ class jsonRPC{
 				if( $v->isDefaultValueAvailable()){
 					$doc[$m]['params'][$k]['default'] = $v->getDefaultValue();
 				}
+				if( $v->getClass()){
+					$doc[$m]['params'][$k]['type'] = $v->getClass()->name;
+				}else if($v->isArray()){
+					$doc[$m]['params'][$k]['type'] = 'Array';
+				}else if(preg_match('!@param\s+(int(eg[ea]r)?|array|mixed|str(ing)?|float|double|stdobject|object|bool)\s+\$?'.$v->name.'\b!i',$comment,$paramDoc)){
+					$doc[$m]['params'][$k]['type'] = $paramDoc[1];
+				}else{
+					$doc[$m]['params'][$k]['type'] = 'scalar';
 			}
-			if( $comment = $ref->getDocComment()){
-				$doc[$m]['comment'] = preg_replace(array('!^(\s*/\*|\s*\*|\s*\*+/)!m','!^\*\s*|\s*/?$!'),'',$comment);
 			}
 		}
 		return $doc;
+	}
+
+	function htmlDiscovery(){
+		$docs = $this->discovery() ;
+		if( empty($docs) ){
+			echo "No public API";exit;
+		}
+		echo "<!DOCTYPE HTML><head><style type=\"text/css\">dt{ font-weight:bold; background:#e0e0e0;color:#333;margin:1em 0 0 0;padding:.4em .8em;}dd{background:#d0d0d0;margin:0 1em;padding:.4em .8em;}</style></head><body><dl>";
+		foreach($docs as $m=>$doc){
+			$params = array();
+			if( isset($doc['params'])){
+				foreach($doc['params'] as $p){
+					$p['name'] = "$p[type] $p[name]".(isset($p['default'])?" = ".var_export($p['default'],1):'');
+					$params[] = (!isset($p['optional'])?$p['name']:"[$p[name]]");
+					//$params[] = $p['toString'];
+				}
+			}
+			$comment = empty($doc['comment'])?'':'<dd>'.nl2br($doc['comment']).'<dd>';
+			echo "<dt>$m(".implode(',',$params).")$comment";
+		}
+		echo "</dl></body></html>";
+		exit;
 	}
 
 	function jqueryProxy($proxyName='jsonrpc',$endPoint=null){
@@ -297,7 +335,7 @@ class jsonRPC{
 		exit(0);
 	}
 
-	static function syncResquest($uri,$request,array $params=null,$timeOut=15){
+	static function syncRequest($uri,$request,array $params=null,$timeOut=15){
 		preg_match('!^http(s?)://([^/]+)(.*)$!',$uri,$m);
 		$fp = fsockopen(($m[1]?'ssl://':'').$m[2],$m[1]?443:80,$errno,$errstr,$timeOut);
 		if(! $fp ){
