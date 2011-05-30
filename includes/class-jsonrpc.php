@@ -16,14 +16,16 @@ class jsonRpcMethodException extends jsonRpcException{
 * @licence LGPL
 * @since 2011-02-25
 * @changelog
-*            - 2011-05-30 - add htmDiscovery method and some more information on parameters discovery
-*                         - add a $noCache property
+*            - 2011-05-30 - add htmDiscovery method and some more information on discovery
+*                         - add a $noCache and $allowDiscovery static properties
+*                         - if $allowDiscovery is true and no request is passed then will return the result of htmlDiscovery
 *            - 2011-04-27 - add $autoCleanMagicQuotes property
 */
 class jsonRPC{
 	static public $falseIsError=false;
 	static public $autoCleanMagicQuotes = true;
 	static public $noCache = false;
+	static public $allowDiscovery=true;
 	private $callback = null;
 	private $methods = array();
 	private $processingRequest = null;
@@ -42,9 +44,11 @@ class jsonRPC{
 		if( !empty($_GET['callback'])){
 			$this->callback = $_GET['callback'];
 		}
-		$this->bindMethod('discovery',array($this,'discovery'))
-			->bindMethod('htmlDiscovery',array($this,'htmlDiscovery'))
-			->bindMethod('jqueryProxy',array($this,'jqueryProxy'));
+		if( self::$allowDiscovery ){
+			$this->bindMethod('discovery',array($this,'discovery'))
+				->bindMethod('htmlDiscovery',array($this,'htmlDiscovery'));
+		}
+		$this->bindMethod('jqueryProxy',array($this,'jqueryProxy'));
 		set_error_handler(array($this,'phpErrorHandler'));
 	}
 
@@ -133,7 +137,7 @@ class jsonRPC{
 		}else{
 			$request= null;
 		}
-		return null!==$request?$request:$this->response($this->error('REQUEST_ERROR'));
+		return null!==$request?$request:(self::$allowDiscovery?$this->htmlDiscovery():$this->response($this->error('REQUEST_ERROR')));
 	}
 
 	function processRequest($request=null){
@@ -248,7 +252,10 @@ class jsonRPC{
 		echo $this->callback?"$this->callback($response);":$response;
 		exit;
 	}
-
+	/**
+	* return the jsonRPC server method descriptions in a json format.
+	* @return stdclass
+	*/
 	function discovery(){
 		$doc = array();
 		foreach($this->methods as $m=>$cb){
@@ -257,8 +264,12 @@ class jsonRPC{
 			}
 			$ref = is_array($cb)?new ReflectionMethod($cb[0],$cb[1]):new ReflectionFunction($cb);
 			$doc[$m]['params'] = $ref->getParameters();
-			if( $comment = $ref->getDocComment())
+			if( $comment = $ref->getDocComment()){
 				$doc[$m]['comment'] = preg_replace(array('!^(\s*/\*|\s*\*|\s*\*+/)!m','!^\*\s*|\s*/?$!'),'',$comment);
+				if( preg_match('!@return\s+\b(\S+)\b!i',$comment,$returnDoc)){
+					$doc[$m]['return'] = $returnDoc[1];
+				}
+			}
 			foreach($doc[$m]["params"] as $k=>$v){
 				$doc[$m]['params'][$k] = array_filter(array(
 					'name'=>$v->name,
@@ -280,7 +291,10 @@ class jsonRPC{
 		}
 		return $doc;
 	}
-
+	/**
+	* return the page you're probably looking at
+	* @return text/html
+	*/
 	function htmlDiscovery(){
 		$docs = $this->discovery() ;
 		if( empty($docs) ){
@@ -297,12 +311,19 @@ class jsonRPC{
 				}
 			}
 			$comment = empty($doc['comment'])?'':'<dd>'.nl2br($doc['comment']).'<dd>';
-			echo "<dt>$m(".implode(',',$params).")$comment";
+			echo "<dt>".(isset($doc['return'])?"( $doc[return] ) ":'')."$m( ".implode(', ',$params)." )$comment";
 		}
 		echo "</dl></body></html>";
 		exit;
 	}
-
+	/**
+	* return a javascript proxy class to call directly this jsonRPC server. It require jquery to make calls
+	* In your html page add a <script src="http://exemple.com/myjsonrpcserver.php/?method=jqueryProxy"></script>
+	* then call jsonrpc.request('method',[param1,param2...],function(result){ success code },function(result){error code});
+	* @param string $proxyName name of the javascript variable containing the proxy
+	* @param string $endPoint  optionnal endpoint will default to this server page
+	* @return text/javascript
+	*/
 	function jqueryProxy($proxyName='jsonrpc',$endPoint=null){
 		if( null === $endPoint ){
 			$endPoint = (stripos($_SERVER['SERVER_PROTOCOL'],'HTTPS')!==false?'https':'http').'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'];
