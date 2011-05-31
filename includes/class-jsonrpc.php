@@ -19,6 +19,7 @@ class jsonRpcMethodException extends jsonRpcException{
 *            - 2011-05-30 - add htmDiscovery method and some more information on discovery
 *                         - add a $noCache and $allowDiscovery static properties
 *                         - if $allowDiscovery is true and no request is passed then will return the result of htmlDiscovery
+*                         - bug correction in init() that avoided to bind static class at init time
 *            - 2011-04-27 - add $autoCleanMagicQuotes property
 */
 class jsonRPC{
@@ -54,7 +55,7 @@ class jsonRPC{
 
 	static function init($serviceDefinition,$classMapping=null,$bindParentMethodsToo=false){
 		$i = new self;
-		if( is_object($serviceDefinition) ){
+		if( is_object($serviceDefinition) || (is_string($serviceDefinition) && class_exists($serviceDefinition,false)) ){
 			$i->bindClass($serviceDefinition,$classMapping,$bindParentMethodsToo);
 		}else{
 			$i->bindMethod($serviceDefinition);
@@ -300,6 +301,7 @@ class jsonRPC{
 		if( empty($docs) ){
 			echo "No public API";exit;
 		}
+		ksort($docs);
 		echo "<!DOCTYPE HTML><head><style type=\"text/css\">dt{ font-weight:bold; background:#e0e0e0;color:#333;margin:1em 0 0 0;padding:.4em .8em;}dd{background:#d0d0d0;margin:0 1em;padding:.4em .8em;}</style></head><body><dl>";
 		foreach($docs as $m=>$doc){
 			$params = array();
@@ -385,5 +387,29 @@ class jsonRPC{
 		while(!feof($fp))$response.= fread($fp,1024);
 		fclose($fp);
 		return json_decode(preg_replace('!^.*(?:\r?\n){2}(.*)$!s','\\1',$response));
+	}
+}
+
+/**
+ *
+ */
+interface rpcserverInterface{}
+
+/** 
+ * @author malko
+ * 
+ * 
+ */
+abstract class rpcServer implements rpcserverInterface{
+	
+	function __construct(){
+
+	}
+	
+	/**
+	 * 
+	 */
+	function __destruct(){
+
 	}
 }
