@@ -1,4 +1,8 @@
 <?php
+/**
+* @changelog
+*           - 2011-05-23 - add actionStack management
+*/
 class jsonRpcController extends abstractController{
 
 	public $bindedMethods = array();
@@ -41,10 +45,10 @@ class jsonRpcController extends abstractController{
 			}elseif( $rawDatas && !empty($rawDatas->method)){
 				$_m = $rawDatas->method;
 			}
-			if( $_m && isset($this->bindedMethods[$_m]) || in_array($_m,array('discovery','jqueryProxy'),true))
+			if( $_m && isset($this->bindedMethods[$_m]) || in_array($_m,array('discovery','htmlDiscovery','jqueryProxy'),true))
 				$m = $_m;
 		}
-		if(isset($this->bindedMethods[$m]) || in_array($m,array('discovery','jqueryProxy'),true) ){
+		if(isset($this->bindedMethods[$m]) || in_array($m,array('discovery','htmlDiscovery','jqueryProxy'),true) ){
 			#- check if we need to append method to request and where to add
 			if( isset($_REQUEST['jsonrpc']) ){
 				if(! isset($_REQUEST['method'])){
@@ -61,11 +65,18 @@ class jsonRpcController extends abstractController{
 				$_REQUEST['method'] = $m;
 			}
 			smvcShutdownManager::unregister(null);
-			return $this->jsonRpc->response($this->jsonRpc->processRequest());
+			$this->_currentActionStart($m);
+			$res = $this->jsonRpc->response($this->jsonRpc->processRequest());
+			$this->_currentActionEnd($m);
+			return $res;
 		}
 
 		if( in_array($m,array('error','response'),true) && ! method_exists($this,$m.'Action') ){
-			return call_user_func_array(array($this->jsonRpc,$m),$a);
+			smvcShutdownManager::unregister(null);
+			$this->_currentActionStart($m);
+			$res =  call_user_func_array(array($this->jsonRpc,$m),$a);
+			$this->_currentActionEnd($m);
+			return $res;
 		}
 
 		return parent::__call($m,$a);

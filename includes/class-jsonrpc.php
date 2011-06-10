@@ -287,7 +287,7 @@ class jsonRPC{
 					$doc[$m]['params'][$k]['type'] = $paramDoc[1];
 				}else{
 					$doc[$m]['params'][$k]['type'] = 'scalar';
-			}
+				}
 			}
 		}
 		return $doc;
