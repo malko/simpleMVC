@@ -7,6 +7,7 @@
 * @todo allow extended mail address form (user display name <useradress@domain.com>)
 * @todo make some modification on set_address_header to better handle multiple values
 * @changelog
+* - 2011-07-06 - bug correction in check_address that reject some valid adresses (1 chars third or more level domain part )
 * - 2011-04-14 - bug correction in check_address that reject some valid adresses (1 chars local or domain part, xn-- TLDs, no more than 63 chars in domain part (this last one was buggy) )
 *              - change version numbering to majorRelease-dateLastModification
 * - 2011-01-14 - bug correction in check_address that reject some valid adresses (2 chars local or domain part)
@@ -27,7 +28,7 @@ class easymail{
 
 	static public $dfltHeaderCharset = 'UTF-8';
 	static public $preferedEncoding  = 'quoted-printable';
-	static public $xmailer = "EasyMail 1-110414";
+	static public $xmailer = "EasyMail 1-110706";
 	#- ~ static public $preferedEncoding  = '7bit';
 
 	function easymail($TO=null,$SUBJECT=null){
@@ -82,7 +83,7 @@ class easymail{
 
 			$_0_255         = '(?:[0-1]?\d?\d|2[0-4]\d|25[0-5])';
 			$domain_ip      = '\['.$_0_255.'(?:\.'.$_0_255.'){3}\]';
-			$domain_name    = '(?!.{64})(?:[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.?|[a-zA-Z0-9])+\.(?:xn--[a-zA-Z0-9]+|[a-zA-Z]{2,6})';
+			$domain_name    = '(?!.{64})(?:[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.?|[a-zA-Z0-9]\.?)+\.(?:xn--[a-zA-Z0-9]+|[a-zA-Z]{2,6})';
 
 			$exp = "/^(?:$local_unquoted|$local_quoted)@(?:$domain_name|$domain_ip)$/";
 		}
