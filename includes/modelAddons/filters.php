@@ -19,6 +19,7 @@
 * @author Jonathan Gotti <jgotti at jgotti dot net>
 * @license lgpl / mmit
 * @changelog
+*            - 2011-07-01 - typo error on throwing exception + add support for preg_replace and str_replace
 *            - 2011-05-13 - allow callback to return true to keep old value
 *                         - allow to prefix callback with '!' to reverse the filter result
 *            - 2011-05-10 - total rewrite of filtersModelAddons seems more logical this way
@@ -105,9 +106,9 @@ class filtersModelAddon extends modelAddon{
 			if( is_array($func) && $func[0]==='self'){
 				$func[0] = $this->modelInstance;
 			}
-			
+
 			if(! is_callable($func))
-				throw new BadFunctionCallException(__class__." unknown filter '$f'");
+				throw new BadFunctionCallException(__class__." unknown filter '$fName'");
 			array_unshift($args,$a);
 			$ret = call_user_func_array($func,$args);
 			if( $reverse ){
@@ -162,5 +163,11 @@ class filtersModelAddon extends modelAddon{
 	}
 	static function ucfirst($v){
 		return strtolower(substr($v,0,1)).substr($v,1);
+	}
+	static function preg_replace($v,$exp,$rep=''){
+		return preg_replace($exp,$rep,$v);
+	}
+	static function str_replace($v,$exp,$rep=''){
+		return str_replace($exp,$rep,$v);
 	}
 }
