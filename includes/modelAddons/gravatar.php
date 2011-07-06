@@ -137,7 +137,9 @@ class gravatarModelAddon extends modelAddon{
 		return self::$url.self::getGravatarHash('.json').($callBack?'callback='.$callBack:'');
 	}
 	/**
-	 * return the url of the php serialized gravatar profile
+	 * return the url of the php serialized gravatar profile.
+	 * @warning /!\ this method is implemented as it exists but please consider that unserializing datas 
+	 *              from untrusted source can introduce serious security issues so use this at your own risk !!!! 
 	 * @return string
 	 */
 	public function getGravatarPHP(){
@@ -149,5 +151,9 @@ class gravatarModelAddon extends modelAddon{
 	 */
 	public function getGravatarXML(){
 		return self::$url.self::getGravatarHash('.xml');
+	}
+	public function getGravatarInfos(){
+		//use json instead of php serialized as serialized datas contains important security holes
+		return json_decode(file_get_contents($this->getGravatarJSON()));
 	}
 }
