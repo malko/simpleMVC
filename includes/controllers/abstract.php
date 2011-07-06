@@ -11,6 +11,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2011-07-01 - msgRedirect will now redirect to REFERER as default even for state other than error
 *            - 2010-12-08 - redirect now check REFERER to be in the application path
 *            - 2010-10-06 - add minified js deletetion on clearCache
 *            - 2010-09-22 - now session datas are editable in showSession
@@ -536,10 +537,12 @@ abstract class abstractController{
 
 	function msgRedirect($msg,$state='error',$dispatchString=null,$params=null){
 		self::appendAppMsg($msg,$state);
-		if( $dispatchString===null && $state==='error'){
-			if( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'],ROOT_URL)!==false )
+		if( $dispatchString===null ){
+			if( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'],ROOT_URL)!==false ){
 				return  $this->redirect($_SERVER['HTTP_REFERER'],$params);
-			$dispatchString = ERROR_DISPATCH;
+			}else{
+				$dispatchString = $state==='error'?ERROR_DISPATCH:DEFAULT_DISPATCH;
+			}
 		}
 		return $this->redirectAction($dispatchString,$params);
 	}
