@@ -16,6 +16,7 @@ class jsonRpcMethodException extends jsonRpcException{
 * @licence LGPL
 * @since 2011-02-25
 * @changelog
+*            - 2011-07-22 - make use of curl in syncRequest when enable else default to fsockopen
 *            - 2011-05-30 - add htmDiscovery method and some more information on discovery
 *                         - add a $noCache and $allowDiscovery static properties
 *                         - if $allowDiscovery is true and no request is passed then will return the result of htmlDiscovery
@@ -359,11 +360,6 @@ class jsonRPC{
 	}
 
 	static function syncRequest($uri,$request,array $params=null,$timeOut=15){
-		preg_match('!^http(s?)://([^/]+)(.*)$!',$uri,$m);
-		$fp = fsockopen(($m[1]?'ssl://':'').$m[2],$m[1]?443:80,$errno,$errstr,$timeOut);
-		if(! $fp ){
-			throw new RuntimeException("$errno - $errstr");
-		}
 		if( is_string($request) ){
 			$request = array('method'=>$request,'params'=>$params,'id'=>uniqid());
 		}else{
@@ -373,43 +369,48 @@ class jsonRPC{
 			if( !isset($request->id) )
 				$request->id = uniqid();
 		}
-		$request=json_encode($request);
-		$requestContent = array(
-			"POST $m[3] HTTP/1.1",
-			"Host: $m[2]",
-			"User-Agent: authentificationApi",
-			"Content-Type: application/x-www-form-urlencoded",
-			"Content-Length:".strlen($request),
-			"\r\n$request",
-		);
-		fwrite($fp,implode("\n",$requestContent));
-		$response='';
-		while(!feof($fp))$response.= fread($fp,1024);
-		fclose($fp);
-		return json_decode(preg_replace('!^.*(?:\r?\n){2}(.*)$!s','\\1',$response));
-	}
-}
-
-/**
- *
- */
-interface rpcserverInterface{}
-
-/** 
- * @author malko
- * 
- * 
- */
-abstract class rpcServer implements rpcserverInterface{
-	
-	function __construct(){
-
-	}
-	
-	/**
-	 * 
-	 */
-	function __destruct(){
-
+		if( function_exists('curl_setopt_array') ){
+			$curl = curl_init();
+			curl_setopt_array($curl,array(
+				CURLOPT_RETURNTRANSFER=>true         # get result as string instead of stdout printing
+				,CURLOPT_HEADER => false 		         # no header in the results
+				,CURLOPT_URL => $uri                 # url d'appel
+				,CURLOPT_POST => true                # this is a post request
+				,CURLOPT_POSTFIELDS => urlencode(json_encode($request)) # here's the jsonrpc request
+				,CURLOPT_FOLLOWLOCATION => true 		 # allow redirect
+				,CURLOPT_MAXREDIRS => 5 	         	 # max redirect
+				,CURLOPT_CONNECTTIMEOUT => $timeOut  # max connection time
+				,CURLOPT_TIMEOUT => $timeOut         # max get time
+				,CURLOPT_FAILONERROR => true
+				,CURLOPT_SSL_VERIFYPEER => false
+			));
+			$response = curl_exec($curl);
+			if( false===$response ){
+				throw new RuntimeException(__class__.':'.__function__.
+				"Error while requesting $uri : ".curl_error($curl));
+			}
+			curl_close($curl);
+		}else{
+			preg_match('!^http(s?)://([^/]+)(.*)$!',$uri,$m);
+			$fp = fsockopen(($m[1]?'ssl://':'').$m[2],$m[1]?443:80,$errno,$errstr,$timeOut);
+			if(! $fp ){
+				throw new RuntimeException("$errno - $errstr");
+			}
+			$request=json_encode($request);
+			$requestContent = array(
+				"POST $m[3] HTTP/1.1",
+				"Host: $m[2]",
+				"User-Agent: authentificationApi",
+				"Content-Type: application/x-www-form-urlencoded",
+				"Content-Length:".strlen($request),
+				"\r\n$request",
+			);
+			fwrite($fp,implode("\n",$requestContent));
+			$response='';
+			while(!feof($fp))$response.= fread($fp,1024);
+			fclose($fp);
+			$reponse = preg_replace('!^.*(?:\r?\n){2}(.*)$!s','\\1',$response);
+		}
+		return json_decode($response);
 	}
 }
