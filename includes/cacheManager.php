@@ -3,6 +3,7 @@
 * @since 2009-11-19
 * @package cacheManager
 * @changelog
+* - 2011-07-26 - cacheManager::saveItem() remove item if empty value
 * - 2010-11-10 - cacheManager::setEnd() doesn't need name parameter any more as we use $cacheStack property to get it
 * - 2010-10-06 - fileCacheBackend now manage file extensions and constructor can take parameters
 * - 2010-03-22 - add fileCacheBackend
