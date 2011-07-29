@@ -217,6 +217,8 @@ class fileCacheBackend implements cacheBackend{
 		return $i;
 	}
 	function saveItem(cacheItem $item){
+		if(empty($item->content))
+			$this->removeItem($item);
 		$item->cacheTime = date('Y-m-d H:i:s');
 		$tmp = $this->getItemPath($item);
 		if( is_file($tmp) )
@@ -356,6 +358,8 @@ class dbCacheBackend implements cacheBackend{
 	* @return bool
 	*/
 	function saveItem(cacheItem $item){
+		if(empty($item->content))
+			$this->removeItem($item);
 		$item->cacheTime = date('Y-m-d H:i:s');
 		$values = $this->db->process_conds(array('(?)',$item->datas));
 		return $this->db->query('REPLACE INTO '.self::$tableName.' (name,content,cacheTime) VALUES '.$values);
