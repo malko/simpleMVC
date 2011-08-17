@@ -7,6 +7,7 @@
 * @todo allow extended mail address form (user display name <useradress@domain.com>)
 * @todo make some modification on set_address_header to better handle multiple values
 * @changelog
+* - 2011-08-17 - bug correction in clean_header which may strip spaces between specials chars
 * - 2011-07-06 - bug correction in check_address that reject some valid adresses (1 chars third or more level domain part )
 * - 2011-04-14 - bug correction in check_address that reject some valid adresses (1 chars local or domain part, xn-- TLDs, no more than 63 chars in domain part (this last one was buggy) )
 *              - change version numbering to majorRelease-dateLastModification
@@ -28,7 +29,7 @@ class easymail{
 
 	static public $dfltHeaderCharset = 'UTF-8';
 	static public $preferedEncoding  = 'quoted-printable';
-	static public $xmailer = "EasyMail 1-110706";
+	static public $xmailer = "EasyMail 1-110817";
 	#- ~ static public $preferedEncoding  = '7bit';
 
 	function easymail($TO=null,$SUBJECT=null){
@@ -61,6 +62,7 @@ class easymail{
 				$replacement = preg_replace('/([\x80-\xFF])/e', '"=".strtoupper(dechex(ord("\1")))', $word);
 				$headerval   = str_replace($word, "=?$charset?Q?$replacement?=", $headerval);
 			}
+			$headerval = preg_replace('/(=\?[A-Za-z0-9_-]+\?Q\?)(.*?)\?=(\s*)\1/','\1\2\3',$headerval);
 		}
 		return $headerval;
 	}
