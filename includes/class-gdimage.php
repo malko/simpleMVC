@@ -1,6 +1,8 @@
 <?php
 /**
-* @changelog 
+* @changelog
+* - 2011-08-05 - copyFrom() will now propelry destroy the from resource if passed as a filename
+*              - add save() method as a shortcut to output
 * - 2010-12-02 - add $transparentBackground to getNew() method
 *              - add chainedMethods alphablending,savealpha,truecolortopalette
 *              - add fill() method
@@ -159,6 +161,21 @@ class gdImage{
 				break;
 		}
 		return $destroy?$this->destroy():$this;
+	}
+	/**
+	* shortcut for output() with a filepath as parameter
+	* @param int    $quality  0-100 based
+	* @param string $dest     path to the destination file, if null will default to original source file path
+	*                         (for instance loaded from a file) or throw an exception if not loaded from a file.
+	*/
+	function save($quality=75,$dest=null){
+		if( null === $dest){
+			if( empty($this->_src) ){
+				throw new InvalidArgumentException('attempt to save to an unknown destination');
+			}
+			$dest = $this->_src;
+		}
+		return $this->output($dest,false,$quality);
 	}
 
 	/**
@@ -434,12 +451,14 @@ class gdImage{
 	* @return $this;
 	*/
 	function copyFrom($from,$toX=0,$toY=0,$fromX=0,$fromY=0,$width=null,$height=null,$copyType=null){
+		$needDestroy = false;
 		if( ! is_resource($from) ){
 			if( $from instanceof self){
 				$from = $from->output(null);
 			}else{
 				$i = new gdImage();
 				$from = $i->load($from)->output(null);
+				$needDestroy=true;
 			}
 		}
 		switch($copyType){
@@ -454,6 +473,9 @@ class gdImage{
 				break;
 			default:
 				$res = imagecopy($this->_resource,$from,$toX,$toY ,$fromX,$fromY,null!==$width?$width:imagesx($from), null!==$height?$height:imagesy($from));
+		}
+		if( $needDestroy ){
+			$from->destroy();
 		}
 		return $this;
 	}
