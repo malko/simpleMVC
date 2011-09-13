@@ -296,7 +296,7 @@ function html_substr($htmlStr,$start=0,$length=null,$appendStr='...'){
 		}
 
 		#- then deal with space
-		if(preg_match('!^\s+!',$htmlStr,$m)){
+		if(preg_match('!^\s\s+!',$htmlStr,$m)){
 			$htmlStr = ltrim($htmlStr);
 			if($pos>$start) $outStr.=$m[0];
 			#- @todo manage space that are not to be count
