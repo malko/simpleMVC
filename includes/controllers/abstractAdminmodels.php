@@ -73,8 +73,13 @@ abstract class abstractAdminmodelsController extends abstractController{
 	protected $configFile = '';
 	protected $_config = array();
 	protected $_modelConfig = array();
-	/** set one or multiple databases connection constants names to generate model from */
+	/** @var set one or multiple databases connection constants names to generate model from */
 	protected $dbConnectionsDefined = array('DB_CONNECTION');
+	/**
+		@var use for modelGeneration to determine single form of plural table name
+		list of plural=>single or plural=>array(single1,single2) in which case the first will be the one to use for related hasOne
+	*/
+	public $singulars = array();
 	/**
 	* method that extended class should override to check if user is allow or not to access to extended controller or not.
 	*/
@@ -223,7 +228,6 @@ abstract class abstractAdminmodelsController extends abstractController{
 								$conds[] = $filter;
 								break;
 						}
-
 					}
 					if( !empty($conds)){
 						$this->_models_ = abstractModel::getFilteredModelInstances($this->modelType,$conds);
@@ -703,6 +707,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 		}
 		#- do generation for each setted databases
 		modelgenerator::$excludePrefixedTables=true;
+		modelgenerator::$singularizer = array($this,'singular');
 		modelgenerator::$tablePrefixes='_';
 		foreach($this->dbConnectionsDefined as $dbConn){
 			eval('$g = new modelgenerator('.$dbConn.',$modelDir,1);');
@@ -716,6 +721,18 @@ abstract class abstractAdminmodelsController extends abstractController{
 			chmod($f,0666);
 		}
 		return $this->redirect();
+	}
+
+	public function singular($plural){
+		if( isset($this->singluars[$plural])){
+			return (array) $this->singluars[$plural];
+		}
+		$res = array();
+		if( preg_match("!ies$!",$plural))
+			$res[] = substr($plural,0,-3).'y';
+		if( preg_match("!(s|x)$!",$plural) )
+			$res[] = substr($plural,0,-1);
+		return $res;
 	}
 
 	private function readModel__ToStr($modelType){
