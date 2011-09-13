@@ -26,11 +26,12 @@
 */
 class filtersModelAddon extends modelAddon{
 	
-	static private $internal;
 	static public $defaultSalt = 'salt';
+	static private $internal;
 	static private $registered = array(
 		'uppercase'=>array('strtoupper')
 		,'lowercase'=>array('strtolower')
+		,'empty'=>array('filtersModelAddon::isEmpty')
 	);
 	
 	function __construct(abstractModel $modelInstance,$PK=null){
@@ -49,6 +50,10 @@ class filtersModelAddon extends modelAddon{
 			self::$internal[$this->modelName][]='filter'.(is_array($f)?$f[0]:$f);
 		}
 	}
+	/**
+	* automaticly register filter methods as filters
+	* @internal
+	*/
 	static private function _initFilters(){
 		static $initialized;
 		if( $initialized )
@@ -169,5 +174,8 @@ class filtersModelAddon extends modelAddon{
 	}
 	static function str_replace($v,$exp,$rep=''){
 		return str_replace($exp,$rep,$v);
+	}
+	static function isEmpty($v){
+		return empty($v);
 	}
 }
