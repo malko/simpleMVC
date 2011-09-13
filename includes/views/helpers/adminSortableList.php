@@ -42,6 +42,7 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		$msgDel  = htmlentities(langManager::msg('Delete'),ENT_COMPAT,'utf-8');
 		$this->view->_js_script("
 			var options = {
+				footerString: '<span style=\"float:right;\" class=\"sorttable-pagesize-setting\">".langManager::msg('display %s lines','%psizesel')."</span><div style=\"white-space:nowrap;\" class=\"sorttable-pagenav-settings\">%pnav</div>',
 				rowRendering: function(row,data){
 					$(row).addClass(data.rowid%2?'row':'altrow');
 				".(($editable||$deletable)?"
