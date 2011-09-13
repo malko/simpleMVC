@@ -162,6 +162,7 @@ class gdImage{
 		}
 		return $destroy?$this->destroy():$this;
 	}
+
 	/**
 	* shortcut for output() with a filepath as parameter
 	* @param int    $quality  0-100 based
@@ -287,6 +288,21 @@ class gdImage{
 		}
 		return $this;
 	}
+	/**
+	*This function will return an array of colors with $steps elements representing
+	*each color of the scale from $startcolor to $endcolor.
+	*the default behaviour is to return colors in the same format as it was input as first argument.
+	*@param mixed $startcolor array(R,G,B) with values between 0 to 255 or HTML colors as #ffffff or ffffff this is the starting color for the scale
+	*@param mixed $endcolor same as $startcolor but this one would be used as the ending color of the scale
+	*@param int   $steps the steps number of the scale;
+	*@param string $mod will forced the output format '#' will return html colors with preceding '#',
+	*                   '' will return colors as html colors without the '#', and 255 will return array (R,G,B).
+	*                   'gd' will return array('red'=>R,'green'=>G,'blue'=>B)
+	*                   you can also pass 'alpha' for a quadri dim array
+	*@return array of colors
+	*@date 2004-09-17
+	*@todo manage the array output
+	*/
 	function array_color_shade($startcolor,$endcolor,$steps=16){
 		# first take colors to correct format
 		$startcolor = gdImage::_read_color($startcolor);
@@ -475,7 +491,7 @@ class gdImage{
 				$res = imagecopy($this->_resource,$from,$toX,$toY ,$fromX,$fromY,null!==$width?$width:imagesx($from), null!==$height?$height:imagesy($from));
 		}
 		if( $needDestroy ){
-			$from->destroy();
+			imagedestroy($from);
 		}
 		return $this;
 	}
@@ -516,7 +532,21 @@ class gdImage{
 	* @return this for method chaining
 	*/
   function negative(){
-		imagefilter($this->_resource,IMG_FILTER_NEGATE);
+		if( function_exists('imagefilter') ){
+			imagefilter($this->_resource,IMG_FILTER_NEGATE);
+			return $this;
+		}
+		if( $this->istruecolor){
+			$this->truecolortopalette(self::$useDithering,256);
+		}
+		$nbcolors = $this->colorstotal;
+		for($i=0;$i<$nbcolors;$i++){
+			$c = $this->colorsforindex($i);
+			$r              = min(255,255-$c["red"]);
+			$g              = min(255,255-$c["green"]);
+			$b              = min(255,255-$c["blue"]);
+			$this->colorset($i,$r,$g,$b);
+		}
 		return $this;
 	}
 	function Sepia(){
@@ -532,39 +562,39 @@ class gdImage{
 		return $nval;
 	}
 	/**
-  * read a color in any understandable format and return it as a 255RGB array
-  * @param mixed $c
-  * @return array 255RGB or FALSE
-  * @private
-  */
-  static protected function _read_color($c){
+	* read a color in any understandable format and return it as a 255RGB array
+	* @param mixed $c
+	* @return array 255RGB or FALSE
+	* @private
+	*/
+	static protected function _read_color($c){
 		if( is_array($c)){
-      if(isset($c['red']) && isset($c['green']) &&isset ($c['blue']) ){
-        $rgb[0] = $c['red'];
-        $rgb[1] = $c['green'];
-        $rgb[2] = $c['blue'];
+			if(isset($c['red']) && isset($c['green']) &&isset ($c['blue']) ){
+				$rgb[0] = $c['red'];
+				$rgb[1] = $c['green'];
+				$rgb[2] = $c['blue'];
 				if( isset($c['alpha']) )
 					$rgb[3] = $c['alpha'];
-      }else{
-        for($i=0;$i<3;$i++){
-          $rgb[$i] = (int)$c[$i];
-          if($rgb[$i]<0)$rgb[$i]=0;
-          if($rgb[$i]>255)$rgb[$i]=255;
-        }
+			}else{
+				for($i=0;$i<3;$i++){
+					$rgb[$i] = (int)$c[$i];
+					if($rgb[$i]<0)$rgb[$i]=0;
+					if($rgb[$i]>255)$rgb[$i]=255;
+				}
 				if( isset($c[3]) )
 					$rgb[3] = $c[3];
-      }
-    }elseif(is_bool($c) || null===$c){
+			}
+		}elseif(is_bool($c) || null===$c){
 			return array(0,0,0);
 		}elseif(is_string($c)){
-      $c = trim($c);
-      if($c[0]==='#') # avoid the #
-        $c = substr($c,1);
+			$c = trim($c);
+			if($c[0]==='#') # avoid the #
+				$c = substr($c,1);
 			$cLength = strlen($c);
-      # check validity of the color or consider it as black
+			# check validity of the color or consider it as black
 			if((! in_array($cLength,array(3,4,6,8))) || !preg_match("!^[0-9a-fA-F]+$!",$c))
-        return array(0,0,0);
-      # get decimal values for each channel
+				return array(0,0,0);
+			# get decimal values for each channel
 			if( $cLength > 4){
 				$c = explode("\n",chunk_split($c,2,"\n"));
 				array_pop($c);
@@ -578,10 +608,10 @@ class gdImage{
 					$rgb[$k] = hexdec("0X$v$v");
 				}
 			}
-    }else{
-      return array(0,0,0);;
-    }
-    return $rgb;
-  }
+		}else{
+			return array(0,0,0);;
+		}
+		return $rgb;
+	}
 
 }
