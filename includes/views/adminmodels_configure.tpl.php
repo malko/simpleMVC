@@ -73,9 +73,14 @@
 					echo $this->formInput("fields[$fld]",$fld,'checkbox',array('checked'=>isset($this->listedFields[$fld]),'label'=>$fld ,'formatStr'=>'<li><span class="toggleItemFormat ui-icon ui-icon-circle-triangle-n">toggle</span> %input %label '.$formatInput.'</li>'))."\n";
 				}
 			}
+			$listType = isset($this->_modelConfig['LIST_TYPE'])?$this->_modelConfig['LIST_TYPE']:null;
 		?>
 		</ul>
 		<br />
+		<select id="listType" name="listType" class="listType ui-selectbuttonset ui-buttonset-small">
+			<option value="js"<?php echo ( $listType === "js"?' selected="selected"':'') ?>>use javascript sortTable list</option>
+			<option value="sql"<?php echo ($listType === "sql"?' selected="selected"':'') ?>>Use SQL list</option>
+		</select>
 		<div class="ui-buttonset-small">
 			<button type="button" class="ui-button ui-button-circle-plus" id="listAddField"><?php echo langManager::msg('add list field')?></button>
 			<button type="submit" class="ui-button ui-button-disk"><?php echo langManager::msg('save'); ?></button>

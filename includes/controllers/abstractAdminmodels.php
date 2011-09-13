@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+* - 2011-09-13 - now list manage 2 types of listing, sortTable and SQL
 * - 2011-01-04 - bug correction regarding loosing primaryKey value when saving with a mismatch confirm field
 * - 2010-11-25 - add a getFiltersArray() and prepareFilters() methods
 * - 2010-09-05 - add a try/catch on save
@@ -76,8 +77,8 @@ abstract class abstractAdminmodelsController extends abstractController{
 	/** @var set one or multiple databases connection constants names to generate model from */
 	protected $dbConnectionsDefined = array('DB_CONNECTION');
 	/**
-		@var use for modelGeneration to determine single form of plural table name
-		list of plural=>single or plural=>array(single1,single2) in which case the first will be the one to use for related hasOne
+	* @var use for modelGeneration to determine single form of plural table name
+	* list of plural=>single or plural=>array(single1,single2) in which case the first will be the one to use for related hasOne
 	*/
 	public $singulars = array();
 	/**
@@ -139,6 +140,8 @@ abstract class abstractAdminmodelsController extends abstractController{
 				}
 				if( $m[1] === 'ACTION' )
 					$this->_allowedActions = $this->_modelConfig['ACTION'];
+			}else if( preg_match('!^(LIST(?:_TYPE))_'.$this->modelType.'$!',$k,$m)){
+				$this->_modelConfig[$m[1]] = $v;
 			}
 		}
 		$this->view->_config = $this->_config;
@@ -195,8 +198,9 @@ abstract class abstractAdminmodelsController extends abstractController{
 	}
 
 	function listAction(){
-
 		$this->_isAllowedAction_('list');
+		$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
+		$conds = array();
 
 		if( ! empty($this->_config) ){
 			if( !empty($this->_modelConfig['LIST']) ){
@@ -208,16 +212,10 @@ abstract class abstractAdminmodelsController extends abstractController{
 
 			if( ( !empty($this->_modelConfig['LIST_FILTERS']) ) && ! empty($_GET['_filters']) ){
 				$dbAdapter = abstractModel::getModelDbAdapter($this->modelType);
-				#- $filters = match('!(?<=^|,)([^,]+?),([^,]+?)(?=,|$)!',$_GET['_filters'],array(1,2),true);
 				$filters = self::getFiltersArray(null,empty($this->_modelConfig['LIST_FILTERS'])?array():array_keys($this->_modelConfig['LIST_FILTERS']));
 				if( ! empty($filters)){
 					$datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
-					$conds = array();
 					foreach($filters as $field=>$filter ){
-						/*if( empty($this->_modelConfig['LIST_FILTERS'][$field]) ){ #- unauthorized filter just ignore it
-							unset($filters[$field]);
-							continue;
-						}*/
 						switch($this->_modelConfig['LIST_FILTERS'][$field]){
 							case 'like':
 								$conds[0] = (empty($conds)?'WHERE ':"$conds[0] AND ").$dbAdapter->protect_field_names($field).' LIKE ?';
@@ -230,11 +228,85 @@ abstract class abstractAdminmodelsController extends abstractController{
 						}
 					}
 					if( !empty($conds)){
-						$this->_models_ = abstractModel::getFilteredModelInstances($this->modelType,$conds);
 						$this->fieldFilters = $filters;
 					}
 				}
 			}
+		}
+		// List Filters for URLs
+		$filter = empty($this->fieldFilters)?'':'/_filters/'.self::prepareFilters($this->fieldFilters);
+
+		if( empty($this->_modelConfig['LIST_TYPE']) || $this->_modelConfig['LIST_TYPE'] !== 'sql' ){
+			$needPreorder = true;
+			if(! isset($this->_modelConfig['LIST_TYPE']) ){
+				$this->_modelConfig['LIST_TYPE'] = 'js';
+			}
+			if(! empty($conds) ){
+				$this->_models_ = abstractModel::getFilteredModelInstances($this->modelType,$conds);
+			}
+			$models = (isset($this->_models_) && $this->_models_ instanceof modelCollection )?$this->_models_:abstractModel::getAllModelInstances($this->modelType);
+			$this->totalRows = $models->count();
+		}else{
+			$needPreorder = false;
+			# pagination / ordering datas
+			$listParams = array(
+				'pageNb'=>1
+				,'pageSize'=>10
+				,'orderBy'=> $PKname
+				,'orderWay'=>'ASC'
+			);
+			foreach( $listParams as $param=>$dfltVal){
+				$clean = false;
+				if( isset($_POST[$param])){
+					$listParams[$param] = $_POST[$param];
+					$clean = true;
+				}else if( isset($_GET[$param])){
+					$listParams[$param] = $_GET[$param];
+					$clean = true;
+				}else if( isset($_SESSION['sqlist'][$this->modelType][$param]) ){
+					$listParams[$param] = $_SESSION['sqlist'][$this->modelType][$param];
+					$clean = true;
+				}
+				if( $clean ){
+					//-- make parameters safe
+					switch(gettype($dfltVal)){
+						case 'string':
+							$listParams[$param] = preg_replace('![^a-z0-9_-]!i','',$listParams[$param]);
+							break;
+						default:
+							settype($listParams[$param],'int');
+					}
+				}
+			}
+			$_SESSION['sqlist'][$this->modelType] = $listParams;
+			//-- get listing datas
+			$pageSizeSelector = '
+			<select name="pageselectorsortTablesizes" id="pageselectorsortTablesizes">
+				<option'.($listParams['pageSize']===10?' selected="selected"':'').'>10</option>
+				<option'.($listParams['pageSize']===20?' selected="selected"':'').'>20</option>
+				<option'.($listParams['pageSize']===30?' selected="selected"':'').'>30</option>
+				<option'.($listParams['pageSize']===50?' selected="selected"':'').'>50</option>
+				<option'.($listParams['pageSize']===100?' selected="selected"':'').'>100</option>
+			</select>';
+			abstractModel::_setModelPagedNav($this->modelType,array(
+				'linkStr'=>$this->url('list',array('modelType'=>$this->modelType,'_filters'=>self::prepareFilters($this->fieldFilters),'pageNb'=>'%page'),true)
+				,'first' => '<a href="%lnk" class="pagelnk">&lt;&lt;</a>'
+				,'prev'  => '<a href="%lnk" class="pagelnk">&lt;</a>'
+				,'next'  => '<a href="%lnk" class="pagelnk">&gt;</a>'
+				,'last'  => '<a href="%lnk" class="pagelnk">&gt;&gt;</a>'
+				,'curpage'  => '<input type="text" value="%page" onfocus="this.value=\'\';" onkeydown="if(event.keyCode==13){ var p=parseInt(this.value)||1;window.location=\'%lnk\'.replace(/pageNb\/%page/,\'pageNb\/\'+(p>%nbpages?%nbpages:(p<1?1:p)));return false;}" size="3" title="aller &agrave; la page" style="text-align:center;" />'
+				,'formatStr'=> '<span style="float:right;" class="sorttable-pagesize-setting">'.msg('show %s rows',$pageSizeSelector).'</span><div style="white-space:nowrap;" class="sorttable-pagenav-settings">%first %prev page %1links / %nbpages %next %last</div>'
+			));
+			$conds[0] = (empty($conds[0])?'':$conds[0].' ')
+				."ORDER BY $listParams[orderBy] "
+				.(in_array(strtoupper($listParams['orderWay']),array('ASC','DESC'),true)?$listParams['orderWay']:'asc')
+			;
+			list($models,$this->navStr,$this->totalRows) = abstractModel::getPagedModelInstances(
+				$this->modelType
+				,$conds
+				,$listParams['pageNb']
+				,$listParams['pageSize']
+			);
 		}
 
 		$this->view->assign('_smvcAllowedAction',$this->_allowedActions);
@@ -242,7 +314,6 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$supportedAddons = abstractModel::_modelGetSupportedAddons($this->modelType);
 		$orderable = in_array('orderable',$supportedAddons);
 		$activable = in_array('activable',$supportedAddons);
-		$models = (isset($this->_models_) && $this->_models_ instanceof modelCollection )?$this->_models_:abstractModel::getAllModelInstances($this->modelType);
 
 		if(empty($this->loadDatas)){ //-- attempt to autodetect datas that may need to be loaded
 			$relDefs = abstractModel::modelHasRelDefs($this->modelType,null,true);
@@ -254,27 +325,25 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$models->loadDatas(empty($this->loadDatas)?null:$this->loadDatas);
 		$datas = array();
 
-
-		// List Filters for URLs
-		$filter = empty($this->fieldFilters)?'':'/_filters/'.self::prepareFilters($this->fieldFilters);
-
-
 		if( count($models) ){
 			$this->view->_js_loadPlugin('jqueryui');
 			//-- prepare common modelAddons management
 			$orderableField = null;
 			if( $orderable ){
 				list($orderableField,$orderableGroupField) = $models->current()->_getOrderableFields();
-				$models->sort($orderableField);
+				if( $needPreorder ){
+					$models->sort($orderableField);
+				}
 				$orderableLastPos = array();
 				if(! $orderableGroupField ){
 					$orderableLastPos[] = $models->current()->orderableGetLastPK();
 				}else{
 					$orderableLastPos = $models->filterBy($orderableField,0)->orderableGetLastPK();
-					$models->sort($orderableGroupField);
+					if( $needPreorder ){
+						$models->sort($orderableGroupField);
+					}
 				}
 			}
-			$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 
 			if( empty($this->listFields)){
 				$this->listFields = array_keys(abstractModel::_getModelStaticProp($this->modelType,'datasDefs'));
@@ -283,7 +352,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 			$nbZeroFill = strlen($models->count());
 			foreach($models as $m){
 				$row = array();
-				$row['id'] = $m->PK.'/modelType/'.$this->modelType;
+				$row['id'] = $m->PK.($this->_modelConfig['LIST_TYPE']==='js'?'/modelType/'.$this->modelType:'');
 				foreach($this->listFields as $k=>$v){
 					if(!empty($this->listFormats[$k])){
 						$row[$k] = $m->__toString($this->listFormats[$k]);
@@ -308,7 +377,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 				}
 				$datas[] = $row;
 			}
-			$this->view->listHeaders = array_map(array($this,'langMsg'),array_values($this->listFields));
+			$this->view->listHeaders = array_map(array($this,'langMsg'),$this->_modelConfig['LIST_TYPE']==='sql'?$this->listFields:array_values($this->listFields));
 		}
 		// Add filters to id (for edit&trash buttons)
 		if(!empty($this->fieldFilters)&& $count = count($datas)){
@@ -591,12 +660,14 @@ abstract class abstractAdminmodelsController extends abstractController{
 			return $this->forward(ERROR_DISPATCH);
 		if( empty($_POST['fields'])){
 			$config['LIST_'.$this->modelType] = '--UNSET--';
+			$config['LIST_TYPE_'.$this->modelType] = '--UNSET--';
 		}else{
 			$flds = array();
 			foreach($_POST['fields'] as $fld){
 				$flds[$fld] =  isset($_POST['formatStr'][$fld])?$_POST['formatStr'][$fld]:false;
 			}
 			$config['LIST_'.$this->modelType] = json_encode($flds);
+			$config['LIST_TYPE_'.$this->modelType] = isset($_POST['listType'])?$_POST['listType']:'js';
 		}
 		#- write config
 		write_conf_file($this->configFile,$config,true);

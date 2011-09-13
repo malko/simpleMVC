@@ -78,4 +78,69 @@ if(!empty($add)){
 	</div>';
 	$this->js('$("#adminListAddNew").button().focus();','jquery');
 }
-echo $this->adminSortableList($this->listDatas,$this->listHeaders,'id',$edit,$del);
+
+if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LIST_TYPE'] ){
+	echo $this->adminSortableList($this->listDatas,$this->listHeaders,'id',$edit,$del);
+}else{
+	#- add table headers
+	echo '<table cellspacing="0" cellpadding="0" id="table'.$this->modelType.'" class="adminList sqlist">
+	<thead><tr>';
+	foreach( $this->listHeaders as $k=>$v){
+		$ow = 'ASC';
+		$oSymbol = '';
+		if( $k === $_SESSION['sqlist'][$this->modelType]['orderBy'] ){
+			if( 'ASC' !== $_SESSION['sqlist'][$this->modelType]['orderWay'] ){
+				$oSymbol = "&uarr;";
+			}else{
+				$ow = 'DESC';
+				$oSymbol = "&darr;";
+			}
+		}
+		echo '<th><a href="'.$this->url('list',array('modelType'=>$this->modelType,'_filters'=>$filters,'orderBy'=>$k,'orderWay'=>$ow),true)."\">$v</a> $oSymbol</th>";
+	}
+	echo '<th></th></tr></thead>
+	<tfoot>
+	<tr>
+		<td colspan="'.(count($this->listHeaders)+1).'">
+			'.$this->navStr.'
+		</td>
+	</tr>
+	</tfoot>
+	<tbody>
+	';
+	#- fill in the table rows
+	$i=0;
+	$filters = abstractAdminmodelsController::prepareFilters();
+	$baseUrl = $this->url('%action',array('modelType'=>$this->modelType,'id'=>'%id','_filters'=>$filters),true);
+	foreach($this->listDatas as $row){
+		echo '
+		<tr class="'.(++$i%2?'alt':'').'row">';
+		foreach( $row as $cellId => $cell){
+			if( $cellId === 'id' )
+				continue;
+			echo "
+			<td>$cell</td>";
+		}
+		echo '
+			<td>
+				<div class="ui-buttonset ui-buttonset-tiny-i editButtons">
+					<a href="'.str_replace(array('%action','%id'),array('edit',$row['id']),$baseUrl).'" class="ui-button ui-button-pencil editButton" title="Edit" tabindex="0">edit</a>
+					<a href="'.str_replace(array('%action','%id'),array('del',$row['id']),$baseUrl).'" class="ui-button ui-button-trash delButton" title="Delete" tabindex="0">delete</a>
+				</div>
+			</td>
+		</tr>';
+	}
+	#- close table tags
+	echo '</tbody>
+	</table>';
+	$this->button('.ui-button',array('checkButtonset'=>true));
+	$this->js('
+		$("#table'.$this->modelType.' th:has(a)").css({cursor:"pointer"})
+			.click(function(){window.location = $("a",this).attr("href");})
+			.find("a").css({textDecoration:"none"});
+		$("#table'.$this->modelType.' tfoot select#pageselectorsortTablesizes").change(function(){
+			window.location = ("'.$this->url('list',array('modelType'=>$this->modelType,'pageSize'=>'%pageSize','_filters'=>$filters),true).'").replace(/%pageSize/,$(this).val());
+		});
+		'
+	,'jquery');
+}
