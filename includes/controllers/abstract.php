@@ -450,9 +450,10 @@ abstract class abstractController{
 	/**
 	* forward the dispatching to another action in same or other controller.
 	* @param string $dispatchString dispatch string 'controller:action', 'controller:' or simply 'action'
+	* @param mixed  $params  array of additional parameters to pass to the following action or a scalart that will be passed as the first parameter
 	*/
 	public function forward($dispatchString){
-		if( strpos($dispatchString,':') ){
+		if( false !== strpos($dispatchString,':') ){
 			list($controllerName,$actionName)=explode(':',$dispatchString,2);
 		}else{
 			$controllerName = null;
@@ -461,13 +462,26 @@ abstract class abstractController{
 		if( empty($actionName)){
 			$actionName = substr(DEFAULT_DISPATCH,strpos(DEFAULT_DISPATCH,':')+1);
 		}
+		$params = null;
+		if( func_num_args() > 1){
+			$params = func_get_args();
+			array_shift($params);
+		}
 		if(empty($controllerName) || in_array($controllerName,array($this->getName(),get_class($this)),true)){
-			$this->$actionName();
+			if( null === $params){
+				$this->$actionName();
+			}else{
+				call_user_func_array(array($this,$actionName),$params);
+			}
 		}else{
 			if(! preg_match('!(C|_c)ontroller$!',$controllerName) )
 				$controllerName .= 'Controller';
 			$controller = new $controllerName($this->view);
-			$controller->$actionName();
+			if( null === $params){
+				$controller->$actionName();
+			}else{
+				call_user_func_array(array($controller,$actionName),$params);
+			}
 			#- restore controller (was modified at new controller init time)
 			$this->view->setController($this);
 		}
