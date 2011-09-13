@@ -63,6 +63,9 @@ class jsonRpcController extends abstractController{
 				$_REQUEST['jsonrpc'] = json_encode($rawDatas);
 			}else{
 				$_REQUEST['method'] = $m;
+				if( (! isset($_REQUEST['params'])) && !empty($a) ){
+					$_REQUEST['params'] = $a;
+				}
 			}
 			smvcShutdownManager::unregister(null);
 			$this->_currentActionStart($m);
