@@ -30,12 +30,22 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		$_headers = 'var headers = ['.implode(', ',$_headers).(($editable||$deletable)?",{label:'&nbsp;',unsortable:true,width:'55px'}":'').'];';
 
 		$tableId = 'sortTable'.($this->view->modelType?$this->view->modelType:(++self::$lastTableId));
-		foreach($datas as $row){
+		$useJsonEncode = function_exists('json_encode');
+		foreach($datas as &$row){
 			$pk = $row[$PK];
 			unset($row[$PK]);$row['id'] = $pk;
-			$jsData[] = "['".implode("', '",array_map(array($this,'escapeDatas'),$row))."']";
+			if( $useJsonEncode ){
+				$row = array_values($row);
+			}else{
+				$row = "['".implode("', '",array_map(array($this,'escapeDatas'),$row))."']";
+			}
 		}
-		$datas   = "var $tableId = [\n        ".implode(",\n        ",$jsData)."\n      ];\n";
+		if( $useJsonEncode ){
+			$datas  = "var $tableId = ".json_encode($datas).";\n";
+		}else{
+			$datas   = "var $tableId = [\n        ".implode(",\n        ",$datas)."\n      ];\n";
+		}
+
 		$controller = $this->getController()->getName();
 		#- $baseUrl = APP_URL.'/'.$controller->getName.'/';
 		$msgEdit = htmlentities(langManager::msg('Edit'),ENT_COMPAT,'utf-8');
@@ -81,6 +91,6 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 	}
 
 	function escapeDatas($datas){
-		return ($datas==='')?'&nbsp;':preg_replace(array("!'!","!\r?\n!"),array("\'","\\n"),"$datas");
+		return ($datas==='')?'&nbsp;':preg_replace(array("/(?<!\\\\)'/","!\r?\n!"),array("\'","\\n"),"$datas");
 	}
 }
