@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+* - 2011-09-14 - bug correction on sql listing regarding moveUp/moveDown buttons
 * - 2011-09-13 - now list manage 2 types of listing, sortTable and SQL
 * - 2011-01-04 - bug correction regarding loosing primaryKey value when saving with a mismatch confirm field
 * - 2010-11-25 - add a getFiltersArray() and prepareFilters() methods
@@ -295,10 +296,10 @@ abstract class abstractAdminmodelsController extends abstractController{
 				,'next'  => '<a href="%lnk" class="pagelnk">&gt;</a>'
 				,'last'  => '<a href="%lnk" class="pagelnk">&gt;&gt;</a>'
 				,'curpage'  => '<input type="text" value="%page" onfocus="this.value=\'\';" onkeydown="if(event.keyCode==13){ var p=parseInt(this.value)||1;window.location=\'%lnk\'.replace(/pageNb\/%page/,\'pageNb\/\'+(p>%nbpages?%nbpages:(p<1?1:p)));return false;}" size="3" title="aller &agrave; la page" style="text-align:center;" />'
-				,'formatStr'=> '<span style="float:right;" class="sorttable-pagesize-setting">'.msg('show %s rows',$pageSizeSelector).'</span><div style="white-space:nowrap;" class="sorttable-pagenav-settings">%first %prev page %1links / %nbpages %next %last</div>'
+				,'formatStr'=> '<span style="float:right;" class="sorttable-pagesize-setting">'.langManager::msg('show %s rows',$pageSizeSelector).'</span><div style="white-space:nowrap;" class="sorttable-pagenav-settings">%first %prev page %1links / %nbpages %next %last</div>'
 			));
 			$conds[0] = (empty($conds[0])?'':$conds[0].' ')
-				."ORDER BY $listParams[orderBy] "
+				."ORDER BY ".abstractModel::getModelDbAdapter($this->modelType)->protect_field_names($listParams['orderBy'])." "
 				.(in_array(strtoupper($listParams['orderWay']),array('ASC','DESC'),true)?$listParams['orderWay']:'asc')
 			;
 			list($models,$this->navStr,$this->totalRows) = abstractModel::getPagedModelInstances(
@@ -352,7 +353,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 			$nbZeroFill = strlen($models->count());
 			foreach($models as $m){
 				$row = array();
-				$row['id'] = $m->PK.($this->_modelConfig['LIST_TYPE']==='js'?'/modelType/'.$this->modelType:'');
+				$row['id'] = $m->PK.'/modelType/'.$this->modelType;
 				foreach($this->listFields as $k=>$v){
 					if(!empty($this->listFormats[$k])){
 						$row[$k] = $m->__toString($this->listFormats[$k]);
@@ -375,6 +376,8 @@ abstract class abstractAdminmodelsController extends abstractController{
 							break;
 					}
 				}
+				if( $this->_modelConfig['LIST_TYPE'] === 'sql' )
+					$row['id'] = $m->PK;
 				$datas[] = $row;
 			}
 			$this->view->listHeaders = array_map(array($this,'langMsg'),$this->_modelConfig['LIST_TYPE']==='sql'?$this->listFields:array_values($this->listFields));

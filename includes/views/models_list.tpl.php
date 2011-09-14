@@ -85,6 +85,7 @@ if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LI
 	#- add table headers
 	echo '<table cellspacing="0" cellpadding="0" id="table'.$this->modelType.'" class="adminList sqlist">
 	<thead><tr>';
+	$dataFields = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 	foreach( $this->listHeaders as $k=>$v){
 		$ow = 'ASC';
 		$oSymbol = '';
@@ -96,7 +97,11 @@ if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LI
 				$oSymbol = "&darr;";
 			}
 		}
-		echo '<th><a href="'.$this->url('list',array('modelType'=>$this->modelType,'_filters'=>$filters,'orderBy'=>$k,'orderWay'=>$ow),true)."\">$v</a> $oSymbol</th>";
+		if( isset($dataFields[$k])){
+			echo '<th><a href="'.$this->url('list',array('modelType'=>$this->modelType,'_filters'=>$filters,'orderBy'=>$k,'orderWay'=>$ow),true)."\">$v</a> $oSymbol</th>";
+		}else{
+			echo "<th>$v</th>";
+		}
 	}
 	echo '<th></th></tr></thead>
 	<tfoot>
