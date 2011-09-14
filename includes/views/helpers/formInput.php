@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+* - 2011-09-14 - better value escapment of quotes + drop unmaintained codepress support
 * - 2011-01-04 - add autocomplete=off for password fields if not set
 * - 2010-04-08 - change validable callbacks for confirmations to conform tk-validable plugin
 * - 2010-02-12 - change validable callbacks for confirmations
@@ -45,7 +46,6 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - time[picker]
 	*                          - datetime[picker]
 	*                          - file
-	*                          - codepress
 	* @param array  $options   list of optionnal parameters:
 	*                          - default is the default value to set if $value is empty.
 	*                          - multiple,class, size, id, onchange, maxlength, rows,cols,style,checked and disabled are replaced by the corresponding html attributes
@@ -138,7 +138,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				}
 				if($type==='txt')
 					$type='text';
-				$value = preg_replace('/(?<!\\\\)"/','\"',$value);
+				$value = preg_replace('/(?<!\\\\)"/','&quot;',$value);
 				return $this->formatInput(
 					$labelStr,
 					"<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
@@ -146,7 +146,7 @@ class formInput_viewHelper extends abstractViewHelper{
 				).(isset($confirm)?$confirm:'');
 				break; //-- dummy break
 			case 'hidden':
-				$value = preg_replace('/(?<!\\\\)"/','\"',$value);
+				$value = preg_replace('/(?<!\\\\)"/','&quot;',$value);
 				return "<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />";
 				break; //-- dummy break
 			case 'area':
@@ -201,7 +201,7 @@ class formInput_viewHelper extends abstractViewHelper{
 							$selected = in_array($k,$value)?' selected="selected"':'';
 						else
 							$selected = ($k==$value && ($value!=='' || ''===$k))?' selected="selected"':'';
-						$opts .= "<option value=\"$k\"$selected>$v</option>";
+						$opts .= "<option value=\"".preg_replace('/(?<!\\\\)"/','&quot;',$k)."\"$selected>$v</option>";
 					}
 				}
 				if( isset($options['multiple']) && empty($options['multiple']))
@@ -228,7 +228,7 @@ class formInput_viewHelper extends abstractViewHelper{
 							$checked = ($ok==$value && ($value!=='' || ''===$ok))?' checked="checked"':'';
 						#- ~ $labelStr = "<label for=\"\">$ov</label>";
 						$options['id'] = "$idStr-$ok";
-						$opts .= "<label for=\"$options[id]\"><input type=\"$type\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"$ok\"".$this->getAttrStr($options)."$checked />$ov</label>";
+						$opts .= "<label for=\"$options[id]\"><input type=\"$type\" name=\"$name".($type==='radio'?'':"[$ok]")."\" value=\"".preg_replace('/(?<!\\\\)"/','&quot;',$ok)."\"".$this->getAttrStr($options)."$checked />$ov</label>";
 					}
 					if(! empty($validableOpts)){
 						$this->validable($name,array('stateElmt'=>'label[for^=$idStr]','helpTrigger'=>"label[for^=$idStr]",'helpAfter'=>"label[for=$options[id]]"),$validableForm);
@@ -239,7 +239,7 @@ class formInput_viewHelper extends abstractViewHelper{
 						$options['checked'] = empty($options['checked'])?null:'checked';
 					return $this->formatInput(
 						$labelStr,
-						"<input type=\"$type\" name=\"$name\" value=\"$value\"".$this->getAttrStr($options)." />",
+						'<input type="'.$type.'" name="'.$name.'" value="'.preg_replace('/(?<!\\\\)"/','&quot;',$value).'"'.$this->getAttrStr($options).' />',
 						$options['formatStr']
 					);
 				}
@@ -316,13 +316,6 @@ class formInput_viewHelper extends abstractViewHelper{
 				return $this->formatInput(
 					$labelStr,
 					$inputStr,
-					$options['formatStr']
-				);
-				break;//-- dummy break
-			case 'codepress':
-				return $this->formatInput(
-					$labelStr,
-					$this->codepress($name,$value,$options),
 					$options['formatStr']
 				);
 				break;//-- dummy break
