@@ -103,7 +103,7 @@ if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LI
 			echo "<th>$v</th>";
 		}
 	}
-	echo '<th></th></tr></thead>
+	echo ( ((!empty($edit)) || (!empty($del)))?'<th></th>':'').'</tr></thead>
 	<tfoot>
 	<tr>
 		<td colspan="'.(count($this->listHeaders)+1).'">
@@ -126,14 +126,16 @@ if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LI
 			echo "
 			<td>$cell</td>";
 		}
-		echo '
+		if((!empty($edit)) || (!empty($del))){
+			echo '
 			<td>
 				<div class="ui-buttonset ui-buttonset-tiny-i editButtons">
-					<a href="'.str_replace(array('%action','%id'),array('edit',$row['id']),$baseUrl).'" class="ui-button ui-button-pencil editButton" title="Edit" tabindex="0">edit</a>
-					<a href="'.str_replace(array('%action','%id'),array('del',$row['id']),$baseUrl).'" class="ui-button ui-button-trash delButton" title="Delete" tabindex="0">delete</a>
-				</div>
+					'.($edit ? '<a href="'.str_replace(array('%action','%id'),array('edit',$row['id']),$baseUrl).'" class="ui-button ui-button-pencil editButton" title="Edit" tabindex="0">edit</a>':'')
+					.($del?'<a href="'.str_replace(array('%action','%id'),array('del',$row['id']),$baseUrl).'" class="ui-button ui-button-trash delButton" title="Delete" tabindex="0">delete</a>':'')
+				.'</div>
 			</td>
 		</tr>';
+		}
 	}
 	#- close table tags
 	echo '</tbody>

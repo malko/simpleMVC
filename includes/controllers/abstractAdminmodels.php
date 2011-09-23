@@ -387,6 +387,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 			for($i = 0 ; $i < $count ; $i++)
 				$datas[$i]['id'] .= $filter ;
 		}
+		$this->_models_ = $models;
 		$this->view->listDatas = $datas;
 	}
 
