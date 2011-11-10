@@ -321,7 +321,7 @@ class jsonRPC{
 	}
 	/**
 	* return a javascript proxy class to call directly this jsonRPC server. It require jquery to make calls
-	* In your html page add a <script src="http://exemple.com/myjsonrpcserver.php/?method=jqueryProxy"></script>
+	* In your html page add a &lt;script src="http://exemple.com/myjsonrpcserver.php/?method=jqueryProxy"&gt;&lt;/script&gt;
 	* then call jsonrpc.request('method',[param1,param2...],function(result){ success code },function(result){error code});
 	* @param string $proxyName name of the javascript variable containing the proxy
 	* @param string $endPoint  optionnal endpoint will default to this server page

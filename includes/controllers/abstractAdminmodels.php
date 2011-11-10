@@ -703,8 +703,14 @@ abstract class abstractAdminmodelsController extends abstractController{
 				$options = array();
 				if( $v !== '--- default ---')
 					$options['type'] =  $v;
-				if( ! empty($_POST['inputOptions'][$k] ) )
-					$options = array_merge($options,json_decode($_POST['inputOptions'][$k],true));
+				if( ! empty($_POST['inputOptions'][$k] ) ){
+					$tmp = json_decode($_POST['inputOptions'][$k],true);
+					if( is_array($tmp) ){
+						$options = array_merge($options,$tmp);
+					}else{
+						self::appendAppMsg("Error while trying to set $k options with an invalid json string <br /><code>".$_POST['inputOptions'][$k]."</code>");
+					}
+				}
 				if( empty($options) )
 					continue;
 				$c[$k] = $options;
