@@ -33,6 +33,7 @@ jQuery(function($){
 		},
 		loading: 'Loading ...',
 		accessDenied: "Access denied.",
+		badConnectorConfig:'Connector config error<br />(probably nonexistent directory).',
 		postWaitPrevResult: "Please wait for previous request to process.",
 		infosMissing: "Some required informations are missing.",
 		confirmFileDelete: "Are you sure you want to delete file:<br />$path ?",

@@ -33,6 +33,7 @@ jQuery(function($){
 		},
 		loading: 'Chargement en cours ...',
 		accessDenied: "Accès refusé.",
+		badConnectorConfig:'Erreur de configuration du connecteur<br />( repertoire probablement inexistant ).',
 		postWaitPrevResult: "Attendez la réponse de la requete précedente.",
 		infosMissing: "Des informations requises sont manquantes.",
 		confirmFileDelete: "Etes vous sur de vouloir effacer le fichier :<br />$path ?",
