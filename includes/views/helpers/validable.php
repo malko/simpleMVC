@@ -5,6 +5,7 @@
 *           - 2010-02-18 - make use of jquerytoolkit version of the plugin
 */
 class validable_viewHelper extends jsPlugin_viewHelper{
+	
 	public $requiredFiles   = array(
 		#- 'js/jqueryPlugins/jqueryValidable/jquery.validable.css',
 		#- 'js/jqueryPlugins/jqueryValidable/jquery.validable.js'

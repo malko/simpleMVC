@@ -39,14 +39,18 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 			$benchInfos = '<button>'.round(microtime(true) - $GLOBALS['_SMVC_BENCH_']['start'],4).'s  '.$memUsage.' / '.$memUsage2.'</button>';
 
 		}
+		/*if( smvcModule::modulesConfig(true)->filter('active')->count() ){
+		}*/
+		
 		#- check for langManager
 		$withLangManager = class_exists('langManager',false);
 
 		$this->button('.ui-button',array('checkButtonset'=>true));
 
 		return '<style type="text/css">#sMVCpannels .sMVCpannel,#sMVCmodelsList {display:none}</style><div id="sMVCtoolBar" class="ui-buttonset ui-buttonset-small"><button id="sMVCtoolBarToggle" class="ui-button ui-button-circle-triangle-e"></button>'
-		.'<button id="sMVCmodels" class="ui-button ui-button-gear">Models</button><button id="sMVCshow" class="ui-button ui-button-info">Show </button>'
-		.'<button id="sMVCphperr" class="ui-button ui-button-alert tk-state-error ui-state-error">PHP Errors </button><button id="sMVCdb" class="ui-button ui-button-clock">Db::profiler</button>'
+		.(defined('DB_CONNECTION')?'<button id="sMVCmodels" class="ui-button ui-button-gear">Models</button>':'')
+		.(defined('MODULES_DIR')?'<a href="'.$this->url('adminmodules:').'" id="sMVCmodules" class="ui-button ui-button">Modules</a>':'')
+		.'<button id="sMVCshow" class="ui-button ui-button-info">Show </button><button id="sMVCphperr" class="ui-button ui-button-alert tk-state-error ui-state-error">PHP Errors </button><button id="sMVCdb" class="ui-button ui-button-clock">Db::profiler</button>'
 		.'<button id="sMVCcssEditor" rel="'.ROOT_URL.'/js/dryCss/cssEditor.php?editorId='.$editorName.'" class="ui-button ui-button-tag" >cssEditor</button>'
 		.($withLangManager?'<button id="sMVClangmanager" class="ui-button ui-button-flag">langManager</button>':'')
 		#- .'<button onclick="window.location=\''.$this->url('pages:clearSession').'\';" id="sMVCclearSession" class="ui-button ui-button-person">Clear Session</button>'

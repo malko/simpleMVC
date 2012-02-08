@@ -2,6 +2,7 @@
 /**
 * helper for administration lists
 * @changelog
+* - 2011-11-02 - allow invalid PK
 * - 2010-10-06 - make zebra style rowRendering active even when no editable/deletable
 * - 2010-03-16 - supress the lastest column when not editable and not deletable
 * - 2009-05-28 - ncancel: added $editable and $deletable parameters.
@@ -32,8 +33,10 @@ class adminSortableList_viewHelper extends jsPlugin_viewHelper{
 		$tableId = 'sortTable'.($this->view->modelType?$this->view->modelType:(++self::$lastTableId));
 		$useJsonEncode = function_exists('json_encode');
 		foreach($datas as &$row){
-			$pk = $row[$PK];
-			unset($row[$PK]);$row['id'] = $pk;
+			if( isset($row[$PK])){
+				$pk = $row[$PK];
+				unset($row[$PK]);$row['id'] = $pk;
+			}
 			if( $useJsonEncode ){
 				$row = array_values($row);
 			}else{
