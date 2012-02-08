@@ -10,6 +10,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            -2011-10-28 - new langManager::setLocalesDirs() and langManager::addLocalesDir() methods
+*                        - make langManager::$localesDirs protected
 *            -2011-01-30 - add LANGMANAGER_SHORTMSG global shortcut
 *                        - add some methods to assist in dictionnaries management
 *            -2011-01-14 - add $onFailureHighlight, $onFailureFeedDictionnaries, and $higlightFormat static properties to ease finding untranslated strings
@@ -25,7 +27,7 @@ if( defined('LANGMANAGER_SHORTMSG') && ! function_exists(LANGMANAGER_SHORTMSG) )
 
 class langManager{
 
-	static public $localesDirs = array(
+	static protected $localesDirs = array(
 		'locales'
 	);
 
@@ -122,6 +124,41 @@ class langManager{
 	}
 
 	###--- DICTIONARIES MANAGEMENT ---###
+
+	/**
+	* set locales directory to use for lookUpDic latest will be check first
+	* @param array $localesDirs;
+	*/
+	static public function setLocalesDirs(array $localesDirs){
+		self::$localesDirs = array();
+		self::addLocalesDir($localesDirs);
+	}
+
+	/**
+	* add a locales directory (or list of locales directories) to the stack of checked locales.
+	* the latest added is the first path checked and the first added is checked at end.
+	* @param mixed $localesDir locales directory or array list of directories to add to the list of checked path
+	* @param bool  $fallBack   if true $localesDir will be checked at end instead of being checked at first
+	*/
+	static public function addLocalesDir($localesDir,$fallBack=false){
+		if( is_array($localesDir) ){
+			foreach( $localesDir as $d){
+				self::addLocalesDir($d,$fallBack);
+			}
+			return;
+		}
+		if(! is_dir($localesDir)){
+			throw new InvalidArgumentException();
+		}
+		if( in_array($localesDir,self::$localesDirs,true)){
+			return;
+		}
+		if( $fallBack ){
+			array_unshift(self::$localesDirs,$localesDir);
+		}else{
+			self::$localesDirs[] = $localesDir;
+		}
+	}
 	/**
 	* check path for given dicFile regarding the localesDirs setted (last to first)
 	* @param str dictFile dictionry filename
