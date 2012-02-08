@@ -183,6 +183,16 @@ abstract class abstractController{
 		#- ~ return $controller->view;
 	}
 
+	/**
+	* return the active controller
+	*/
+	static public function getCurrent(){
+		$view = self::getCurrentViewInstance();
+		if(! $view )
+			return null;
+		return $view->getController();
+	}
+
 	###--- DISPATCH STACK MANAGEMENT ---###
 	/**
 	* append element to dispatch stack

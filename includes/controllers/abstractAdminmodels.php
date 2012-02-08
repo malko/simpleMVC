@@ -10,6 +10,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+* - 2011-09-29 - new listExportAction() method
 * - 2011-09-14 - bug correction on sql listing regarding moveUp/moveDown buttons
 * - 2011-09-13 - now list manage 2 types of listing, sortTable and SQL
 * - 2011-01-04 - bug correction regarding loosing primaryKey value when saving with a mismatch confirm field
@@ -70,7 +71,8 @@ abstract class abstractAdminmodelsController extends abstractController{
 		'edit'=>true,
 		'list'=>true,
 		'del'=>true,
-		'add'=>true
+		'add'=>true,
+		'export'=>false
 	);
 	protected $configFile = '';
 	protected $_config = array();
@@ -141,7 +143,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 				}
 				if( $m[1] === 'ACTION' )
 					$this->_allowedActions = $this->_modelConfig['ACTION'];
-			}else if( preg_match('!^(LIST(?:_TYPE))_'.$this->modelType.'$!',$k,$m)){
+			}else if( preg_match('!^(LIST(?:_TYPE))_'.$this->modelType.'$!',$k,$m) && ! isset($this->_modelConfig[$m[1]]) ){
 				$this->_modelConfig[$m[1]] = $v;
 			}
 		}
@@ -391,6 +393,26 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$this->view->listDatas = $datas;
 	}
 
+	function exportAction(){
+		$this->_isAllowedAction_('export');
+		//-- force list type to js to retrieve all datas.
+		$this->_modelConfig['LIST_TYPE'] = 'js';
+		$this->listAction();
+		#- print_r($this->getDatas());
+		$csv = new csv('php://output','a',';');
+		header('Content-Type: application/csv');
+		header('Content-Disposition: attachment; filename="'.$this->modelType.'.csv"');
+		$headers = array_keys($this->listDatas[0]);
+		if( isset($this->listHeaders) ){
+			$headers = array_merge(array('id'),$this->listHeaders) + $headers;
+		}
+		$csv->append($headers);
+		foreach($this->listDatas as $row){
+			$row['id'] = strtok($row['id'],'/');
+			$csv->append(array_map('strip_tags',$row));
+		}
+		smvcShutdownManager::shutdown(0,true);
+	}
 	function addAction(){
 		$this->setDictName();
 		if(empty($this->fieldFilters) && !empty($_GET['_filters'])) {
@@ -422,7 +444,6 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$this->_isAllowedAction_(null===$this->view->_model_?'add':'edit',null,$this->getName().':list');
 		$this->view->datasDefs = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
 		$this->view->relDefs   = abstractModel::modelHasRelDefs($this->modelType,null,true);
-
 		$args = array('modelType'=>$this->modelType) ;
 		if (!empty($_GET['_filters']))
 			$args['_filters'] = $_GET['_filters'] ;
