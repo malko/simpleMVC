@@ -18,6 +18,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2011-10-18 - know viewInterface::__get() return references
 *            - 2010-06-24 - use abstractController::_getActionCacheNameParameter() for view cacheName
 *            - 2010-03-29 - add viewInterface::getLayout() method
 *            - 2010-03-22 - add cacheManager support to renderScript() method ( little impact on lookUpScript() too)
@@ -73,7 +74,7 @@ interface viewInterface{
 	static public function getInstance(abstractController $controller=null,array $layout=null);
 	static public function hasLivingInstance($returnInstance=false);
 	function __set($k,$v);
-	function __get($k);
+	function &__get($k);
 	function __isset($k);
 	function assign($k,$v=null);
 
@@ -154,8 +155,11 @@ class baseView implements viewInterface{
 		$this->_datas[$k] = $v;
 	}
 
-	function __get($k){
-		return isset($this->_datas[$k])?$this->_datas[$k]:null;
+	function &__get($k){
+		if(isset($this->_datas[$k]))
+			return $this->_datas[$k];
+		$tmp = null;
+		return $tmp;
 	}
 
 	/**
