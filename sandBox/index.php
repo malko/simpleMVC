@@ -30,10 +30,39 @@ if( isset($_SESSION) )
 session_name(FRONT_NAME);
 session_start();
 
+/** sample methods to use with module users
+function checkSession($returnInstance=false){
+	$u = users::getCurrent();
+	return $returnInstance ? $u : ($u? true:false) ;
+}
+
+function checkUserRight($right=null){
+	$u = checkSession(true);
+	return $u?$u->hasRight($right):false;
+}
+*/
 //-initialize our own error handler
 smvcErrorHandler::init(DEVEL_MODE);
 smvcErrorHandler::$contextFormatCb='smvc_print_r';
 
+/** experimental profiling code
+if( DEVEL_MODE ){
+	if( isset($_GET['activateProfiler']) && $_GET['activateProfiler'] === '1'){
+		$_SESSION['__smvcProfileNext__'] = true;
+		echo "<script> window.onload=function(){window.top.loaction.reload();window.close();}</script>";
+		smvcShutdownManager::shutdown(0,true);
+	}elseif( !empty($_SESSION['__smvcProfileNext__']) ){
+		$_SESSION['__smvcProfileNext__'] = false;
+		function profilerReport(){
+			echo '<div style="border:solid black 1px;position:absolute;background:#f0f0f0;top:0;width:98%;margin:1%;padding:5% 0;font-size:12px;z-index:9999;">
+				<h1>Profiler report <a onclick="this.parentNode.parentNode.style.display=\'none\';" style="float:right">close</a></h1>
+				'.smvcProfiler::htmlResults().'</div>';
+		}
+		smvcShutdownManager::register('profilerReport',1);
+		smvcProfiler::start(2);
+	}
+}
+*/
 #- if needed specified your default database connection (uncomment next two lines)
 #- db::setDefaultConnectionStr(DB_CONNECTION);
 #- db::$_default_verbosity = DEVEL_MODE?1:0; #- only report errors
@@ -44,10 +73,24 @@ smvcErrorHandler::$contextFormatCb='smvc_print_r';
 #- Set default views directories lasts will be try first and vice-versa
 abstractController::$defaultViewClass = 'baseView';
 abstractController::$appMsgIgnoreRepeated=2;
-abstractController::$defaultViewDirs  = array(
-	LIB_DIR.'/views',
-	APP_DIR.'/views'
-);
+
+#- smvcAutoloader::addAppPath(ROOT_DIR);
+smvcAutoloader::addAppPath(LIB_DIR.'/modules');
+smvcAutoloader::addAppPath(APP_DIR);
+
+
+if( defined('MODULES_CONF') && PHP_SAPI!=='cli' ){
+	$modulesConf = smvcModule::modulesConfig()->filter('active',true);
+	foreach($modulesConf as $mod=>$conf){
+		try{
+			smvcAutoloader::addAppPath(MODULES_DIR."/$mod");
+			if( is_dir(MODULES_DIR."/$mod/locales") )
+				langManager::addLocalesDir(MODULES_DIR."/$mod/locales",false);
+		}catch(Exception $e){
+			show($e,'exit');
+		}
+	}
+}
 
 #- some helpers configuration
 #- formInput_viewHelper::$useFileEntry = true;

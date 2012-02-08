@@ -1,2 +1,2 @@
-<h1><?= $this->pageMain->title?></h1>
-<div><?= $this->pageMain->content?> </div>
+<h1><?php echo $this->pageMain->title?></h1>
+<div><?php echo $this->pageMain->content?> </div>
