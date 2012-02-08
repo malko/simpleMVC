@@ -151,3 +151,9 @@ if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LI
 		'
 	,'jquery');
 }
+if( !empty($export) ){
+	echo '
+	<div style="text-align:right;">
+		<a href="'.$this->url('export',array('modelType'=>$this->modelType,'_filters'=>$filters)).'" class="ui-button ui-button-disk">'.langManager::msg('Export list',null,$this->_langManagerDicName).'</a>
+	</div>';
+}

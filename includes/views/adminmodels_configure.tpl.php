@@ -49,6 +49,7 @@
 		echo $this->formInput('actions[add]',empty($add)?0:1,'selectbuttonset',array('label'=>'Can be added','values'=>array('no','yes')));
 		echo $this->formInput('actions[del]',empty($del)?0:1,'selectbuttonset',array('label'=>'Can be deleted','values'=>array('no','yes')));
 		echo $this->formInput('actions[list]',empty($list)?0:1,'selectbuttonset',array('label'=>'Can be listed','values'=>array('no','yes')));
+		echo $this->formInput('actions[export]',empty($export)?0:1,'selectbuttonset',array('label'=>'Can be exported','values'=>array('no','yes')));
 	?>
 	<br />
 	<button type="submit" class="ui-button ui-button-small-disk"><?php echo langManager::msg('save'); ?></button>
