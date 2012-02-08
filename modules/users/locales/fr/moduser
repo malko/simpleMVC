@@ -1,0 +1,6 @@
+loginform login = Pseudo :
+loginform password = Mot de passe :
+loginform submit = M'authentifier
+loginbox logout  = Déconnexion
+moduser - missing authentication datas = Informations d'authentification incomplètes.
+moduser - bad credentials = Mauvais pseudo ou mot de passe.

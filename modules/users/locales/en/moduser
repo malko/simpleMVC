@@ -1,0 +1,6 @@
+loginform login = Login:
+loginform password = Password:
+loginform submit = Log me in
+loginbox logout = disconnect
+moduser - missing authentication datas = Missing some authentication informations.
+moduser - bad credentials = Bad login or password.
