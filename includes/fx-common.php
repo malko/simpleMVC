@@ -44,6 +44,19 @@ if(get_magic_quotes_gpc()){
 	foreach(array('POST', 'GET', 'REQUEST', 'COOKIE') as $gpc)
 		$GLOBALS["_$gpc"] = array_map('stripslashes_deep', $GLOBALS["_$gpc"]);
 }
+require LIB_DIR.'/smvc/Autoloader.php';
+smvcAutoloader::init(array(
+	'db'=>LIB_DIR.'/db/class-db.php'
+	,'mysqldb'=>LIB_DIR.'/db/adapters/class-mysqldb.php'
+	,'mysqlidb'=>LIB_DIR.'/db/adapters/class-mysqlidb.php'
+	,'sqlitedb'=>LIB_DIR.'/db/adapters/class-sqlitedb.php'
+	,'sqlite3db'=>LIB_DIR.'/db/adapters/class-sqlite3db.php'
+	,'abstractmodel'=>LIB_DIR.'/db/class-abstractmodel.php'
+	,'modelcollection'=>LIB_DIR.'/db/class-abstractmodel.php'
+	,'modelgenerator'=>LIB_DIR.'/db/class-modelgenerator.php'
+	,'console_app'=>LIB_DIR.'/db/scripts/libs/class-console_app.php'
+	,'baseView'=>LIB_DIR.'/views/base.php'
+));
 
 #- display and prepare error to go into simpleMVC toolbar if we're on devel_mode
 if( defined('DEVEL_MODE') && DEVEL_MODE){
@@ -83,7 +96,7 @@ if( defined('JS_TO_HEAD') && JS_TO_HEAD){
 			return ob_end_flush();
 		}
 		$view = baseView::hasLivingInstance(true);
-		if( false === $view ){
+		if( ! $view instanceof viewInterface ){
 			return ob_end_flush();
 		}
 		$jsHelper = $view->helperLoaded('js',true);
@@ -102,85 +115,6 @@ if( defined('JS_TO_HEAD') && JS_TO_HEAD){
 }
 //*/
 
-###--- AUTOLOAD ---###
-if( function_exists('spl_autoload_register')){
-	spl_autoload_register('smvcAutoload');
-}else{
-	function __autoload($className){
-		return smvcAutoload($className);
-	}
-}
-function smvcAutoload($className){
-	$dirs[] = LIB_DIR;
-	if(preg_match('!^(db|model[Gg]enerator|abstract[mM]odel)$!',$className))
-		return require LIB_DIR.'/db/class-'.strtolower($className).'.php';
-	if( defined('FRONT_NAME') ){
-		if( preg_match('!(?:_c|C)ontroller$!',$className,$m) ){ #- look for controller
-			$dirs[] = LIB_DIR.'/controllers';
-			$dirs[] = ROOT_DIR.'/controllers';
-			$className = str_replace($m[0],'',$className);
-		}elseif( preg_match('!(?:_v|V)iew((?:_h|H)elper)?$!',$className,$m) ){ #- look for views and helpers
-			if(empty($m[1])){
-				$dirs[] = LIB_DIR.'/views';
-				$dirs[] = ROOT_DIR.'/views';
-			}else{
-				foreach( abstractController::getCurrentViewInstance(true)->getViewDirs() as $d)
-						$dirs[] = "$d/helpers";
-			}
-			$className = str_replace($m[0],'',$className);
-		}elseif( preg_match('!(?:_m|M)odelAddon(?:Interface)?$!',$className,$m) ){#- look for modelAddons and their interface
-			if( defined('MODELADDONS_DIR') )
-				$dirs = array_merge($dirs,explode(',',MODELADDONS_DIR));
-			$dirs[] = LIB_DIR.'/modelAddons';
-			$dirs[] = ROOT_DIR.'/modelAddons';
-			$className = str_replace($m[0],'',$className);
-		}else{ #- default look for models
-			if( preg_match('!Collection$!',$className) ) #- modelCollection must be looked in models files
-				$className = preg_replace('!Collection$!','',$className);
-			$dirs[] = LIB_DIR.'/models';
-			$dirs[] = ROOT_DIR.'/models';
-			if( defined('MODELS_DIR') )
-				$dirs = array_merge($dirs,explode(',',MODELS_DIR));
-		}
-		#- add path corresponding to front controllers
-		if( FRONT_NAME !== 'default' ){
-			foreach($dirs as $d){
-				if( (! preg_match('!^'.LIB_DIR.'!',$d)) && is_dir($tmp = str_replace(ROOT_DIR,APP_DIR,$d)) )
-					$dirs[] = $tmp;
-			}
-		}
-	}
-	$dirs = array_reverse($dirs);
-	foreach($dirs as $dir){
-		$cname = $className;
-		do{
-			$classFiles = array(
-				"$dir/$cname.php",
-				"$dir/class-".strtolower($cname).'.php'
-			);
-			if( preg_match('/^[A-Z]/',$cname) )
-				array_splice($classFiles,1,0,"$dir/".strtolower(substr($cname,0,1)).substr($cname,1).'.php');
-			if( defined('DEVEL_MODE') && DEVEL_MODE )
-				$_dbg[] = $classFiles;
-			foreach($classFiles as $classFile){
-				if( is_file($classFile)){
-					require $classFile;
-					return true;
-				}
-			}
-			$split = preg_split('!(?<=[a-z])(?=[A-Z])|_!',$cname,2);
-			if(! isset($split[1]) )
-				break;
-			list($_dir,$cname) = $split;
-			$dir .= "/$_dir";
-			if(! is_dir($dir))
-				break;
-		}while($cname);
-	}
-	if( defined('DEVEL_MODE') && DEVEL_MODE)
-		show($_dbg,'trace');
-	throw new Exception("classe $className introuvable.");
-}
 ###--- SOME FORMAT AND CLEAN METHOD ---###
 /** remove accented chars (iso-8859-1 and UTF8) */
 function removeMoreAccents($str){

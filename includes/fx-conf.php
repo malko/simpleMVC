@@ -195,17 +195,17 @@ function array2file($arr,$file){
 */
 function _write_conf_line($var,$value=null,$oldline=null){
 	$commented = (substr_count($value,'--COMMENT--')?true:false);
-	if( strpos($var,"=")!==false)	
+	if( strpos($var,"=")!==false )
 		$var = preg_replace('/(?<!\\\\)=/','\=',$var);
 	if( is_bool($value) )
 		$value = $value?'true':'false';
-	elseif( $value===null)
+	elseif( $value===null )
 		$value = 'null';
 	else
 		$value = preg_replace("!([^\\\\])\r?\n!",($commented?"\\1\\\\\n# ":"\\1\\\\\n"),$value);
-	if($commented)
+	if( $commented )
 		$line = (($oldline && trim($value)==='--COMMENT--')?"#~ $oldline":"# $var = ".str_replace('--COMMENT--','',$value)."\n");
-	elseif($value === '--UNSET--')
+	elseif( $value === '--UNSET--' )
 		$line = '';
 	else
 		$line = "$var = ".$value."\n";
