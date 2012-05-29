@@ -1,6 +1,7 @@
 <?php
 /**
 * @changelog
+*           - 2012-05-29 - only reject methods from abstractController to allow extending extended jsonRpcControllers
 *           - 2011-05-23 - add actionStack management
 */
 class jsonRpcController extends abstractController{
@@ -16,13 +17,12 @@ class jsonRpcController extends abstractController{
 		$className = get_class($this);
 		$rclass = new ReflectionClass($className);
 		$methods = $rclass->getMethods(ReflectionMethod::IS_PUBLIC);
-
 		foreach($methods as $m){
-			if( preg_match('!^(.*?)Action$!',$m->name,$match) && ! isset($this->bindedMethods[$match[1]]) && $m->getDeclaringClass()->name===$className){
+			if( preg_match('!^(.*?)Action$!',$m->name,$match) && ! isset($this->bindedMethods[$match[1]]) && $m->getDeclaringClass()->name!=='abstractController'){
 				$this->bindedMethods[$match[1]] = $m->name;
 			}
 		}
-		$this->jsonRpc->bindClass($this,empty($this->bindedMethods)?null:$this->bindedMethods);
+		$this->jsonRpc->bindClass($this,empty($this->bindedMethods)?null:$this->bindedMethods,true);
 	}
 	//-- return the jqueryProxy javascript --//
 	protected function indexAction($proxyname=null){

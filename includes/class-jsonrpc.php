@@ -16,6 +16,7 @@ class jsonRpcMethodException extends jsonRpcException{
 * @licence LGPL
 * @since 2011-02-25
 * @changelog
+*            - 2012-05-29 - some rewrite in jqueryProxy now binded methods are exposed directly.
 *            - 2011-07-22 - make use of curl in syncRequest when enable else default to fsockopen
 *            - 2011-05-30 - add htmDiscovery method and some more information on discovery
 *                         - add a $noCache and $allowDiscovery static properties
@@ -332,29 +333,39 @@ class jsonRPC{
 			$endPoint = (stripos($_SERVER['SERVER_PROTOCOL'],'HTTPS')!==false?'https':'http').'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'];
 		}
 		header('Content-type: application/javascript');
-		echo "(function($){var RID = '".$proxyName."0';function generateId(){return (RID = RID.replace(/\d+$/,function(m){return parseInt(m,10)+1;}));}"
-			,"window.$proxyName={\n\tendpoint:'".$endPoint."'\n\t,"
-			,"callbacks:{},"
-			,"
-			request: function(method,params,success,error){
-				var id=generateId();
-				if(success||error){this.callbacks[id]=[success,error];}
-				\$.ajax({url:this.endpoint,dataType:'jsonp',data:{id:id,method:method,params:params,callback:'$proxyName.callback'}});
-			},"
-			,"
-			callback:function(r){
-				if( ! (r && r.id && this.callbacks[r.id])){
+		foreach( $this->methods as $k=>$v){
+			if( ! in_array($k,array('jqueryProxy','htmlDiscovery','discovery'),true) ){
+				$exposedMethods[] = "$k: function(){Array.prototype.splice.call(arguments,0,0,'$k');return this.request.apply(this,arguments);}";
+			}
+		}
+		echo "(function($){
+			var RID = '".$proxyName."0'
+			, callbacks={}
+			, generateId = function (){return (RID = RID.replace(/\d+$/,function(m){return parseInt(m,10)+1;}));}
+	window.$proxyName={
+		endpoint:'".$endPoint."'
+		,request: function(method,params,success,error){
+			var id=generateId();
+			if(success||error){callbacks[id]=[success,error];}
+			//if( ! params instanceof Array ){ params = [params]; };
+			\$.ajax({url:this.endpoint,dataType:'jsonp',data:{id:id,method:method,params:params,callback:'$proxyName.callback'}});
+		}
+		".(empty($exposedMethods)?"":','.implode("\n\t\t,",$exposedMethods))."
+		,callback:function(r){
+				if( ! (r && r.id && callbacks[r.id])){
 					return false;
 				}
-		var cbs=this.callbacks[r.id],cb = r.error?(cbs[1]?cbs[1]:false):(cbs[0]?cbs[0]:false),res=(typeof r.result !== 'undefined')? r.result : (r.error?r.error:null);
-				delete this.callbacks[r.id];
+				var cbs=callbacks[r.id],cb = r.error?(cbs[1]?cbs[1]:false):(cbs[0]?cbs[0]:false),res=(typeof r.result !== 'undefined')? r.result : (r.error?r.error:null);
+				delete callbacks[r.id];
 				if($.isFunction(cb)){
-			return cb(res);
+					return cb(res);
 				}else if( cb) {
-			return (new Function('r','return '+cb+'(r);'))(res);
+					return (new Function('r','return '+cb+'(r);'))(res);
 				}
 				return false;
-	}};
+		}
+
+			};
 })(jQuery);";
 		exit(0);
 	}
