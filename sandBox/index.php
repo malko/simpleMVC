@@ -106,10 +106,10 @@ if( defined('MODULES_CONF') && PHP_SAPI!=='cli' ){
 #- langManager::$acceptedLanguages = array('fr','en');
 #- if( DEVEL_MODE )
 #- 	langManager::collectFailures(true);
-#-langManager::$localesDirs = array(
+#-langManager::setLocalesDirs(array(
 #-	ROOT_DIR.'/locales',
 #-	APP_DIR.'/locales',
-#-);
+#-));
 #- then set current lang in session
 #- if( isset($_SESSION['lang']) || isset($_COOKIE['lang']) ){
 #- 	if(empty($_SESSION['lang']))
