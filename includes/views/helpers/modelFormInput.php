@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class modelFormInput_viewHelper
 * @changelog
+* - 2013-01-11 - add support for option name to override input name
 * - 2010-10-05 - add possibility to display primaryKey fields
 * - 2010-05-27 - forceEmptyChoice passed to false allow to remove the empty %s value for hasMany relations
 * - 2010-05-17 - add forceEmptyChoice options for enum/sets
@@ -39,7 +40,11 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 	function modelFormInput($modelName, $keyName, array $options=array()){
 		$relsDefs =  abstractModel::modelHasRelDefs($modelName,null,true);
 		$datasDefs = abstractModel::_getModelStaticProp($modelName,'datasDefs');
-
+		$inputName = $keyName;
+		if( !empty($options['name'])){
+			$inputName = $options['name'];
+			unset($options['name']);
+		}
 		if(! isset($options['label'])){
 			$options['label'] = ucFirst(langManager::msg($keyName,null,$this->view->_langManagerDicName));
 		}
@@ -76,7 +81,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 
 			if(! empty($options['value']) )
 				$value = $options['value'];
-			return $this->formInput($keyName,($value instanceof abstractModel?$value->PK:$value),empty($options['type'])?'select':$options['type'],$options);
+			return $this->formInput($inputName,($value instanceof abstractModel?$value->PK:$value),empty($options['type'])?'select':$options['type'],$options);
 		}elseif(isset($relsDefs['hasMany'][$keyName]) ){
 			#- prepare les valeurs
 			if( $modelName instanceof abstractModel && $modelName->{$keyName} instanceof modelCollection)
@@ -102,11 +107,11 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				}
 				if( isset($options['type']) && strpos($options['type'],'check') === 0){
 					$this->view->_js_script('
-					$("input[name^=\''.$keyName.'[\']").change(function(){
+					$("input[name^=\''.$inputName.'[\']").change(function(){
 						if( $(this).val() !== "0"){
-							$("#'.$keyName.'-0").attr("checked",false);
+							$("#'.$inputName.'-0").attr("checked",false);
 						}else if($(this).is(":checked")){
-							$("input:checked[name^=\''.$keyName.'[\']").not(this).attr("checked",false);
+							$("input:checked[name^=\''.$inputName.'[\']").not(this).attr("checked",false);
 						}
 					})');
 				}
@@ -116,16 +121,16 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			}
 			if( ! isset($options['multiple']) )
 				$options['multiple'] = 'multiple';
-			return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
+			return $this->formInput($inputName,$value,empty($options['type'])?'select':$options['type'],$options);
 		}
 		if( $keyName === 'PK' || $keyName === abstractModel::_getModelStaticProp($modelName,'primaryKey') ){
 			if( ! $modelName instanceof abstractModel ){
 				if( empty($options['type']) || $options['type']==='hidden' ){
 				return '';
 				}
-				return $this->formInput($keyName,'',$options['type'],$options);//$options['type']);;
+				return $this->formInput($inputName,'',$options['type'],$options);//$options['type']);;
 			}
-			return $this->formInput($keyName,$modelName->PK,empty($options['type'])?'hidden':$options['type']);
+			return $this->formInput($inputName,$modelName->PK,empty($options['type'])?'hidden':$options['type']);
 		}
 		#- try to get def from datas array
 		if( empty($datasDefs[$keyName]) ){
@@ -135,7 +140,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 				$value = $modelName->{$keyName};
 			else
 				$value=null;
-			return $this->formInput($keyName,$value,empty($options['type'])?'txt':$options['type'],$options);
+			return $this->formInput($inputName,$value,empty($options['type'])?'txt':$options['type'],$options);
 		}else{
 			if(isset($options['value']) )
 				$value = $options['value'];
@@ -157,7 +162,7 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 					foreach($values as $v)
 						$options['values'][$v] = $v;
 				}
-				return $this->formInput($keyName,$value,empty($options['type'])?'select':$options['type'],$options);
+				return $this->formInput($inputName,$value,empty($options['type'])?'select':$options['type'],$options);
 			}
 			if(empty($options['type']) ){
 				if( $datasDefs[$keyName]['Type'] === 'date' ){
@@ -188,10 +193,10 @@ class modelFormInput_viewHelper extends abstractViewHelper{
 			}
 			#- then textareas
 			if( preg_match('!^\s*(text|blob)!',$datasDefs[$keyName]['Type'])){
-				return $this->formInput($keyName,$value,empty($options['type'])?'textarea':$options['type'],$options);
+				return $this->formInput($inputName,$value,empty($options['type'])?'textarea':$options['type'],$options);
 			}
 			#- then use a default text type (or userdefined type)
-			return $this->formInput($keyName,$value,empty($options['type'])?'text':$options['type'],$options);
+			return $this->formInput($inputName,$value,empty($options['type'])?'text':$options['type'],$options);
 		}
 
 	}
