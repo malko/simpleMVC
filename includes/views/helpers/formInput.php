@@ -4,6 +4,7 @@
 * @subPackage helpers
 * @class formInput_viewHelper
 * @changelog
+* - 2013-01-11 - add forcefile type
 * - 2011-09-14 - better value escapment of quotes + drop unmaintained codepress support
 * - 2011-01-04 - add autocomplete=off for password fields if not set
 * - 2010-04-08 - change validable callbacks for confirmations to conform tk-validable plugin
@@ -46,6 +47,7 @@ class formInput_viewHelper extends abstractViewHelper{
 	*                          - time[picker]
 	*                          - datetime[picker]
 	*                          - file
+	*                          - forcefile
 	* @param array  $options   list of optionnal parameters:
 	*                          - default is the default value to set if $value is empty.
 	*                          - multiple,class, size, id, onchange, maxlength, rows,cols,style,checked and disabled are replaced by the corresponding html attributes
@@ -156,6 +158,7 @@ class formInput_viewHelper extends abstractViewHelper{
 					if( isset($options['label']) && ! isset($options['placeholder'])){
 						$options['placeholder'] = $options['label'];
 					}
+					unset($options['value']);
 					return $this->formatInput(
 						$labelStr,
 						"<textarea name=\"$name\"".$this->getAttrStr($options).">$value</textarea>",
@@ -300,6 +303,7 @@ class formInput_viewHelper extends abstractViewHelper{
 			case 'file':
 			case 'fileentry':
 			case 'fileextended':
+			case 'forcefile':
 				if( isset($options['label']) && ! isset($options['placeholder'])){
 					$options['placeholder'] = $options['label'];
 				}
