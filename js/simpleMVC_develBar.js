@@ -35,6 +35,7 @@ var cookies={
 
 	var toolBar = $('#sMVCtoolBar').css({position:'fixed',top:0})
 		, positionUsed = toolBar.offset().top===$(window).scrollTop()?'fixed':'absolute'
+		, btModules = $('#sMVCmodules')
 		, btShow  = $('#sMVCshow')
 		, showDiv = $('#sMVCshow_div')
 		, btPhperr  = $('#sMVCphperr')
@@ -254,7 +255,7 @@ var cookies={
 	//-- toggle button
 	btToggle.click(function(){
 		dataMenu.hide();
-		var sibs = $(':button',toolBar).not(this)
+		var sibs = $(':button,a.ui-button',toolBar).not(this)
 			, folded = btToggle.attr('folded')?true:false;//btDataMenu.is(':visible');
 		if( !folded){
 			sibs.attr('style','display:none!important');
