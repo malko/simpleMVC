@@ -7,10 +7,14 @@ class smvcAutoloader{
 	static private $suffixRegisteredPaths = array();
 	static private $knownPaths = array();
 	static private $instance  = null;
+	static public $basicInit = false;
 
 	private function __construct(){
 		self::$instance = $this;
 		spl_autoload_register(array($this,'autoload'),true);
+		if( self::$basicInit ){
+			return;
+		}
 		//-- register defaults paths of a standard simpleMVC installation --//
 		self::addAppPath(LIB_DIR);
 		if( defined('MODELS_DIR') ){
@@ -149,13 +153,13 @@ class smvcAutoloader{
 			}
 		}
 		//-- if models are used we always try to load a model instead of a std class
-		if( defined('MODELS_DIR') && $this->_autoload($className,self::$suffixRegisteredPaths['((?:_m|M)odel|Collection)'],$testedPaths) ){
+		if( defined('MODELS_DIR') && isset(self::$suffixRegisteredPaths['((?:_m|M)odel|Collection)']) && $this->_autoload($className,self::$suffixRegisteredPaths['((?:_m|M)odel|Collection)'],$testedPaths) ){
 			return true;
 		}
 		if( $this->_autoload($className,self::$registeredPaths,$testedPaths) ){
 			return true;
 		}
-		if( defined('DEVEL_MODE') && DEVEL_MODE ){
+		if( function_exists('DEVEL_MODE_ACTIVE') &&  DEVEL_MODE_ACTIVE() ){
 			show($testedPaths,"trace");
 		}
 		throw new Exception("class $className can't be found.");
