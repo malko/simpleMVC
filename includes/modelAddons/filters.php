@@ -25,7 +25,7 @@
 *            - 2011-05-10 - total rewrite of filtersModelAddons seems more logical this way
 */
 class filtersModelAddon extends modelAddon{
-	
+
 	static public $defaultSalt = 'salt';
 	static private $internal;
 	static private $registered = array(
@@ -33,7 +33,7 @@ class filtersModelAddon extends modelAddon{
 		,'lowercase'=>array('strtolower')
 		,'empty'=>array('filtersModelAddon::isEmpty')
 	);
-	
+
 	function __construct(abstractModel $modelInstance,$PK=null){
 		parent::__construct($modelInstance,$PK);
 		if( isset(self::$internal[$this->modelName])){
@@ -80,7 +80,7 @@ class filtersModelAddon extends modelAddon{
 			$filterMsg
 		);
 	}
-	
+
 	public function __call($m,$a){
 		if(! preg_match('!^filter(.*)$!',$m,$matches)){
 			return;
@@ -138,7 +138,7 @@ class filtersModelAddon extends modelAddon{
 		}
 		return $a;
 	}
-	
+
 	//** common filters **//
 	static public function minlength($v,$min){
 		return strlen($v)<$min?false:$v;

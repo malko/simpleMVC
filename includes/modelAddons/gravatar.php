@@ -2,17 +2,17 @@
 /**
  * modelAddon to ease retrieving of gravatar datas for users models.
  * You can override default settings for a model by declaring static public properties $_gravatarDefault, $_gravatarDefaultSize and $_gravatarEmailField
- * if none of thoose properties is specified the first field containing "mail" in the model will be used as the gravatar primary mail 
+ * if none of thoose properties is specified the first field containing "mail" in the model will be used as the gravatar primary mail
  * other parameters will default to gravatarModelAddon default values
  * @author jonathan gotti < jgotti at modedemploi dot fr> for http://www.agence-modedemploi.com
  * @since 2011-04-21
- */ 
+ */
 class gravatarModelAddon extends modelAddon{
-	
+
 	static private $internals = array();
 	static public $defaultSize = null;
 	static public $default = 'mm';
-	
+
 	static private $sslMode = null;
 	static private $url = null;
 	/**
@@ -55,7 +55,7 @@ class gravatarModelAddon extends modelAddon{
 	static public function useSSL($use){
 		self::$sslMode = $use;
 		self::$url = (self::$sslMode?'https://secure':'http://www').'.gravatar.com/';
-	} 
+	}
 	/**
 	 * return the gravatar hash
 	 * @param string $ext
@@ -92,7 +92,7 @@ class gravatarModelAddon extends modelAddon{
 	public function getGravatarImg($size=null){
 		return '<img src="'.$this->getGravatar($size).'" alt="gravatar" class="gravatar'.($size?" gravatar-$size":'').'"/>';
 	}
-	
+
 	/**
 	 * return the url of the qrcode
 	 * @param int $size
@@ -107,7 +107,7 @@ class gravatarModelAddon extends modelAddon{
 		return $avatar;
 	}
 	/**
-	 * return the html img tag of the qrcode 
+	 * return the html img tag of the qrcode
 	 * @param int $size
 	 * @return string
 	 */
@@ -122,14 +122,14 @@ class gravatarModelAddon extends modelAddon{
 		return self::$url.self::getGravatarHash();
 	}
 	/**
-	 * return the url of the gravatar vcard 
+	 * return the url of the gravatar vcard
 	 * @return string
 	 */
 	public function getGravatarVCard(){
 		return self::$url.self::getGravatarHash('.vcf');
 	}
 	/**
-	 * return the url of the json gravatar profile 
+	 * return the url of the json gravatar profile
 	 * @param string $callBack the javascript function to use as a jsonp callback
 	 * @return string
 	 */
@@ -138,8 +138,8 @@ class gravatarModelAddon extends modelAddon{
 	}
 	/**
 	 * return the url of the php serialized gravatar profile.
-	 * @warning /!\ this method is implemented as it exists but please consider that unserializing datas 
-	 *              from untrusted source can introduce serious security issues so use this at your own risk !!!! 
+	 * @warning /!\ this method is implemented as it exists but please consider that unserializing datas
+	 *              from untrusted source can introduce serious security issues so use this at your own risk !!!!
 	 * @return string
 	 */
 	public function getGravatarPHP(){
