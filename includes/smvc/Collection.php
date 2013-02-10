@@ -3,6 +3,10 @@
 * generic collection to ease work on array.
 * this class is intended to work as a list of similar items like the results of a database select query for example.
 * @changelog
+* - 2012-10-11 - smvcCollection::getIndexedBy() correctly return a smvcCollection
+* - 2012-09-14 - smvcCollection::getIndexedBy() method now handle $onlyDatas parameter
+*              - new methods removeCol() , getProperties(),__toString(), isEmpty()
+*              - keys correcly return an array as a collection mean nothing
 * - 2011-11-02 - smvcCollection::filter() method can now take a value to compare as filter + add third parameter strict compare
 */
 
@@ -48,11 +52,25 @@ class smvcCollection extends arrayObject{
 		#- 'count_values' => 'array_count_values'
 
 
-	static function init($datas){
-		return new smvcCollection($datas);
+	/**
+	* @param mixed $datas array or smvcCollection
+	* @return smvcCollection
+	*/
+	static function init($datas=null){
+		return $datas ? new smvcCollection($datas) : new smvcCollection();
 	}
 
+	public function keys(){
+		return array_keys($this->getArrayCopy());
+	}
 
+	/**
+	 * if called method start with an "_" then the result will be reassign to the current collection instead of returning a new one
+	 * this method is not intended to be called directly
+	 * @param string $m method to call
+	 * @param array $a method parameters
+	 * @return mixed  depending on the called method
+	 */
 	function __call($m,$a){
 		$_m = strtolower($m);
 		$_reassign = false;
@@ -117,6 +135,11 @@ class smvcCollection extends arrayObject{
 		return $this->getCol($key);
 	}
 
+	/**
+	* return an array of each values corresponding to given key in each items in collection
+	* @param string $key key you want to get values for
+	* @return array
+	*/
 	function getCol($key){
 		$res = array();
 		foreach($this as $k=>$v){
@@ -126,12 +149,54 @@ class smvcCollection extends arrayObject{
 	}
 
 	/**
+	 * return a copy of the collection with given column removed
+	 * @param string $key key you want to remove from items
+	 * @return smvcCollection
+	 */
+	function removeCol($key){
+		$res = array();
+		foreach($this as $k=>$v){
+			$res[$k] = $v;
+			unset($res[$k][$key]);
+		}
+		return smvcCollection::init($res);
+	}
+
+	/**
+	* return a collection of associative array with each model properties
+	* @param mixed $propertiesNames list of propery to get from
+	* @param string $concatSeparator if $concatSeparator is passed then will implode each model results using given string as separator
+	* @param smvcCollection
+	*/
+	function getProperties($properties){
+		if(! is_array($properties )){
+			$properties = preg_split('![,|;]!',$properties);
+		}
+		$properties = array_flip($properties);
+		$res = array();
+		foreach($this as $k=>$v){
+			$res[$k] = array_intersect_key($v,$properties);
+		}
+		return smvcCollection::init($res);
+	}
+
+	/**
+	* self explanatory
+	* @return bool
+	*/
+	function isEmpty(){
+		return empty($this);
+	}
+
+	/**
 	* return an smvcCollection indexed by the given item Key.
-	* In case of multiple model matching the same value for the given property then the default is to return a
+	* In case of multiple items matching the same value for the given property then the default is to return a
 	* smvcCollection of thoose matching items, you can choose to keep only one of thoose matching items by passing
 	* $forceSingleValue as true (arbitrary determined).
 	* @param string $itemKey     name of the property we whant to use as index
 	* @param bool   $forceSingleValue on multiple matching models for a given property value return only one of thoose.
+	* @param bool   $onlyDatas   if true will remmove $itemKey property from items in the collection.
+	*                            If resulting items are composed of a single property after removing the Key, then they will be replaced by thoose single property value.
 	* @return smvcCollection
 	*/
 	public function getIndexedBy($itemKey,$forceSingleValue=false,$onlyDatas=false){
@@ -140,17 +205,23 @@ class smvcCollection extends arrayObject{
 		$res = array();
 		foreach($this as $k=>$item){
 			$key = $item[$itemKey];
-			if( ! isset($res[$key]) ){
+			if( $onlyDatas ){
+				unset($item[$itemKey]);
+				if( count($item) === 1){
+					$item = current($item);
+				}
+			}
+			if( ! isset($res[$key]) ){ // key not already assigned put item in it
 				$res[$key] = $item;
-			}elseif( $forceSingleValue ){
+			}elseif( $forceSingleValue ){ // key already assigned ignore others similar key
 				continue;
-			}elseif( $res[$key] instanceof smvcCollection ){
+			}elseif( $res[$key] instanceof smvcCollection ){ // key already get multiple assigned values append the current one
 				$res[$key][] = $item;
-			}else{
+			}else{ // key already assigned to a single value make it a collection with old and new value
 				$res[$key] = smvcCollection::init(array($res[$key],$item));
 			}
 		}
-		return $res;
+		return self::init($res);
 	}
 
 	/**
@@ -333,6 +404,41 @@ class smvcCollection extends arrayObject{
 		if( $this->_sortReversed)
 			return $res>0?-1:1;
 		return $res;
+	}
+
+
+
+	/**
+	* return collection as a string. Without parameter return json_encoded collection
+	* @param mixed $format callable function that will receive one item as parameter and return it as a formatted string or a string used as a formatString.
+	*                      strings can ask for item property values by prefixing them with '%' like this "formatted item with %property"
+	*                      to print a single % chars just escape it with a \ or by doubling it
+	* @return string
+	*/
+	function __toString(){
+		if(! func_num_args() ){
+			return json_encode($this);
+		}
+		$args = func_get_args();
+		$format = $args[0];
+		$concat = isset($args[1])?$args[1]:'';
+		$res = array();
+		$callableFormat = false;
+		if($format === null){
+			$callableFormat = true;
+			$format = 'json_encode';
+		}else if( is_callable($format) ){
+			$callableFormat = true;
+		}
+
+		foreach( $this as $v){
+			$res[] = $callableFormat?call_user_func($format,$v):preg_replace(
+				array('/(?<!%|\\\\)%(?!%)([A-Za-z_][A-Za-z0-9_]*)/e','![\\\\%]%!')
+				,array('$v[\'\\1\']','%')
+				,$format
+			);
+		}
+		return implode($concat,$res);
 	}
 
 }
