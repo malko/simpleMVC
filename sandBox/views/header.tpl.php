@@ -2,8 +2,8 @@
 <html>
 <head>
 <meta charset="utf-8">
-	<title><?= FRONT_NAME .($this->pageTitle?" - $this->pageTitle":'')?></title>
-	<link rel="stylesheet" href="<?= ROOT_URL .'/'.FRONT_NAME.'.css' ?>" type="text/css" />
+	<title><?php echo FRONT_NAME.($this->pageTitle?" - $this->pageTitle":'')?></title>
+	<link rel="stylesheet" href="<?php echo ROOT_URL.'/'.FRONT_NAME ?>.css" type="text/css" />
 	<?php
 		$this->_jqueryToolkit_initPlugins('notifybox|notify');
 		echo $this->_js_getPending();

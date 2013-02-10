@@ -37,16 +37,17 @@ function checkSession($returnInstance=false){
 }
 
 function checkUserRight($right=null){
+	if( DEVEL_MODE_ACTIVE() ){ return true; }
 	$u = checkSession(true);
 	return $u?$u->hasRight($right):false;
 }
 */
 //-initialize our own error handler
-smvcErrorHandler::init(DEVEL_MODE);
+smvcErrorHandler::init(DEVEL_MODE_ACTIVE());
 smvcErrorHandler::$contextFormatCb='smvc_print_r';
 
 /** experimental profiling code
-if( DEVEL_MODE ){
+if( DEVEL_MODE_ACTIVE() ){
 	if( isset($_GET['activateProfiler']) && $_GET['activateProfiler'] === '1'){
 		$_SESSION['__smvcProfileNext__'] = true;
 		echo "<script> window.onload=function(){window.top.loaction.reload();window.close();}</script>";
@@ -65,20 +66,16 @@ if( DEVEL_MODE ){
 */
 #- if needed specified your default database connection (uncomment next two lines)
 #- db::setDefaultConnectionStr(DB_CONNECTION);
-#- db::$_default_verbosity = DEVEL_MODE?1:0; #- only report errors
+#- db::$_default_verbosity = DEVEL_MODE_ACTIVE()?1:0; #- only report errors
 
 #- include class-abstractModel if you use them (uncomment next two lines)
-#- abstractModel::$useDbProfiler = DEVEL_MODE?true:false;
+#- abstractModel::$useDbProfiler = DEVEL_MODE_ACTIVE()?true:false;
 
 #- Set default views directories lasts will be try first and vice-versa
 abstractController::$defaultViewClass = 'baseView';
 abstractController::$appMsgIgnoreRepeated=2;
 
-#- smvcAutoloader::addAppPath(ROOT_DIR);
-smvcAutoloader::addAppPath(LIB_DIR.'/modules');
-smvcAutoloader::addAppPath(APP_DIR);
-
-
+#- smvcAutoloader::addAppPath(ROOT_DIR); // <- eventually add root dir as a default
 if( defined('MODULES_CONF') && PHP_SAPI!=='cli' ){
 	$modulesConf = smvcModule::modulesConfig()->filter('active',true);
 	foreach($modulesConf as $mod=>$conf){
@@ -86,11 +83,14 @@ if( defined('MODULES_CONF') && PHP_SAPI!=='cli' ){
 			smvcAutoloader::addAppPath(MODULES_DIR."/$mod");
 			if( is_dir(MODULES_DIR."/$mod/locales") )
 				langManager::addLocalesDir(MODULES_DIR."/$mod/locales",false);
+			smvcModule::getInstance($mod); // initialize modules
 		}catch(Exception $e){
 			show($e,'exit');
 		}
 	}
 }
+#- declare the app path at last to make it the default one
+smvcAutoloader::addAppPath(APP_DIR);
 
 #- some helpers configuration
 #- formInput_viewHelper::$useFileEntry = true;
@@ -104,9 +104,11 @@ if( defined('MODULES_CONF') && PHP_SAPI!=='cli' ){
 #- first set directories for dictionaries lookUp
 #- abstractController::$appMsgUseLangManager = true;
 #- langManager::$acceptedLanguages = array('fr','en');
-#- if( DEVEL_MODE )
+#- if( DEVEL_MODE_ACTIVE() ){
 #- 	langManager::collectFailures(true);
-#-langManager::setLocalesDirs(array(
+#-	//langManager::$onFailureHighlight=true;
+#- }
+#-langManager::addLocalesDir(array(
 #-	ROOT_DIR.'/locales',
 #-	APP_DIR.'/locales',
 #-));
@@ -162,7 +164,7 @@ try{
 	if( class_exists($cname) )
 		$controller = new $cname;
 }catch(Exception $e){
-	if( DEVEL_MODE )
+	if( DEVEL_MODE_ACTIVE() )
 		show($e->getMessage(),$e->getTrace(),'color:orange;exit');
 	abstractController::appendAppMsg(langManager::msg("Can't find '%s' controller.",array($_controller)),'error');
 	$controller = new pagesController();
@@ -172,7 +174,7 @@ try{
 try{
   call_user_func_array(array($controller,$_action),$actionParameters);
 }catch(Exception $e){
-	if( DEVEL_MODE )
+	if( DEVEL_MODE_ACTIVE() )
 		show($e->getMessage(),$e->getTrace(),'color:maroon;exit');
 	abstractController::appendAppMsg(langManager::msg("Can't find '%s' action for '%s' controller.",array($_action,$_controller)),'error');
 	$controller->redirectAction(ERROR_DISPATCH,null,404);
