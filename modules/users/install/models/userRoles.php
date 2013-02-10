@@ -78,12 +78,18 @@ class userRoles extends BASE_userRoles{
 		}
 		if( is_numeric($right) ){
 			return $this->rights->filterByRightId($right,'==')->count()>0?true:false;
-		}else	if( strpos($right,'.') ){
+		}else if( strpos($right,'|')){ // check for a  list of rights
+			foreach( explode('|',$right) as $r){
+				if( $this->hasRight($r) ){
+					return true;
+				}
+			}
+			return false;
+		}else if( strpos($right,'.') ){
 			return $this->rights->filterBy('FullName',$right)->count()>0?true:false;
 		}
 		//--finally check for any right in the userRightGroup
 		return $this->rights->domain->filterByName($right)->count()>0?true:false;
-
 	}
 
 }

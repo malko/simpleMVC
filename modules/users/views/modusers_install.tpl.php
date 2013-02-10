@@ -13,11 +13,11 @@
 	width:18em;
 }
 </style>
-<form action="<?php echo $this->url('modusers:install2') ?>" class="moduleAdminForm" method="post">
+<form action="<?php echo $this->url('modusers:install2') ?>" class="moduleAdminForm" id="moduserInstallForm" method="post">
 <?php echo $this->token('moduserInstall2'); ?>
-	<div class="formInput"><label for="">Database Connection string: </label> <input name="dbConnection" type="text" value="<?php echo defined('DB_CONNECTION')?DB_CONNECTION:''; ?>" size="40" /></div>
-	<div class="formInput"><label for="">user module administrator login: </label> <input name="login" type="text" value="userAdmin" /></div>
-	<div class="formInput"><label for="">user module administrator password: </label> <input name="password" type="password" value="" /></div>
-	<div class="formInput"><label for="">user module administrator email: </label> <input name="email" type="text" value="" /></div>
+	<div class="formInput"><label for="muiDbConnection">Database Connection string: </label> <input name="dbConnection" id="muiDbConnection" type="text" value="<?php echo defined('DB_CONNECTION')?DB_CONNECTION:''; ?>" size="40" /></div>
+	<div class="formInput"><label for="muiLogin">user module administrator login: </label> <input id="muiLogin" name="login" type="text" value="userAdmin" /></div>
+	<div class="formInput"><label for="muiPassword">user module administrator password: </label> <input id="muiPassword" name="password" type="password" value="" /></div>
+	<div class="formInput"><label for="muiEmail">user module administrator email: </label> <input id="muiEmail" name="email" type="email" value=""/></div>
 	<div style="text-align:right"><input type="submit"></div>
 </form>

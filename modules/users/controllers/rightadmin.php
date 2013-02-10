@@ -12,22 +12,12 @@ class rightadminController extends moduseradminController{
 		,'export'=>false
 	);
 
-	function init(){
-		abstractAdminmodelsController::init();
-	}
-
-	function delete(){
-		if( $_GET['id'] === 1){
-			return $this->msgRedirect('You can not delete administrator role.');
-		}
-	}
-
 	public $_modelConfig = array(
 		'LIST' => array(
 			 'domain'=>'%{ %domain->name }%'
 			,'name'=>''
-		)
-		,'FORM_ORDER' => array(
+		),
+		'FORM_ORDER' => array(
 			'fieldGroupMethod'=>'tabs'
 			,array('name'=>'Right properties','fields'=>array('domain','name'))
 		)
@@ -37,6 +27,16 @@ class rightadminController extends moduseradminController{
 			,'name'=>array('required'=>true,'minlength'=>3,'maxlength'=>25,'rule'=>'/^[A-Za-z0-9_-]+$/','help'=>"3 to 25 characters long, accepted characters are a-z A-Z 0-9 _ -")
 		)
 	);
+
+	function init(){
+		abstractAdminmodelsController::init();
+	}
+
+	function delete(){
+		if( $_GET['id'] === 1){
+			return $this->msgRedirect('You can not delete administrator role.');
+		}
+	}
 
 	function formAction(){
 		if( userRightDomains::getCount() < 5){

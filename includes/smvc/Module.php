@@ -15,15 +15,23 @@ abstract class smvcModule{
 		'active','weight','installed'
 	);
 
+	static private $instances = array();
+
 	protected function __construct(){
 		$this->name = self::getInstanceName($this);
 		$this->path = MODULES_DIR.'/'.$this->name;
+		if( $this->isActive() && method_exists($this,'init') ){
+			$this->init();
+		}
 	}
 
 	/**
 	* @return smvcModule
 	*/
 	static function getInstance($moduleName){
+		if( isset(self::$instances[$moduleName]) ){
+			return self::$instances[$moduleName];
+		}
 		self::checkModName($moduleName);
 		$className = $moduleName.'Module';
 		if( ! class_exists($moduleName.'Module',false) ){
@@ -33,9 +41,12 @@ abstract class smvcModule{
 				eval('class '.$className.' extends '.__class__.'{};');
 			}
 		}
-		return new $className();
+		return self::$instances[$moduleName] = new $className();
 	}
 
+	/**
+	* return current module instance config
+	*/
 	function getConfig($confProp=null){
 		$conf = self::modulesConfig();
 		return $confProp?$conf[$this->name][$confProp]:$conf[$this->name];
@@ -50,8 +61,8 @@ abstract class smvcModule{
 	}
 
 	function setActive($active=true){ return self::moduleSetActive($this->name,$active); }
-	function hasInstaller(){ return method_exists($this,'install'); }
-	function hasUnInstaller(){ return method_exists($this,'uninstall'); }
+	//function hasInstaller(){ return method_exists($this,'install'); }
+	//function hasUnInstaller(){ return method_exists($this,'uninstall'); }
 	function isActive(){ return $this->getConfig('active'); }
 	function isInstalled(){ return $this->getConfig('installed'); }
 	function setInstalled($installed=true){
@@ -65,6 +76,16 @@ abstract class smvcModule{
 	function getWeight(){ return $this->getConfig('weight'); }
 
 
+	//-- DEFAULT METHODS THAT SHOULD BE OVERRIDE BY MODULES --//
+	/**
+	* return bool
+	*/
+	protected function install(){ return true;}
+	/**
+	* return bool
+	*/
+	protected function uninstall(){return true;}
+	//-- END DEFAULT METHODS THAT SHOULD BE OVERRIDE BY MODULES --//
 
 	/**
 	* @return smvcCollection modules config
@@ -94,7 +115,16 @@ abstract class smvcModule{
 		}
 		return $conf;
 	}
-
+	/**
+	* return physical and web path for module
+	* @return stdObject {dir:'physical/path',uri:'remote/path'}
+	*/
+	static function getModulePaths($moduleName){
+		return (object) array(
+			'dir'=> MODULES_DIR."/$moduleName"
+			,'uri'=> str_replace(ROOT_DIR,ROOT_URL,MODULES_DIR)."/$moduleName"
+		);
+	}
 	/**
 	* @return void
 	*/
@@ -105,6 +135,14 @@ abstract class smvcModule{
 		self::saveModulesConfig($conf);
 	}
 
+
+	/**
+	* return mixed (depend on module installer return)
+	*/
+	static function moduleInstall($modName){
+		$m = self::getInstance($modName);
+		return method_exists($m,'install') ? $m->install() : true;
+	}
 	/**
 	* @return bool
 	*/

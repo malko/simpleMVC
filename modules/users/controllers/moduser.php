@@ -1,7 +1,7 @@
 <?php
 class moduserController extends abstractController{
 
-	function loginAction(){
+	function loginAction($redirectDispatch=null){
 		if( empty($_POST['login']) || empty($_POST['password']) ){
 			return $this->msgRedirect(langManager::msg('moduser - missing authentication datas',null,'moduser'),'error');
 		}
@@ -10,12 +10,12 @@ class moduserController extends abstractController{
 			return $this->msgRedirect(langManager::msg('moduser - bad credentials',null,'moduser'),'error');
 		}
 		$u->startSession();
-		return $this->redirect();
+		return $redirectDispatch ? $this->redirectAction($redirectDispatch) : $this->redirect();
 	}
 
-	function logoutAction(){
+	function logoutAction($redirectDispatch=null){
 		users::resetSession();
-		return $this->redirect();
+		return $redirectDispatch ? $this->redirectAction($redirectDispatch) : $this->redirect();
 	}
 
 }

@@ -18,7 +18,7 @@ class useradminController extends moduseradminController{
 		,'FORM' => array(
 			 'userRole' => array('type'=>'skip')
 			,'role' => array('type'=>'select')
-			,'login'=>array('type'=>'text','required'=>true,'help'=>"5 to 20 characters long, containing only a-zA-Z0-9_-")
+			,'login'=>array('type'=>'text','required'=>true,'help'=>"5 to 20 characters long, containing only a-zA-Z0-9_-",'uneditable'=>true)
 			,'password'=>array('type'=>'password')
 			,'email'=>array(
 				'rule'=>'email'

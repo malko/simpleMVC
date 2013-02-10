@@ -1,0 +1,19 @@
+text : 0px
+
+hidden : 16px
+
+Area : 32px
+
+select : 48px
+
+radio : 64px
+
+Check : 80px
+
+Paragraphe : 96px
+
+password : 112px
+
+Date : 128px
+
+Edit : 144px

@@ -1,0 +1,18 @@
+formBuilderForms = Forms
+Edit formBuilderForms = Edit form
+Add new formBuilderForms = Add a new form
+activityPeriodStart = starting time period
+activityPeriodEnd = ending time period
+groupMethod = grouping method
+htmlIntro = Intro
+htmlOutro = Outro
+submitText = submit button label
+jsUri = javascript file url (opt)
+cssUri = css file url (opt)
+
+labelFormName = Nom du formulaire
+labelFormMethod = Methode d'envoie
+labelFormAction = Adresse de reception du formulaire (action=)
+labelFormTarget = Cadre ou fenêtre cible (target=)
+labelCssUri = css file url (opt)
+labelJsUri = javascript file url (opt)

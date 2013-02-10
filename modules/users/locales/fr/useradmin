@@ -1,0 +1,11 @@
+users = Utilisateurs
+Add new users = Ajouter un utilisateur
+role = Rôle
+login = Pseudo
+5 to 20 characters long, containing only a-zA-Z0-9_- = de 5 à 20 caractères, caractères authorisés: a-zA-Z0-9
+password = Mot de passe
+email = E-mail
+active = Actif
+UserInfos = Informations utilisateurs
+show password = Afficher le mot de passe
+set empty password = Mettre un mot de passe vide

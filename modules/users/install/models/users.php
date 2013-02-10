@@ -135,6 +135,12 @@ class users extends BASE_users{
 		return self::getInstance($_SESSION['moduser']['userId']);
 	}
 
+	/**
+	* check if user's role has the passed right.
+	* @see userRoles::hasRight()
+	* @param mixed $right may be a userRight instance, a userRight PK or string domain.name
+	* @return bool
+	*/
 	function hasRight($right){
 		$this->role->rights->loadDatas('domain');
 		return $this->role->hasRight($right);

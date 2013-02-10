@@ -1,0 +1,4 @@
+configure_requireRightLabel = Choisissez le droit requis pour accèder à formBuilder
+unknown right = Droit inconnu
+settings saved = Configuration enregistrée
+empty form list = Aucun formulaire pour le moment, créez en un.

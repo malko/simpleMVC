@@ -1,0 +1,120 @@
+.grid, .grid360, .grid720, .grid960{
+	max-width:960px;
+	margin:auto;
+	text-align:left;
+}
+.grid360{ max-width:360px; }
+.grid720{ max-width:720px; }
+.row,.cell{
+	zoom: 1;
+	-webkit-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+	        box-sizing: border-box;
+	 *behavior: url(boxsizing.htc);
+}
+.row{
+	font-family:Arial!important;
+	margin:0 auto;
+	clear:both;
+	display:block;
+	padding:0!important;
+	border:none!important;
+	width:960px;
+	/*overflow:hidden;*/
+	white-space: nowrap;
+	letter-spacing: -.31em;
+	word-spacing: -.43em;
+}
+
+.row .row{
+	margin-left:-10px;
+}
+
+.cell{
+	/*overflow:hidden;*/
+	display: inline-block;
+	margin:10px;
+	vertical-align: top;
+	white-space: normal;
+	letter-spacing: normal;
+	word-spacing: normal;
+}
+
+.span1{ width:60px;}
+.push1{ margin-left:90px;}
+.span2{ width:140px;}
+.push2{ margin-left:170px;}
+.span3{ width:220px;}
+.push3{ margin-left:250px;}
+.span4{ width:300px;}
+.push4{ margin-left:330px;}
+.span5{ width:380px;}
+.push5{ margin-left:410px;}
+.span6{ width:460px;}
+.push6{ margin-left:490px;}
+.span7{ width:540px;}
+.push7{ margin-left:570px;}
+.span8{ width:620px;}
+.push8{ margin-left:650px;}
+.span9{ width:700px;}
+.push9{ margin-left:730px;}
+.span10{ width:780px;}
+.push10{ margin-left:810px;}
+.span11{ width:860px;}
+.push11{ margin-left:890px;}
+.span12{ width:940px;}
+
+
+@media screen and (min-width:721px) and (max-width:960px){
+	.row{ width: 720px; }
+	.span1{ width:40px;}
+	.push1{ margin-left:70px;}
+	.span2{ width:100px;}
+	.push2{ margin-left:130px;}
+	.span3{ width:160px;}
+	.push3{ margin-left:190px;}
+	.span4{ width:220px;}
+	.push4{ margin-left:250px;}
+	.span5{ width:280px;}
+	.push5{ margin-left:310px;}
+	.span6{ width:340px;}
+	.push6{ margin-left:370px;}
+	.span7{ width:400px;}
+	.push7{ margin-left:430px;}
+	.span8{ width:460px;}
+	.push8{ margin-left:490px;}
+	.span9{ width:520px;}
+	.push9{ margin-left:550px;}
+	.span10{ width:580px;}
+	.push10{ margin-left:610px;}
+	.span11{ width:640px;}
+	.push11{ margin-left:670px;}
+	.span12{ width:700px;}
+}
+
+@media screen and (max-width:720px){
+	.row{ width: 360px; }
+	.span1{ width:340px;}
+	.push1{ margin-left:10px;}
+	.span2{ width:340px;}
+	.push2{ margin-left:10px;}
+	.span3{ width:340px;}
+	.push3{ margin-left:10px;}
+	.span4{ width:340px;}
+	.push4{ margin-left:10px;}
+	.span5{ width:340px;}
+	.push5{ margin-left:10px;}
+	.span6{ width:340px;}
+	.push6{ margin-left:10px;}
+	.span7{ width:340px;}
+	.push7{ margin-left:10px;}
+	.span8{ width:340px;}
+	.push8{ margin-left:10px;}
+	.span9{ width:340px;}
+	.push9{ margin-left:10px;}
+	.span10{ width:340px;}
+	.push10{ margin-left:10px;}
+	.span11{ width:340px;}
+	.push11{ margin-left:10px;}
+	.span12{ width:340px;}
+}

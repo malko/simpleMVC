@@ -1,0 +1,4 @@
+configure_requireRightLabel = Choose required user right to access formbuilder
+unknown right = unknown user right
+settings saved = Settings successfully saved
+empty form list = No form yet please create one

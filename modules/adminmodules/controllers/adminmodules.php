@@ -1,11 +1,17 @@
 <?php
-
+/**
+* make some modification in user checking to allow installation of moduser without checkUser function declared
+*/
 class adminmodulesController extends abstractController{
 
 	function init(){
 		parent::init();
-		if( ! checkUserRight('modules.admin') ){
-			return $this->msgRedirect('Unauthorized action');
+		if(! function_exists('checkUserRight') ){
+			self::appendAppMsg('checkUserRight function not found. You have to create it or install modules user.<br />DONT\'T PUSH TO PROD WITHOUT FOR OBVIOUS SECURITY REASON !','error');
+		}else if( DEVEL_MODE && (!smvcModule::getInstance('users')->isInstalled())){
+			return;
+		}else if( ! checkUserRight('modules.admin') ){
+			return $this->msgRedirect('Unauthorized action','error',ERROR_DISPATCH);
 		}
 	}
 	function indexAction(){
@@ -41,10 +47,12 @@ class adminmodulesController extends abstractController{
 		if(! $module instanceof smvcModule){
 			return $this->redirect();
 		}
-		$module->setActive();
-		if( (! $module->isInstalled()) && $module->hasInstaller() ){
-			$module->install();
+		if( ! $module->isInstalled() ){
+			if( ! smvcModule::moduleInstall($moduleName) ){
+				return $this->msgRedirect('Error while trying to install '.$moduleName);
+			}
 		}
+		$module->setActive();
 		return $this->redirect();
 	}
 	function unactiveAction($module){

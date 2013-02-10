@@ -25,9 +25,9 @@ $(function(){
 
 	<?php
 	if( $this->_model_ && !empty($this->_model_->datas["password"])){
-		echo '$(\'<div class="tk-content tk-border tk-state-warning" >'
+		echo '$(\'<div class="tk-content tk-border tk-state-info" >'
 		.langManager::msg('keeping password blank without checking "set empty password" will simply leave actual password unchanged')
-		.'</div><br />\').insertAfter(\'h1:eq(1)\');';
+		.'</div><br />\').insertAfter($(".adminForm").prev("h1"));';
 	}
 	?>
 });

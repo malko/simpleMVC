@@ -58,16 +58,16 @@ class modusersController extends abstractController{
 	);
 
 	function installAction($token){
-		#- if(! $this->_token_check(30,null,'GET') ){
-			#- return $this->msgRedirect('Token authentication expired');
-		#- }
+		if(! $this->_token_check(60,'modmoduserInstall','GET') ){
+			return $this->msgRedirect('Token authentication expired');
+		}
 		return false;
 	}
 
 	function install2Action(){
-		#- if( ! $this->_token_check(300,'moduserInstall2') ){
-			#- return $this->msgRedirect('Token authentication expired');
-		#- }
+		if( ! $this->_token_check(300,'moduserInstall2') ){
+			return $this->msgRedirect('Token authentication expired','adminmodules:index');
+		}
 
 		#- define models dir if not
 		if(! defined('MODELS_DIR') ){
@@ -84,7 +84,7 @@ class modusersController extends abstractController{
 		}
 		//-- check models dir is writable
 		if(! is_writable(MODELS_DIR) ){
-			self::appendAppMsg(MODELS_DIR.'must be writable','error');
+			self::appendAppMsg(MODELS_DIR.' must be writable','error');
 			$error=true;
 		}
 		//-- check database connection
