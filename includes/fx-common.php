@@ -8,6 +8,10 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+* - 2012-06-19 - new DEVEL_MODE_ACTIVE function to allow DEVEL_MODE to be set based on an IP list
+*              - replace dateus2fr and datefr2us with more accurately named dateISO2FR and dateFR2ISO (old functions are now deprecated)
+*              - show now accept a 'forced' parameter
+*              - add some comments
 * - 2011-01-06 - little rework on autoloading
 * - 2010-09-28 - new error handling
 * - 2010-01-04 - add cli support for show
@@ -44,9 +48,12 @@ if(get_magic_quotes_gpc()){
 	foreach(array('POST', 'GET', 'REQUEST', 'COOKIE') as $gpc)
 		$GLOBALS["_$gpc"] = array_map('stripslashes_deep', $GLOBALS["_$gpc"]);
 }
+
+#- manage autoloader
 require LIB_DIR.'/smvc/Autoloader.php';
 smvcAutoloader::init(array(
 	'db'=>LIB_DIR.'/db/class-db.php'
+	,'jsonQueryClause'=>LIB_DIR.'/db/class-jsonQueryClause.php'
 	,'mysqldb'=>LIB_DIR.'/db/adapters/class-mysqldb.php'
 	,'mysqlidb'=>LIB_DIR.'/db/adapters/class-mysqlidb.php'
 	,'sqlitedb'=>LIB_DIR.'/db/adapters/class-sqlitedb.php'
@@ -56,10 +63,30 @@ smvcAutoloader::init(array(
 	,'modelgenerator'=>LIB_DIR.'/db/class-modelgenerator.php'
 	,'console_app'=>LIB_DIR.'/db/scripts/libs/class-console_app.php'
 	,'baseView'=>LIB_DIR.'/views/base.php'
+	,'pushNotification' => LIB_DIR.'/apns/class-pushnotification.php'
 ));
 
+#- common devel mode checking function
+function DEVEL_MODE_ACTIVE(){
+	static $res = null;
+	if( $res !== null ){
+		return $res;
+	}
+	$res = false;
+	if(! defined('DEVEL_MODE') ){
+		return $res;
+	}
+	if( DEVEL_MODE === true ){
+		$res = true;
+	}else if( ($authorizedIPS = preg_split('/[,|;]/',DEVEL_MODE)) && in_array($_SERVER['REMOTE_ADDR'],$authorizedIPS,true) ){
+		$res = true;
+	}
+	return $res;
+}
+
+
 #- display and prepare error to go into simpleMVC toolbar if we're on devel_mode
-if( defined('DEVEL_MODE') && DEVEL_MODE){
+if( DEVEL_MODE_ACTIVE() ){
 	#- ini_set('error_prepend_string','<div class="php_error">'.preg_replace('!<br\s*/?'.'>!','',ini_get('error_prepend_string')));
 	#- ini_set('error_append_string',preg_replace('!<br\s*/?'.'>!','',ini_get('error_append_string')).'</div>');
 	error_reporting(E_ALL | E_STRICT);
@@ -116,7 +143,11 @@ if( defined('JS_TO_HEAD') && JS_TO_HEAD){
 //*/
 
 ###--- SOME FORMAT AND CLEAN METHOD ---###
-/** remove accented chars (iso-8859-1 and UTF8) */
+/**
+* remove accented chars (iso-8859-1 and UTF8)
+* @param string $str
+* @return string
+*/
 function removeMoreAccents($str){
 	static $convTable;
 	# create conversion table on first call
@@ -159,24 +190,67 @@ function removeMoreAccents($str){
 	}
 	return strtr($str,$convTable);
 }
-/** format de date */
-function dateus2fr($date,$noTime=false){
+###--- DATE FORMAT ---###
+/**
+* return a french format date from an iso8601 date format
+* @param string $date   date in ISO format
+* @param bool   $noTime if true will strip eventual time part of the string
+* @return string french formatted date
+*/
+function dateISO2FR($date,$noTime=false){
 	if( empty($date) )
 		return '00/00/0000';
-	if(! strpos($date,' '))
+	if(! (strpos($date,' ') || strpos($date,'T')) )
 		return implode('/',array_reverse(preg_split('!/|-!',$date)));
-	list($date,$time) = explode(' ',$date);
-	return dateus2fr($date).($noTime?'':' '.$time);
+	list($date,$time) = preg_split('/ |T/',$date,2);
+	return dateISO2FR($date).($noTime?'':' '.$time);
 }
-function datefr2us($date,$noTime=false){
+/**
+* return an iso8601 date format from an french date format
+* @param string $date   date in french format
+* @param bool   $noTime if true will strip eventual time part of the string
+* @param bool   $preferSpaceOverT will use a space over recommended 'T' as separator between date and time
+* @return string ISO8601 formatted date
+*/
+function dateFR2ISO($date,$noTime=false,$preferSpaceOverT=false){
 	if( empty($date) )
 		return '0000-00-00';
-	if(! strpos($date,' '))
+	if(! (strpos($date,' ') || strpos($date,'T')) )
 		return implode('-',array_reverse(preg_split('!/|-!',$date)));
-	list($date,$time) = explode(' ',$date);
-	return dateus2fr($date).($noTime?'':' '.$time);
+	list($date,$time) = preg_split('/ |T/',$date,2);
+	return dateFR2ISO($date).($noTime?'':($preferSpaceOverT?' ':'T').$time);
+}
+/**
+* use dateISO2FR instead, just here for compatibility
+* @deprecated
+* @see dateISO2FR
+*/
+function dateus2fr($date,$noTime=false){
+	if( DEVEL_MODE_ACTIVE() ){
+		trigger_error('deprecated usage of dateus2fr use dateISO2FR instead',defined('E_USER_DEPRECATED')?E_USER_DEPRECATED:E_USER_NOTICE);
+	}
+	return dateISO2FR($date,$noTime);
+}
+/**
+* use dateISO2FR instead, just here for compatibility
+* @deprecated
+* @see dateFR2ISO
+*/
+function datefr2us($date,$noTime=false){
+	if( DEVEL_MODE_ACTIVE() ){
+		trigger_error('deprecated usage of datefr2us use dateFR2ISO instead',defined('E_USER_DEPRECATED')?E_USER_DEPRECATED:E_USER_NOTICE);
+	}
+	return dateFR2ISO($date,$noTime,true);
 }
 
+/**
+* sort of substr for html strings. will ignore html tags and collapse unmeaning spaces when calculating the length of the string.
+* It will also correctly closed any left opened tags.
+* @param string $htmlStr   string to get substring from
+* @param int    $start     starting index of the substring
+* @param int    $length    ending   index of the substring
+* @param str    $appendStr if returned string is shorter than initial string then it will be appended the given suffix
+*/
 function html_substr($htmlStr,$start=0,$length=null,$appendStr='...'){
 	if(strlen($htmlStr) < $length)
 		return $htmlStr;
@@ -277,16 +351,43 @@ function match($pattern,$str,$id=1,$all=FALSE){
 	}
 	return FALSE;
 }
+/**
+* helper function to get real binary safe strlen even in a mbstring overloaded environment
+* @param string $str string being measured for length
+* @return int  length of the string on success, and 0 if the string is empty.
+*/
+function safe_strlen($str){
+	static $strlen;
+	if(! isset($strlen)){ //-- detect environment only once
+		if( function_exists('mb_strlen') && (ini_get('mbstring.func_overload') & 2) ){
+			$strlen = create_function('str','return mb_strlen($str,"8bit");');
+		}else{
+			$strlen = 'strlen';
+		}
+	}
+	return $strlen($str);
+}
 
 ###--- DEBUG HELPER ---###
+/**
+* debug function will print_r any arguments passed to it.
+* @param mixed $var arbitrary number of parameters to debug
+* @param string $param last parameter can be a special string to change the behaviour of this function:
+*                      any of parameters below may be combined to form this special string by separating them with semi colon
+*                      - exit  -> will end the script execution
+*                      - trace -> will also print a execution stack trace
+*                      - forced-> will show a result even if not in DEVEL_MODE
+*                      - color:colorValue -> allow to change the default red color of the output
+* @sample show($var1,$var2,...,'color:blue;trace;forced;exit');
+* @require smvc_print_r, formatted_backtrace
+*/
 function show(){
-	if( ! (defined('DEVEL_MODE') && DEVEL_MODE) )
-		return false;
 	$args  = func_get_args();
 	$argc  = func_num_args();
 	$param = $args[$argc-1];
 	$halt  = false;
 	$getTrace  = false;
+	$forced = false;
 	$separator = "\n".str_repeat('——',50)."\n";
 	if(is_string($param)){
 		if(preg_match('!(^|;)trace(;|$)!',$param))
@@ -294,9 +395,15 @@ function show(){
 		if(preg_match('!(^|;)exit(;|$)!',$param))
 			$halt = true;
 		$color = match('!(?:^|;)color:([^;]+)(?:;|$)!',$param,1);
-		if( $color || $halt || $getTrace)
+		if( preg_match('!(^|;)forced(;|$)!',$param) ){
+			$forced = true;
+		}
+		if( $color || $halt || $getTrace || $forced )
 			array_pop($args);
 	}
+	if( (! DEVEL_MODE_ACTIVE()) && empty($forced) )
+		return false;
+
 	if(empty($color))
 		$color = 'red';
 
@@ -337,6 +444,12 @@ function show(){
 	}
 	return false; # just for convenience
 }
+/**
+* prettyer print_r
+* @param mixed $var
+* @param bool $return
+* @param string $avoidedObjects list of avoided object in result separated by pipes (|)
+*/
 function smvc_print_r($var,$return=false,$avoidedObjects=''){
 	$res = print_r($var,true);
 	$cleanExps = array(
