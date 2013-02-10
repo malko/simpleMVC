@@ -16,6 +16,13 @@ class jsonRpcMethodException extends jsonRpcException{
 * @licence LGPL
 * @since 2011-02-25
 * @changelog
+*            - 2012-08-21 - syncRequest() remove unwanted use of urlencode for curl request
+*                         - now syncRequest throw jsonRpcException instead of RuntimeException on error
+*            - 2012-08-20 - add unbindMethod() method
+*            - 2012-07-25 - add optional constructor parameter $endPoint
+*                         - now htmlDiscovery allow to test the service directly
+*            - 2012-06-20 - correctly check discovery / htmlDiscovery allowed when changed after init time
+*                         - some little work on htmlDiscovery
 *            - 2012-05-29 - some rewrite in jqueryProxy now binded methods are exposed directly.
 *            - 2011-07-22 - make use of curl in syncRequest when enable else default to fsockopen
 *            - 2011-05-30 - add htmDiscovery method and some more information on discovery
@@ -32,6 +39,7 @@ class jsonRPC{
 	private $callback = null;
 	private $methods = array();
 	private $processingRequest = null;
+	public $endPoint = null;
 
 	static public $errors= array(
 		'PARSE_ERROR'   => array('code'=>-32700,'message'=>'Parse error.','data'=>'Invalid JSON. An error occurred on the server while parsing the JSON text.'),
@@ -43,15 +51,21 @@ class jsonRPC{
 			//array(-32099<->-32000','Server error.','Reserved for implementation-defined server-errors.');//
 	);
 
-	function __construct(){
+	/**
+	* @param string $endPoint url of the service endPoint if not the one of the actual displaying page. (use for proxy and discovery methods)
+	*/
+	function __construct($endPoint=null){
 		if( !empty($_GET['callback'])){
 			$this->callback = $_GET['callback'];
 		}
-		if( self::$allowDiscovery ){
-			$this->bindMethod('discovery',array($this,'discovery'))
-				->bindMethod('htmlDiscovery',array($this,'htmlDiscovery'));
+		if( null === $endPoint ){
+			$endPoint = (stripos($_SERVER['SERVER_PROTOCOL'],'HTTPS')!==false?'https':'http').'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'];
 		}
-		$this->bindMethod('jqueryProxy',array($this,'jqueryProxy'));
+		$this->endPoint = $endPoint;
+		$this->bindMethod('discovery',array($this,'discovery'))
+			->bindMethod('htmlDiscovery',array($this,'htmlDiscovery'))
+			->bindMethod('jqueryProxy',array($this,'jqueryProxy'))
+		;
 		set_error_handler(array($this,'phpErrorHandler'));
 	}
 
@@ -94,8 +108,9 @@ class jsonRPC{
 
 	/**
 	* register a new service method
-	* @param string $methodName name of the public exposed method
-	* @param callable $callback the function or object method to call to bind to this methodName
+	* @param string $methodName name of the public exposed method You may also pass a list of methods in form array(methodName => $callback,...) or array(methodName,...) for quick setup.
+	* @param callable $callback the function or object method to call to bind to this methodName (if null will use $methodName as $callback)
+	* return $this for method chaining
 	*/
 	function bindMethod($methodName,$callback=null){
 		if( null===$callback){
@@ -109,11 +124,31 @@ class jsonRPC{
 			return $this;
 		}
 		if( ! is_callable($callback)){
-			return $this->response($this->error('METHOD_ERROR'));
+			return $this->response($this->error('SERVER_ERROR','Attempting to bind uncallable method.'));
 		}
 		$this->methods[$methodName] = $callback;
 		return $this;
 	}
+
+	/**
+	* unregister a previously registered service method
+	* @param string $methodName name of the public exposed method may be a list of method names to unbind
+	* return $this for method chaining
+	*/
+	function unbindMethod($methodName){
+		if( is_array($methodName) ){
+			foreach($methodName as $m){
+				$this->unbindMethod($m);
+			}
+			return $this;
+		}
+		if(! isset($this->methods[$methodName])){
+			return $this->response($this->error('INTERNAL_ERROR','trying to unbind unknown method.'));
+		}
+		unset($this->methods[$methodName]);
+		return $this;
+	}
+
 
 	function getRequest(){
 		$request = $_REQUEST;
@@ -260,6 +295,9 @@ class jsonRPC{
 	* @return stdclass
 	*/
 	function discovery(){
+		if(! self::$allowDiscovery ){
+			return $this->error('METHOD_ERROR');
+		}
 		$doc = array();
 		foreach($this->methods as $m=>$cb){
 			if( is_string($cb) && strpos($cb,':')){
@@ -299,25 +337,102 @@ class jsonRPC{
 	* @return text/html
 	*/
 	function htmlDiscovery(){
+		if(! self::$allowDiscovery ){
+			return $this->error('METHOD_ERROR');
+		}
 		$docs = $this->discovery() ;
 		if( empty($docs) ){
 			echo "No public API";exit;
 		}
 		ksort($docs);
-		echo "<!DOCTYPE HTML><head><style type=\"text/css\">dt{ font-weight:bold; background:#e0e0e0;color:#333;margin:1em 0 0 0;padding:.4em .8em;}dd{background:#d0d0d0;margin:0 1em;padding:.4em .8em;}</style></head><body><dl>";
+		?><!DOCTYPE HTML>
+		<html>
+		<head>
+		<style type="text/css">
+			body{font-size:.81em;font-family:Helvetica, Arial;}
+			dt{font-weight:bold; background:#e0e0e0;color:#333;margin:1em 0 0 0;padding:.4em .8em;}
+			dd{background:#d0d0d0;margin:0 1em;padding:.4em .8em;border-bottom-right-radius:.3em;border-bottom-left-radius:.3em; cursor: pointer;}
+			dd form{ display:none;border: solid #444 1px;padding:1em;margin:.5em; border-radius:.4em;}
+			dd label{ width:150px; vertical-align: middle; display: inline-block;}
+			h1,h2{font-size:1.6em;color:#444;background:#e5e5e5;padding:.4em;}
+			h2{ font-size:1em;}
+			.section{ margin-left:1em; }
+			.footer{ font-size:.8em; text-align: center; }
+			a{ color:#333; text-decoration: none;}
+		</style>
+		</head>
+		<body>
+		<h1>How to use this service</h1>
+		<div class="section">
+			here’s a list of different ways to call a service method in same order the service will try to handle them.
+			<ul>
+				<li>
+					Using a full jsonrpc request passed in as a single parameter of a GET/POST request.
+					If a GET/POST parameter named jsonrpc contains a full jsonrpc request (for more infos, search the web for jsonrpc definition)
+					here’s a example:
+					<br /><code>jsonrpc={id:"requestUniqueId",method:"methodname",params:["param1","param2"]})</code>
+					then it will proceed with that
+				</li>
+				<li>
+					Using a partial jsonrpc request passed as multiple GET/POST parameters this is the way we use to try our service in this overview,
+					each part of the request is passed as GET/POST parameters.
+					<br />Here’s a GET example:
+					<br /><code>http://myserver.com/service.php?id=requestUniqueID&amp;method=methodName&amp;params=["param1","param2"]</code>
+				</li>
+				<li>
+					Using a true jsonrpc request as raw POST datas this is the way a jsonrpc is intended to work
+					search the web for jsonrpc service definition for some examples, it’s the harder but better way to go.
+				</li>
+			</ul>
+			<h2>JSONP</h2>
+			If you prefer to get a JSONP response simply add a callback parameter to the queryString of the requested service url.
+			For example with this service:
+			<br /><code>http://<?php echo $this->endPoint; ?>?method=discovery&callback=mycallback</code>
+			will return <code>mycallback({"result":{...this discovery as object...}});</code>
+		</div>
+		<h1>Methods available for this service</h1>
+		<div class="section">
+			<dl>
+		<?php
 		foreach($docs as $m=>$doc){
 			$params = array();
+			$testParams = array();
 			if( isset($doc['params'])){
-				foreach($doc['params'] as $p){
+				foreach($doc['params'] as $k=>$p){
 					$p['name'] = "$p[type] $p[name]".(isset($p['default'])?" = ".var_export($p['default'],1):'');
 					$params[] = (!isset($p['optional'])?$p['name']:"[$p[name]]");
+					$testParams[] = "<label for=\"[$m[$k]]\">$p[name]</label> <input name=\"params[]\" id=\"[$m[$k]]\"/>";
 					//$params[] = $p['toString'];
 				}
 			}
-			$comment = empty($doc['comment'])?'':'<dd>'.nl2br($doc['comment']).'<dd>';
+			$comment = empty($doc['comment'])?'':'<dd title="click to test this method">'.nl2br($doc['comment'])
+				.'<form method="get" action="'.$this->endPoint.'" target="jsonRpcTest"><input type="hidden" name="method" value="'.$m.'"/>'.(empty($testParams)?'':implode('<br />',$testParams).'<br />').'<button type="submit">testService</button></form>'
+				.'</dd>'
+			;
 			echo "<dt>".(isset($doc['return'])?"( $doc[return] ) ":'')."$m( ".implode(', ',$params)." )$comment";
 		}
-		echo "</dl></body></html>";
+		?>
+			</dl>
+		</div>
+		<div class="footer"><a href="http://projects.jgotti.net/blog/15" target="_blank">service implemented using class-jsonrpc.php</a></div>
+		<script>
+			(function(){
+			var dds = document.getElementsByTagName('dd')
+				, l=dds.length
+				, i=0
+				, toggleForm=function(){ var f = this.getElementsByTagName('form')[0].style; f.display = f.display==='block'?'none':'block'}
+				, disable = function(e){
+					e.stopImmediatePropagation();
+				}
+			;
+			for(;i<l;i++){
+				dds[i].onclick=toggleForm;
+				dds[i].getElementsByTagName('form')[0].onclick=disable
+			}
+			})()
+		</script>
+		</body></html>
+		<?php
 		exit;
 	}
 	/**
@@ -329,8 +444,8 @@ class jsonRPC{
 	* @return text/javascript
 	*/
 	function jqueryProxy($proxyName='jsonrpc',$endPoint=null){
-		if( null === $endPoint ){
-			$endPoint = (stripos($_SERVER['SERVER_PROTOCOL'],'HTTPS')!==false?'https':'http').'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'];
+		if( null !== $endPoint ){
+			$this->endPoint = $endPoint;
 		}
 		header('Content-type: application/javascript');
 		foreach( $this->methods as $k=>$v){
@@ -339,11 +454,11 @@ class jsonRPC{
 			}
 		}
 		echo "(function($){
-			var RID = '".$proxyName."0'
-			, callbacks={}
-			, generateId = function (){return (RID = RID.replace(/\d+$/,function(m){return parseInt(m,10)+1;}));}
+	var RID = '".$proxyName."0'
+	, callbacks={}
+	, generateId = function (){return (RID = RID.replace(/\d+$/,function(m){return parseInt(m,10)+1;}));}
 	window.$proxyName={
-		endpoint:'".$endPoint."'
+		endpoint:'".$this->endPoint."'
 		,request: function(method,params,success,error){
 			var id=generateId();
 			if(success||error){callbacks[id]=[success,error];}
@@ -352,20 +467,19 @@ class jsonRPC{
 		}
 		".(empty($exposedMethods)?"":','.implode("\n\t\t,",$exposedMethods))."
 		,callback:function(r){
-				if( ! (r && r.id && callbacks[r.id])){
-					return false;
-				}
-				var cbs=callbacks[r.id],cb = r.error?(cbs[1]?cbs[1]:false):(cbs[0]?cbs[0]:false),res=(typeof r.result !== 'undefined')? r.result : (r.error?r.error:null);
-				delete callbacks[r.id];
-				if($.isFunction(cb)){
-					return cb(res);
-				}else if( cb) {
-					return (new Function('r','return '+cb+'(r);'))(res);
-				}
+			if( ! (r && r.id && callbacks[r.id]) ){
 				return false;
+			}
+			var cbs=callbacks[r.id],cb = r.error?(cbs[1]?cbs[1]:false):(cbs[0]?cbs[0]:false),res=(typeof r.result !== 'undefined')? r.result : (r.error?r.error:null);
+			delete callbacks[r.id];
+			if($.isFunction(cb)){
+				return cb(res);
+			}else if( cb) {
+				return (new Function('r','return '+cb+'(r);'))(res);
+			}
+			return false;
 		}
-
-			};
+	};
 })(jQuery);";
 		exit(0);
 	}
@@ -387,7 +501,7 @@ class jsonRPC{
 				,CURLOPT_HEADER => false 		         # no header in the results
 				,CURLOPT_URL => $uri                 # url d'appel
 				,CURLOPT_POST => true                # this is a post request
-				,CURLOPT_POSTFIELDS => urlencode(json_encode($request)) # here's the jsonrpc request
+				,CURLOPT_POSTFIELDS => json_encode($request) # here's the jsonrpc request
 				,CURLOPT_FOLLOWLOCATION => true 		 # allow redirect
 				,CURLOPT_MAXREDIRS => 5 	         	 # max redirect
 				,CURLOPT_CONNECTTIMEOUT => $timeOut  # max connection time
@@ -397,7 +511,7 @@ class jsonRPC{
 			));
 			$response = curl_exec($curl);
 			if( false===$response ){
-				throw new RuntimeException(__class__.':'.__function__.
+				throw new jsonRpcException(__class__.':'.__function__.
 				"Error while requesting $uri : ".curl_error($curl));
 			}
 			curl_close($curl);
@@ -405,7 +519,7 @@ class jsonRPC{
 			preg_match('!^http(s?)://([^/]+)(.*)$!',$uri,$m);
 			$fp = fsockopen(($m[1]?'ssl://':'').$m[2],$m[1]?443:80,$errno,$errstr,$timeOut);
 			if(! $fp ){
-				throw new RuntimeException("$errno - $errstr");
+				throw new jsonRpcException("$errno - $errstr");
 			}
 			$request=json_encode($request);
 			$requestContent = array(
