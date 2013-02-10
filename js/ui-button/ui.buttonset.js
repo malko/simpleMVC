@@ -112,7 +112,7 @@
 			self.element.children('option').each(function(i){
 				var option = $(this);
 				var label = option.html();
-				var optionIcon = option.attr('class').match(/(?:^|\s)ui-icon-(.+)(?:$|\s)/);
+				var optionIcon = (option.attr('class')||'').match(/(?:^|\s)ui-icon-(.+)(?:$|\s)/);
 				var optionOptions = {
 					buttonMode:'toggle',
 					active:option.is(':selected')?true:false,

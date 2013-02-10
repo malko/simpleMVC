@@ -24,7 +24,7 @@
 			//prepare expression
 			var exp = '(?:^|\\s)'+baseClass+'(?=-)';
 			var opts={}, optName;
-			var classAttr = elmt.attr('class');
+			var classAttr = elmt.attr('class') || '';
 			if(null===classAttr || classAttr.length <1)
 				return opts;
 			for(optName in optionsList ){
@@ -77,7 +77,7 @@
 		_rmExpClass:function(exp,add,elmt){
 			elmt=(!elmt)?this.element:$(elmt);
 			exp = new RegExp('(?:^|\\s)'+exp.replace(/\*/g,'[a-zA-Z_0-9-]*')+'(?=$|\\s)','g');
-			elmt.attr('class',elmt.attr('class').replace(exp,''));
+			elmt.attr('class',(elmt.attr('class')||'').replace(exp,''));
 			if( undefined!==add ){
 				elmt.addClass(add);
 			}

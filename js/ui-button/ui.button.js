@@ -32,10 +32,10 @@
 
 
 			//-- should think about aborting or not init when ui-button-none, ui-buttonset are used.
-			if( this.element.attr('class').match(/(?:^|\s+)ui-button(set|-none(\s|$))/) ){
+			if( (this.element.attr('class') || '').match(/(?:^|\s+)ui-button(set|-none(\s|$))/) ){
 				return $.widget.prototype.destroy.apply(this, arguments);
 			}
-			self._originalClass = self.element.attr('class');
+			self._originalClass = self.element.attr('class') || '';
 			// read inline options from class attribute (that can't be null!!!)
 			if( $.ui.classnameoptions){
 				var inlineOptions=self._readClassNameOpts({buttonMode:'|toggle',active:'|active',size:'|auto|tiny|small|normal|big|huge',orientation:'|auto|[trbli]',icon:'|[a-zA-Z0-9_-]+'})
@@ -100,7 +100,7 @@
 						}
 				}
 			}
-			if(! self.element.attr('class').match(/ui-corner-[a-z]+/) ){
+			if(! (self.element.attr('class')||'').match(/ui-corner-[a-z]+/) ){
 				self.element.addClass('ui-corner-all');
 			}
 			self._bindCommonEvents();
@@ -179,7 +179,7 @@
 				ico='ui-icon-none';
 			}
 			if( this._iconIsImage){
-				this._elmt_icon=$('<img src="'+escape(ico)+'"  />');
+				this._elmt_icon=$('<img src="'+ico+'"  />');
 			}else{
 				this._elmt_icon=$('<span class="'+(ico.match(/^ui-icon-/)?'ui-icon '+ico:ico)+'"></span>');
 			}
@@ -339,7 +339,7 @@
 		_rmExpClass:function(exp,add,elmt){
 			elmt=(!elmt)?this.element:$(elmt);
 			exp = new RegExp('(?:^|\\s)'+exp.replace(/\*/g,'[a-zA-Z_0-9-]*')+'(?=$|\\s)','g');
-			elmt.attr('class',elmt.attr('class').replace(exp,''));
+			elmt.attr('class',(elmt.attr('class')||'').replace(exp,''));
 			if( undefined!==add ){
 				elmt.addClass(add);
 			}
