@@ -125,7 +125,7 @@ class smvcErrorHandler{
 			self::clear();
 			return;
 		}
-		if( constant('DEVEL_MODE') ){
+		if( DEVEL_MODE_ACTIVE() ){
 			echo $this->getErrors(PHP_SAPI==='cli'?'cli':'default');
 		}
 		if( constant('ERROR_REPORT_MAIL') ){

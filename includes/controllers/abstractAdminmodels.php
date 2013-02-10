@@ -109,7 +109,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 		));
 
 		$this->configFile = CONF_DIR.'/simpleMVCAdmin_'.FRONT_NAME.'_config.php';
-		if( DEVEL_MODE ){
+		if( DEVEL_MODE_ACTIVE() ){
 			if(! is_file($this->configFile) && is_writable(CONF_DIR))
 				touch($this->configFile);
 			if(! is_writable($this->configFile) ){
@@ -205,12 +205,13 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$PKname = abstractModel::_getModelStaticProp($this->modelType,'primaryKey');
 		$conds = array();
 
-		if( ! empty($this->_config) ){
+		// if( ! empty($this->_config) ){
 			if( !empty($this->_modelConfig['LIST']) ){
-				$listFields = $this->_modelConfig['LIST'];
-				$listKeys = array_keys($listFields);
-				$this->listFields = array_combine($listKeys,$listKeys);
-				$this->listFormats=$listFields;
+				$this->listFormats=$this->_modelConfig['LIST'];
+				if( empty($this->listFields) ){
+					$listKeys = array_keys($this->_modelConfig['LIST']);
+					$this->listFields = array_combine($listKeys,$listKeys);
+				}
 			}
 
 			if( ( !empty($this->_modelConfig['LIST_FILTERS']) ) && ! empty($_GET['_filters']) ){
@@ -235,7 +236,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 					}
 				}
 			}
-		}
+		// }
 		// List Filters for URLs
 		$filter = empty($this->fieldFilters)?'':'/_filters/'.self::prepareFilters($this->fieldFilters);
 
@@ -451,12 +452,12 @@ abstract class abstractAdminmodelsController extends abstractController{
 		$this->view->actionUrl = $this->view->url('save',$args, true);
 		$this->view->listUrl   = $this->view->url('list',$args, true);
 
-		if( !empty($this->_config) ){
+		// if( !empty($this->_config) ){
 			if( !empty($this->_modelConfig['FORM']) )
 				$this->inputOpts = $this->_modelConfig['FORM'];
 			if( !empty($this->_modelConfig['FORM_ORDER']))
 				$this->fieldsOrder = $this->_modelConfig['FORM_ORDER'];
-		}
+		// }
 	}
 
 	function setActiveAction(){
@@ -599,7 +600,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	* display model administration configuration form
 	*/
 	function configureAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		$this->view->_js_loadPlugin('jquery');
 		$this->view->configFile = $this->configFile;
@@ -671,7 +672,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	* set how to display the model as a string
 	*/
 	function setToStringAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		if( isset($_POST['_toStr']) )
 			$this->replaceModel__ToStr($this->modelType,$_POST['_toStr']);
@@ -681,7 +682,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	* set model fields to display in list
 	*/
 	function setListAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		if( empty($_POST['fields'])){
 			$config['LIST_'.$this->modelType] = '--UNSET--';
@@ -700,7 +701,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	}
 	function setFiltersAction(){
 		$filters = array_filter($_POST['filters']);
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		if( empty($_POST['filters'])){
 			$config['LIST_FILTERS_'.$this->modelType] = '--UNSET--';
@@ -716,7 +717,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	* set how to render administrations forms for the given model
 	*/
 	function setFormInputsAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		if(! empty($_POST) ){
 			$c = array();
@@ -754,7 +755,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	}
 
 	function resetFieldsOrder(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		$config['FORM_ORDER_'.$this->modelType] = '--UNSET--';
 		write_conf_file($this->configFile,$config,true);
@@ -764,7 +765,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	* configure langmanager messages for the given model administration
 	*/
 	function setMessagesAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		#-- langs
 		$langs = array_keys($_POST['msgs']);
@@ -784,7 +785,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	}
 
 	function setActionsAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		foreach($_POST['actions'] as $k=>$v)
 			$_POST['actions'][$k] =  (bool) $v;
@@ -795,7 +796,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 	* re-generate models from database
 	*/
 	function generationAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		$modelDir = defined('MODELS_DIR')?MODELS_DIR:LIB_DIR.'/models';
 		#- check for read/write rights
@@ -845,7 +846,7 @@ abstract class abstractAdminmodelsController extends abstractController{
 		return $modelToStr;
 	}
 	private function replaceModel__ToStr($modelType,$newToStr){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		$modelStr = $this->getModelFile($modelType);
 		if( false===$modelStr )
@@ -888,13 +889,13 @@ abstract class abstractAdminmodelsController extends abstractController{
 	}
 
 	function saveEditModelAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		file_put_contents($this->getModelFilePath($this->modelType),preg_replace('/\r(?=\n)/','',$_POST['smvcModel']));
 		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'model'));
 	}
 	function saveEditConfigAction(){
-		if(! (defined('DEVEL_MODE') && DEVEL_MODE) )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->forward(ERROR_DISPATCH);
 		file_put_contents($this->configFile,preg_replace('/\r(?=\n)/','',$_POST['smvcConfig']));
 		return $this->redirectAction('configure',array('modelType'=>$this->modelType,'#'=>'config'));

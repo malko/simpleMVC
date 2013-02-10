@@ -24,7 +24,7 @@ if(! defined('CACHE_DB_CONNECTION') ){
 	define('CACHE_DB_CONNECTION',$dbCacheBackendConnection);
 }
 if(! defined('CACHE_DB_AUTOCREATE')){
-	$dbCacheBackendAutoCreate	= constant('DEVEL_MODE')?true:false;
+	$dbCacheBackendAutoCreate	= DEVEL_MODE_ACTIVE()?true:false;
 	define('CACHE_DB_AUTOCREATE',$dbCacheBackendAutoCreate);
 }
 if(! defined('CACHE_FILE_ROOT_DIR'))
@@ -324,7 +324,7 @@ class dbCacheBackend implements cacheBackend{
 	private $db = null;
 	function __construct(){
 		$this->db = db::getInstance(self::$connectionStr);
-		if( DEVEL_MODE )
+		if( DEVEL_MODE_ACTIVE() )
 			$this->db = new dbProfiler($this->db);
 		#- check for table existence
 		if( self::$autoCreate && false === $this->db->get_count(self::$tableName) ){

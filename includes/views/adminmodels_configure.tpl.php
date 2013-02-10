@@ -4,6 +4,7 @@
 	#settings .sortable li{ list-style-type:none; list-style-image:none;margin:5px 0;padding:5px;}
 	#settings .sortable .placeholder{height:3em;}
 	#settings input{white-space:pre;}
+	#listItems li .formInput input{ width:100%; }
 	div.fieldSet .ui-widget-header{ display:block;}
 	div.fieldSet .ui-widget-header, div.fieldSet, div.formInput{ padding:5px;margin-bottom:5px;}
 	div.fieldSet .ui-widget-header .ui-icon{ float:right;}
@@ -70,7 +71,7 @@
 		<?php
 			if( $this->listDatasDefs){
 				foreach($this->listDatasDefs as $fld){
-					$formatInput = $this->formInput("formatStr[$fld]",isset($this->listedFields[$fld])?htmlentities($this->listedFields[$fld]):null,'text',array('label'=>'format string','size'=>'50'));
+					$formatInput = $this->formInput("formatStr[$fld]",isset($this->listedFields[$fld])?htmlentities($this->listedFields[$fld]):null,'text',array('label'=>'format string:','size'=>'50'));
 					echo $this->formInput("fields[$fld]",$fld,'checkbox',array('checked'=>isset($this->listedFields[$fld]),'label'=>$fld ,'formatStr'=>'<li><span class="toggleItemFormat ui-icon ui-icon-circle-triangle-n">toggle</span> %input %label '.$formatInput.'</li>'))."\n";
 				}
 			}

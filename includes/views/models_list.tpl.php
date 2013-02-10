@@ -14,7 +14,7 @@ if( empty($this->fieldFilters) ){
 	$filters = null;
 }else{
 	$filters = array() ;
-	foreach($this->fieldFilters as $name=>$value){
+	foreach((array) $this->fieldFilters as $name=>$value){
 		$filters[]= "$name,$value";
 	}
 	$filters = implode(',',$filters);
@@ -78,15 +78,16 @@ if(!empty($add)){
 	</div>';
 	$this->js('$("#adminListAddNew").button().focus();','jquery');
 }
-
-if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LIST_TYPE'] ){
+if( empty($this->listDatas) ){
+	echo '<div style="font-weight:bold;color:silver;">'.langManager::msg('No item in database please, you must create one first.').'</div>';
+}else if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LIST_TYPE'] ){
 	echo $this->adminSortableList($this->listDatas,$this->listHeaders,'id',$edit,$del);
 }else{
 	#- add table headers
 	echo '<table cellspacing="0" cellpadding="0" id="table'.$this->modelType.'" class="adminList sqlist">
 	<thead><tr>';
 	$dataFields = abstractModel::_getModelStaticProp($this->modelType,'datasDefs');
-	foreach( $this->listHeaders as $k=>$v){
+	foreach( $tmp = $this->listHeaders as $k=>$v){
 		$ow = 'ASC';
 		$oSymbol = '';
 		if( $k === $_SESSION['sqlist'][$this->modelType]['orderBy'] ){
@@ -117,7 +118,7 @@ if( empty($this->_modelConfig['LIST_TYPE']) || 'sql' !== $this->_modelConfig['LI
 	$i=0;
 	$filters = abstractAdminmodelsController::prepareFilters();
 	$baseUrl = $this->url('%action',array('modelType'=>$this->modelType,'id'=>'%id','_filters'=>$filters),true);
-	foreach($this->listDatas as $row){
+	foreach($tmp = $this->listDatas as $row){
 		echo '
 		<tr class="'.(++$i%2?'alt':'').'row">';
 		foreach( $row as $cellId => $cell){

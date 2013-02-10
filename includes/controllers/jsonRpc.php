@@ -13,7 +13,7 @@ class jsonRpcController extends abstractController{
 		parent::init();
 		jsonRpc::$falseIsError=false;
 		jsonRPC::$autoCleanMagicQuotes=false;
-		$this->jsonRpc = new jsonRPC();
+		$this->jsonRpc = new jsonRPC($this->url(':'));
 		$className = get_class($this);
 		$rclass = new ReflectionClass($className);
 		$methods = $rclass->getMethods(ReflectionMethod::IS_PUBLIC);

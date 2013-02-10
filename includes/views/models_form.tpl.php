@@ -10,7 +10,7 @@
 */
 $encType=false;
 if(! empty($this->inputOpts)){
-	foreach($this->inputOpts as $o){
+	foreach((array) $this->inputOpts as $o){
 		if( (!empty($o['type'])) && ($o['type']==='file' || $o['type']==='fileextended') ){
 			$encType=true;
 			break;
@@ -35,7 +35,7 @@ if(! empty($this->inputOpts)){
 		if( isset($this->fieldsOrder['fieldGroupMethod']) ){
 			$fieldGroupMethod = $this->fieldsOrder['fieldGroupMethod'];
 			$formStr = '';
-			foreach($this->fieldsOrder as $k=>$group){
+			foreach($tmp = $this->fieldsOrder as $k=>$group){
 				if( 'fieldGroupMethod'===$k || empty($group['fields']))
 					continue;
 				$groupStr = "\n<table border=\"0\" cellspacing=\"0\" cellpadding=\"2\">";

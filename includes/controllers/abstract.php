@@ -434,8 +434,8 @@ abstract class abstractController{
 		}
 	}
 
-	public function _getActionCacheNameParameter(){
-		return md5(serialize(array($_GET,$_POST)));
+	public function _getActionCacheNameParameter($additionalParameters=null){
+		return md5(serialize(array($_GET,$_POST,$additionalParameters)));
 	}
 
 	public function __get($k){
@@ -559,6 +559,15 @@ abstract class abstractController{
 		return $this->redirect($url,null,$withResponseCode,$keepGoing);
 	}
 
+	/**
+	* shorthand for appendAppMsg + redirectAction.
+	* @param mixed  $msg string message or array list of messages
+	* @param string $state
+	* @param string $dispatchString if null will use referrer if in same domain, error or default dispatch regarding
+	*                               the $state passed /!\ pay attention when leaving to null of what referrer may be as it could
+	*                               en in an infinite redirection loop!
+	* @param mixed $params @see redirectAction for more info
+	*/
 	function msgRedirect($msg,$state='error',$dispatchString=null,$params=null){
 		self::appendAppMsg($msg,$state);
 		if( $dispatchString===null ){
@@ -574,7 +583,7 @@ abstract class abstractController{
 	###--- DEVEL_MODE SPECIFIC METHODS ---###
 
 	function clearCache(){
-		if( DEVEL_MODE ){
+		if( DEVEL_MODE_ACTIVE() ){
 			cacheManager::clear(0);
 			if( js_viewHelper::$autoMinify){
 				$fileCacheManager = new fileCacheBackend(js_viewHelper::$scriptRootDir.'/minified',false,'-min.js');
@@ -584,12 +593,12 @@ abstract class abstractController{
 		return $this->redirect();
 	}
 	function clearSession(){
-		if( DEVEL_MODE )
+		if( DEVEL_MODE_ACTIVE() )
 			$_SESSION = array();
 		return $this->redirect();
 	}
 	function showSession(){
-		if( DEVEL_MODE ){
+		if( DEVEL_MODE_ACTIVE() ){
 			simpleMVCdevelBar_viewHelper::$disable=true;
 			if( isset($_POST['SESSION']) ){
 				$s = json_decode($_POST['SESSION'],true);;
@@ -624,7 +633,7 @@ abstract class abstractController{
 		return $this->redirect();
 	}
 	function saveDicFormInputs(){
-		if(! DEVEL_MODE )
+		if(! DEVEL_MODE_ACTIVE() )
 			return $this->redirect();
 		#- delegate to the langManager the saving process and return to previous page
 		langManager::saveDicFormInputs($_POST);

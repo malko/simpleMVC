@@ -12,7 +12,7 @@ class filemanagerController extends abstractController{
 	public $connector = null;
 
 	function init(){
-		if( DEVEL_MODE ){
+		if( DEVEL_MODE_ACTIVE() ){
 			parent::init(); // must init views to load current views dirs settings and be abble to properly disable develBar
 			simpleMVCdevelBar_viewHelper::$disable=true;
 		}
