@@ -24,4 +24,6 @@ class jqueryui_viewHelper extends jsPlugin_viewHelper{
 		}
 		$this->_js_script('$.ui.dialog.defaults.bgiframe = true;');
 	}
+
+	function jqueryui(){}
 }

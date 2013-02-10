@@ -39,7 +39,7 @@ class rte_viewHelper extends  jsPlugin_viewHelper{
 		if( null === self::$defaultRteOptions['imgPath'] )
 			self::$defaultRteOptions['imgPath'] = ROOT_URL.'/js/jqueryPlugins/jqueryRte/';
 		if( null === self::$defaultRteOptions['css_url'] )
-			self::$defaultRteOptions['css_url'] = FRONT_URL.'/views/default.css';
+			self::$defaultRteOptions['css_url'] = ROOT_URL.'/'.FRONT_NAME.'.css';
 
 		$defaultOpts = json_encode(self::$defaultRteOptions);
 

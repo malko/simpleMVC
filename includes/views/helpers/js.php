@@ -181,7 +181,7 @@ class js_viewHelper extends abstractViewHelper{
 		#- check paths
 		if(! ($absolutePath || strpos($file,'http')!==false) ){
 			if( ! is_file(self::$scriptRootDir.'/'.$file) ){
-				if( defined('DEVEL_MODE') && DEVEL_MODE )
+				if( DEVEL_MODE_ACTIVE() )
 					show(__class__.'::'.__function__."($file) file not found!",'trace');
 				return false;
 			}

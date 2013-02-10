@@ -41,7 +41,7 @@ class simpleMVCdevelBar_viewHelper extends  jsPlugin_viewHelper{
 		}
 		/*if( smvcModule::modulesConfig(true)->filter('active')->count() ){
 		}*/
-		
+
 		#- check for langManager
 		$withLangManager = class_exists('langManager',false);
 

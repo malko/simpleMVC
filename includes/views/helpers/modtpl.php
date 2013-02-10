@@ -8,10 +8,11 @@ class modtpl_viewHelper extends abstractViewHelper{
 		$this->checkActiveModule();
 	}
 
-	function modtpl($module,$template){
+	function modtpl($module,$template,array $contextVars = null){
 		if(! in_array($module,$this->activeModules))
 			return false;
-		return $this->view->renderScript($module."_$template.modtpl.php");
+		$this->view->renderScript($module."_$template.modtpl.php",true,$contextVars);
+		return '';
 	}
 
 	function checkActiveModule(){

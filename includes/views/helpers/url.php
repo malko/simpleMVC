@@ -16,6 +16,7 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
+*            - 2011-08-09 - add methods key and nokey as shorthand for url methods with last parameters forced
 *            - 2011-02-08 - add $rewriteUseKeys property and $forcedRewriteUseKeys parameter
 *            - 2010-04-09 - make wordCleaner a static method
 *            - 2010-02-08 - drop support for second $controllerName parameter now only support dipatchString as first parameter
@@ -129,6 +130,14 @@ class url_viewHelper extends abstractViewHelper{
 		}
 		return $url;
 	}
+
+	function nokey($dispatchString,$params=null,$alreadyEncoded=false,$appUrl=null){
+		return $this->url($dispatchString,$params,$alreadyEncoded,$appUrl,false);
+	}
+	function key($dispatchString,$params=null,$alreadyEncoded=false,$appUrl=null){
+		return $this->url($dispatchString,$params,$alreadyEncoded,$appUrl,true);
+	}
+
 	static function wordCleaner($word){
 		static $words=array(),$charset;
 		if( isset($words[$word]))

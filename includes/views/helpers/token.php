@@ -5,10 +5,12 @@
 *   get a token in your form view: $this->token('formIdentifier');
 *   check your token in your controller if( $this->_token_check($timeToLive,'formIdentifier')){ continue; }
 * tokens are automaticly droped when checked Ok
+* @changelog
+*            -2012-08-09- add  a useReferrer parameter to get method
 *
 */
 class token_viewHelper extends abstractViewHelper{
-	static public $md5Salt = null;
+	static public $md5Salt = TOKEN_SALT;
 	static public $maxTTL = 1800; // seconds
 	static public $autoClear = true;
 
@@ -31,8 +33,11 @@ class token_viewHelper extends abstractViewHelper{
 	}
 	/*
 	* return a token and it's time and store it in session so a token max time to leave is the session validity
+	* @param string $uid optional lookup id for the token
+	* @param boolean $useReferrer set to true if you want the token based on the referrer instead of the requested url
+	*                             (usefull when token is created while executing a redirection)
 	*/
-	function get($uid=null){
+	function get($uid=null,$useReferrer=false){
 		$time = time();
 		// remove existing token for this uid if given
 		if($uid && ! empty($_SESSION['tokens'])){
@@ -43,7 +48,8 @@ class token_viewHelper extends abstractViewHelper{
 				}
 			}
 		}
-		$token = ($uid?"$uid-":'').md5($_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'].self::$md5Salt.$_SERVER['HTTP_USER_AGENT'].$time);
+		$uri = $useReferrer ? preg_replace('!^https?://!','',$_SERVER['HTTP_REFERER']) : $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+		$token = ($uid?"$uid-":'').md5($uri.self::$md5Salt.$_SERVER['HTTP_USER_AGENT'].$time);
 		#- add token to list
 		$_SESSION['tokens'][$token] = $time;
 		return array($token,$time);
