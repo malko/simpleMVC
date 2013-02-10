@@ -18,7 +18,8 @@
 *            - $LastChangedBy$
 *            - $HeadURL$
 * @changelog
-*            - 2011-10-18 - know viewInterface::__get() return references
+*            - 2012-06-28 - add contexts support for baseView::renderScript
+*            - 2011-10-18 - now viewInterface::__get() return references
 *            - 2010-06-24 - use abstractController::_getActionCacheNameParameter() for view cacheName
 *            - 2010-03-29 - add viewInterface::getLayout() method
 *            - 2010-03-22 - add cacheManager support to renderScript() method ( little impact on lookUpScript() too)
@@ -111,6 +112,7 @@ class baseView implements viewInterface{
 	protected $_layout = null;
 	protected $_controller = null;
 	protected $_loadedHelpers = array();
+	protected $_contexts = array();
 
 	/** where will go all the user define datas */
 	private $_datas = array();
@@ -156,6 +158,12 @@ class baseView implements viewInterface{
 	}
 
 	function &__get($k){
+		// look inside contexts first
+		for($i=count($this->_contexts);--$i>-1;){
+			if( isset($this->_contexts[$i][$k]) ){
+				return $this->_contexts[$i][$k];
+			}
+		}
 		if(isset($this->_datas[$k]))
 			return $this->_datas[$k];
 		$tmp = null;
@@ -166,6 +174,12 @@ class baseView implements viewInterface{
 	* this one is required to permit use of empty()
 	*/
 	function __isset($k){
+		// look inside contexts first
+		for($i=count($this->_contexts);--$i>-1;){
+			if( isset($this->_contexts[$i][$k]) ){
+				return true;
+			}
+		}
 		return isset($this->_datas[$k]);
 	}
 	/**
@@ -395,22 +409,24 @@ class baseView implements viewInterface{
 	* render the given script file.
 	* @param  str  $scriptFile can be the script file path or only the name if you do a lookup
 	* @param  bool $useLookUp   if false then won't use lookUpScript but only check if file exists.
+	* @param array $contextVars contextual vars (usefull for nested renderScript call or modtpl helper usage)
 	* @return bool scriptFile included or not.
 	*/
-	public function renderScript($scriptFile,$useLookUp=true){
+	public function renderScript($scriptFile,$useLookUp=true,array $contextVars=null){
 		$cached = false;
 		if( strpos($scriptFile,'_cached_')===0 ){
 			$cached = true;
 			$scriptFile = substr($scriptFile,8);
-			$cacheName = FRONT_NAME.'_'.preg_replace('!.tpl.php$!','',basename($scriptFile)).(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').$this->getController()->_getActionCacheNameParameter();
+			$cacheName = FRONT_NAME.'_'.preg_replace('!.tpl.php$!','',basename($scriptFile)).(class_exists('langManager',false)?'_'.langManager::getCurrentLang():'').$this->getController()->_getActionCacheNameParameter($contextVars);
 			$res = cacheManager::get($cacheName);
 			if( null !== $res ){
 				echo $res;
 				return true;
 			}
 		}
-		if( $cached )
+		if( $cached ){
 			cacheManager::setStart($cacheName);
+		}
 		if($useLookUp){
 			$scriptFile = $this->lookUpScript($scriptFile);
 			if($scriptFile === false)
@@ -418,9 +434,14 @@ class baseView implements viewInterface{
 		}elseif(! is_file($scriptFile) ){
 				return false;
 		}
+
+		array_push($this->_contexts,$contextVars);
 		include($scriptFile);
-		if( $cached )
+		array_pop($this->_contexts);
+
+		if( $cached ){
 			echo cacheManager::setEnd($cacheName);
+		}
 		return true;
 	}
 	/**
