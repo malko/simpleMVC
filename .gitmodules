@@ -1,0 +1,9 @@
+[submodule "includes/db"]
+	path = includes/db
+	url = git@github.com:malko/class-db.git
+[submodule "js/jqueryToolkit"]
+	path = js/jqueryToolkit
+	url = git@github.com:malko/jqueryToolkit
+[submodule "js/dryCss"]
+	path = js/dryCss
+	url = git@github.com:malko/dryCss
